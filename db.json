@@ -1,0 +1,70 @@
+{
+    "orders": [
+      {
+        "id": 1,
+        "time": "12:25",
+        "type": "delivery",
+        "number": "0431",
+        "customer": "Thomas R.",
+        "items": {
+          "PLATOS": ["1 Pizza Vegetariana", "1 Pizza Margarita", "2 Burger Triple Steak"],
+          "POSTRES": ["1 Tiramisu", "2 Ensalada de frutas"]
+        },
+        "status": "in-progress"
+      },
+      {
+        "id": 2,
+        "time": "12:40",
+        "type": "takeout",
+        "number": "0432",
+        "customer": "Marjorie K.",
+        "items": {
+          "ENTRADAS": ["1 Ensalada César", "2 Ensalada de Queso de Cabra"],
+          "PLATOS": ["1 Pizza Vegetariana", "2 Pizza India"],
+          "POSTRES": ["1 Ensalada de frutas"]
+        },
+        "status": "in-progress"
+      },
+      {
+        "id": 3,
+        "time": "12:45",
+        "type": "dine-in",
+        "number": "0433",
+        "customer": "Table 6",
+        "items": {
+          "ENTRADAS": ["2 Ensalada Auvergnate", "1 Ensalada Verde"],
+          "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
+          "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
+        },
+        "status": "ready"
+      },
+      {
+        "id": 4,
+        "time": "12:45",
+        "type": "dine-in",
+        "number": "0433",
+        "customer": "Table 6",
+        "items": {
+          "ENTRADAS": ["2 Ensalada Auvergnate", "1 Ensalada Verde"],
+          "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
+          "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
+        },
+        "status": "ready"
+      },
+      {
+        "id": 5,
+        "time": "12:45",
+        "type": "dine-in",
+        "number": "0433",
+        "customer": "Table 6",
+        "items": {
+          "ENTRADAS": ["2 Ensalada Auvergnate", "1 Ensalada Verde"],
+          "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
+          "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
+        },
+        "status": "ready"
+      }
+
+    ]
+  }
+  
