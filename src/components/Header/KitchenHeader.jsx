@@ -38,21 +38,6 @@ const KitchenHeader = ({ pendingCount, inProgressCount, isConfigPage }) => (
       </Link>
     </header>
 
-    {/* <div className="flex items-center space-x-6">
-      <div className="flex items-center bg-yellow-100 p-2 rounded-lg">
-        <Clock className="w-6 h-6 mr-2 text-yellow-600" />
-        <span className="text-gray-700 font-semibold">
-          {pendingCount} en espera
-        </span>
-      </div>
-
-      <div className="flex items-center bg-red-100 p-2 rounded-lg">
-        <AlertTriangle className="w-6 h-6 mr-2 text-red-600" />
-        <span className="text-gray-700 font-semibold">
-          {inProgressCount} en curso
-        </span>
-      </div>
-    </div> */}
   </>
 );
 
