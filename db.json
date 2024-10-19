@@ -10,7 +10,8 @@
           "PLATOS": ["1 Pizza Vegetariana", "1 Pizza Margarita", "2 Burger Triple Steak"],
           "POSTRES": ["1 Tiramisu", "2 Ensalada de frutas"]
         },
-        "status": "in-progress"
+        "status": "urgente",
+        "elapsedTime": "00:05:35"
       },
       {
         "id": 2,
@@ -23,7 +24,8 @@
           "PLATOS": ["1 Pizza Vegetariana", "2 Pizza India"],
           "POSTRES": ["1 Ensalada de frutas"]
         },
-        "status": "in-progress"
+        "status": "urgente",
+        "elapsedTime": "00:05:35"
       },
       {
         "id": 3,
@@ -36,7 +38,7 @@
           "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
           "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
         },
-        "status": "ready"
+        "status": "listo"
       },
       {
         "id": 4,
@@ -49,7 +51,7 @@
           "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
           "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
         },
-        "status": "ready"
+        "status": "en-progreso"
       },
       {
         "id": 5,
@@ -62,7 +64,7 @@
           "PLATOS": ["1 Burger de Queso", "2 Pizza Calzone", "1 Bruschetta Provenzal"],
           "POSTRES": ["2 Mousse de Chocolate", "1 Crema Caramel"]
         },
-        "status": "ready"
+        "status": "no-iniciado"
       }
 
     ]

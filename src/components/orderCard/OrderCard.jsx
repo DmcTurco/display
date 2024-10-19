@@ -1,49 +1,36 @@
 import React, { useState } from 'react'
-import { Clock, Truck, ShoppingBag, Users, AlertTriangle } from 'lucide-react'
+import { AlertTriangle } from 'lucide-react'
+import OrderHeader from './OrderHeader';
+import OrderItems from './OrderItems';
+import UrgentAlert from './UrgentAlert';
+import ActionButton from './ActionButton';
 
 function OrderCard({ time, type, number, customer, items, status, elapsedTime }) {
 
-  const getTypeIcon = () => {
-    switch (type) {
-      case 'delivery':
-        return <Truck className='w-5 h-5 text-blue-500' />
-      case 'takeout':
-        return <ShoppingBag className='w-5 h-5 text-green-500' />
-      case 'dine-in':
-        return <Users className='w-5 h-5 text-purple-500' />
-      default:
-        return null
-    }
-  }
 
   const getStatusColor = () => {
-
     switch (status) {
       case 'urgente':
-        return 'bg-red-100 border-1-4 border-red-500'
+        return 'bg-red-100 border-l-4 border-red-500';
       case 'en-progreso':
-        return 'bg-yellow-100 border-1-4 border-yellow-500'
+        return 'bg-yellow-100 border-l-4 border-yellow-500';
       case 'listo':
-        return 'bg-green-100 border-1-4 border-green-500'
+        return 'bg-green-100 border-l-4 border-green-500';
       default:
-        return 'bg-white'
+        return 'bg-white';
     }
-  }
+  };
 
   return (
-    <div className={`rounded-lg shadow-md p-4 mb-4 flex-shrink-0 w-80 ${getStatusColor()}`}>
-      <div className="flex justify-between items-center mb-2">
-
-        <div className="flex items-center">
-          <span className="text-lg font-bold mr-2">{time}</span>
-          {getTypeIcon()}
-        </div>
-        <div className="text-sm text-gray-500">#{number} {customer}</div>
+    <div className={`rounded-lg shadow-md p-7 flex-shrink-0 w-80 h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
+      <div className="flex-grow">
+        <OrderHeader time={time} type={type} number={number} customer={customer} />
+        {status === 'urgente' && <UrgentAlert elapsedTime={elapsedTime} />}
+        <OrderItems items={items} />
       </div>
+      <ActionButton status={status} />
     </div>
-  )
-
-
+  );
 
 }
 

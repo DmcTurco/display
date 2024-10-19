@@ -1,8 +1,8 @@
 import React from 'react';
-import OrderCard from './OrderCard';
+import OrderCard from './orderCard/OrderCard';
 
 const OrderList = ({ orders }) => (
-  <div className="flex space-x-4 overflow-x-auto py-4">
+  <div className="flex flex-nowrap overflow-x-auto p-4 space-x-4">
     {orders.map((order, index) => (
       <OrderCard key={index} {...order} />
     ))}
