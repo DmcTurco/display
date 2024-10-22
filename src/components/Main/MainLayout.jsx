@@ -8,10 +8,9 @@ import KitchenDisplay from "../Pages/Kitchen/kitchenDisplay";
 
 const MainLayout = ({ content }) => {
   
-  const location = useLocation(); 
   const [pendingCount, setPendingCount] = useState(0);
   const [inProgressCount, setInProgressCount] = useState(0);
-  const isConfigPage = content == "config";
+  const isConfigPage = content === 'config';
 
 
   return (

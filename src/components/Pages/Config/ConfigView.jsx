@@ -5,7 +5,7 @@ const ConfigView = () => {
     const navigate = useNavigate();
 
     const handleBackToKitchen = () => {
-        navigate('/');  // Navegar a la ruta principal
+        navigate('/kitchen');  // Navegar a la ruta principal
     };
 
     return (

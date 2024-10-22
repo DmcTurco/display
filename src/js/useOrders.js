@@ -9,6 +9,9 @@ function useOrders() {
     const getOrders = async () => {
 
         try {
+
+            setLoading(true);
+            // const url = process.env.REACT_APP_API_URL || 'http://localhost:5000/orders';
             const url = 'http://localhost:5000/orders'
             const reponse = await fetch(url)
 
@@ -17,9 +20,10 @@ function useOrders() {
             }
             const data = await reponse.json()
             setOrders(data)
-            setLoading(false)
         } catch (err) {
             setError(err.message)
+        }
+        finally {
             setLoading(false)
         }
     }

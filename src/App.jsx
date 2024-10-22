@@ -7,18 +7,8 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route
-          path="/" element={
-            <MainLayout content = "kitchen">
-            </MainLayout>
-          }
-        />
-        <Route
-          path="/config" element={
-            <MainLayout content = "config">
-            </MainLayout>
-          }
-        />
+        <Route path="/kitchen" element={<MainLayout content="kitchen" />} />
+        <Route path="/config" element={<MainLayout content="config" />} />
       </Routes>
     </Router>
   );

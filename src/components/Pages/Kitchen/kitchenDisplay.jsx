@@ -6,18 +6,21 @@ import useOrders from '../../../js/useOrders';
 
 const KitchenDisplay = ({setPendingCount,setInProgressCount}) => {
 
-  const { orders,loading, error, getOrders } = useOrders()  
+  const { orders,loading, error, getOrders } = useOrders()
+
+  useEffect(() =>{
+    getOrders()
+  }, []);
 
   useEffect(()=>{
-    getOrders().then(() => {
-      console.log( orders)
-      const pendingCount = orders.filter( (order) => order.status === "no-iniciado").length;
+    if(orders.length > 0){
+      const pendingCount = orders.filter((order) => order.status == "no-iniciado").length
       const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
       setPendingCount(pendingCount)
       setInProgressCount(inProgressCount)
-    }) ;
+    }
+  }, [orders]);
 
-  },[])
 
   if (loading) {
     return <div>Cargando pedidos...</div>;
