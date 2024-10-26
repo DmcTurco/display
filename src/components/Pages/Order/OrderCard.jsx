@@ -20,18 +20,26 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime })
     }
   };
   // Log items only when they change
-  useEffect(() => {
-    console.log('Items:', items);
-  }, [items]);
+  // useEffect(() => {
+  //   console.log('Items:', items);
+  // }, [items]);
   return (
-    <div className={`rounded-lg shadow-md p-7 flex-shrink-0 w-80 h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
-      <div className="flex-grow">
+    // <div className={`rounded-lg shadow-md p-7 flex-shrink-0 w-80 h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
+    <div className={`rounded-lg shadow-md  flex-shrink-0 w-80 h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
+      <div className="p-4">
         <OrderHeader time={time} type={type} number={number} customer={customer} />
         {status === 'urgente' && <UrgentAlert elapsedTime={elapsedTime} />}
+      </div>
+      <div className="flex-1 overflow-y-auto px-4 custom-scrollbar">
         <OrderItems items={items} />
       </div>
-      <ActionButton status={status} />
+      <div className="p-4 border-t  mt-auto">
+        <ActionButton status={status} />
+      </div>
+      
     </div>
+
+    
   );
 
 }
