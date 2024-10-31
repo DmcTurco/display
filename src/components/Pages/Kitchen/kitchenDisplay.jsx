@@ -9,16 +9,16 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
   const [refreshInterval, setRefreshInterval] = useState(30000);
 
   const [isOnline, setIsOnline] = useState(navigator.onLine);
-  const [isServerError, setIsServerError] = useState(false); 
-  const [showReconnectBanner, setShowReconnectBanner] = useState(false); 
+  const [isServerError, setIsServerError] = useState(false);
+  const [showReconnectBanner, setShowReconnectBanner] = useState(false);
 
 
 
-   useEffect(() => {
+  useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
-      setShowReconnectBanner(true); 
-      setTimeout(() => setShowReconnectBanner(false), 3000); 
+      setShowReconnectBanner(true);
+      setTimeout(() => setShowReconnectBanner(false), 3000);
     };
     const handleOffline = () => setIsOnline(false);
 
@@ -32,14 +32,14 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
   }, []);
 
 
- 
+
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         await getTodayOrders();
-        setIsServerError(false); 
+        setIsServerError(false);
       } catch (err) {
-        setIsServerError(true); 
+        setIsServerError(true);
       }
     };
 
@@ -51,7 +51,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
 
 
   useEffect(() => {
-    if (orders?.length > 0) { 
+    if (orders?.length > 0) {
       const pendingCount = orders.filter((order) => order.status == "no-iniciado").length
       const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
       setPendingCount(pendingCount)
@@ -60,74 +60,82 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
   }, [orders, setPendingCount, setInProgressCount]);
 
 
-  if (!isOnline) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-pulse">
-          <FaWifi className="text-red-500 text-6xl mx-auto mb-4" />
-          <p className="text-2xl font-semibold text-gray-700">Sin conexión a Internet</p>
-          <p className="text-sm text-gray-500">Por favor, verifica tu conexión.</p>
+  const renderContent = () => {
+    if (!isOnline) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center animate-pulse">
+            <FaWifi className="text-red-500 text-6xl mx-auto mb-4" />
+            <p className="text-2xl font-semibold text-gray-700">Sin conexión a Internet</p>
+            <p className="text-sm text-gray-500">Por favor, verifica tu conexión.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (isServerError) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-pulse">
-          <FaServer className="text-yellow-500 text-6xl mx-auto mb-4" />
-          <p className="text-2xl font-semibold text-gray-700">Error de conexión con el servidor</p>
-          <p className="text-sm text-gray-500">El servidor de órdenes no responde. Intenta nuevamente más tarde.</p>
+    if (isServerError) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center animate-pulse">
+            <FaServer className="text-yellow-500 text-6xl mx-auto mb-4" />
+            <p className="text-2xl font-semibold text-gray-700">Error de conexión con el servidor</p>
+            <p className="text-sm text-gray-500">El servidor de órdenes no responde. Intenta nuevamente más tarde.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <FaSpinner className="text-blue-500 text-6xl animate-spin mx-auto mb-4" />
-          <p className="text-2xl font-semibold text-gray-700">Cargando pedidos...</p>
-          <p className="text-sm text-gray-500">Por favor, espere un momento.</p>
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <FaSpinner className="text-blue-500 text-6xl animate-spin mx-auto mb-4" />
+            <p className="text-2xl font-semibold text-gray-700">Cargando pedidos...</p>
+            <p className="text-sm text-gray-500">Por favor, espere un momento.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (error) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <FaExclamationCircle className="text-red-500 text-6xl mx-auto mb-4 animate-bounce" />
-          <p className="text-2xl font-semibold text-red-700">Error al cargar las Ordenes</p>
-          <p className="text-sm text-gray-500">Por favor, inténtalo de nuevo más tarde.</p>
+    if (error) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center">
+            <FaExclamationCircle className="text-red-500 text-6xl mx-auto mb-4 animate-bounce" />
+            <p className="text-2xl font-semibold text-red-700">Error al cargar las Ordenes</p>
+            <p className="text-sm text-gray-500">Por favor, inténtalo de nuevo más tarde.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (orders?.length === 0) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center animate-bounce">
-          <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
-          <p className="text-2xl font-semibold text-gray-700">No hay órdenes disponibles</p>
-          <p className="text-sm text-gray-500">Por favor, inténtalo más tarde.</p>
+    if (orders?.length === 0) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <div className="text-center animate-bounce">
+            <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
+            <p className="text-2xl font-semibold text-gray-700">No hay órdenes disponibles</p>
+            <p className="text-sm text-gray-500">Por favor, inténtalo más tarde.</p>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
+
+    return <OrderList orders={orders} />;
+  };
+
 
   return (
-    <div className="bg-gray-100 min-h-screen p-4 relative">
+    <div className="bg-gray-100 h-screen flex flex-col">
       {showReconnectBanner && (
-        <div className="fixed top-0 left-0 w-full bg-green-500 text-white text-center py-2 animate-slideDown">
+        <div className="absolute top-0 left-0 w-full bg-green-500 text-white text-center py-2 animate-slideDown z-50">
           Reconectado exitosamente
         </div>
       )}
-      <OrderList orders={orders} />
+      {/* Container principal con altura fija */}
+      <div className="flex-1 overflow-hidden">
+        {renderContent()}
+      </div>
     </div>
   );
 };

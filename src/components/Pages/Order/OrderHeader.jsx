@@ -18,7 +18,7 @@ const OrderHeader = ({ time, type, number, customer }) => {
   return (
     <div className="mb-4">
       {/* Título (Mesa o nombre de mesa) */}
-      <h2 className="text-lg font-bold text-gray-800 mb-2 text-center">
+      <h2 className="text-ls font-bold text-gray-800 mb-2 text-center">
         mesa: {customer}
       </h2>
       
