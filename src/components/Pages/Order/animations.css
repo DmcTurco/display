@@ -1,5 +1,5 @@
 /* animations.css */
-@keyframes slideIn {
+/* @keyframes slideIn {
   from { 
     opacity: 0; 
     transform: translateX(100%); 
@@ -36,10 +36,10 @@
   border-radius: 9999px;
   backdrop-filter: blur(4px);
   user-select: none;
-}
+} */
 
 /* animations.css */
-@keyframes fadeInNext {
+/* @keyframes fadeInNext {
   from {
     opacity: 0;
     transform: translateX(20px);
@@ -71,4 +71,4 @@
 
 .cards-container {
   transition: all 0.3s ease-out;
-}
+} */

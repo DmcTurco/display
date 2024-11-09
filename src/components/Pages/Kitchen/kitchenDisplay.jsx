@@ -126,7 +126,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
 
 
   return (
-    <div className="bg-gray-100 h-screen flex flex-col">
+    <div className="bg-gray-100 flex flex-col h-full">
       {showReconnectBanner && (
         <div className="absolute top-0 left-0 w-full bg-green-500 text-white text-center py-2 animate-slideDown z-50">
           Reconectado exitosamente

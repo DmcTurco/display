@@ -18,7 +18,6 @@ const OrderList = ({ orders }) => {
         dragSensitivity: 1.5
     };
 
-    console.log(orders)
     useEffect(() => {
         const container = containerRef.current;
         if (!container) return;
@@ -111,67 +110,69 @@ const OrderList = ({ orders }) => {
     };
 
     return (
-        <div className="relative h-full overflow-hidden">
-            <div
-                ref={containerRef}
-                className="relative w-full h-full"
-                onTouchStart={onTouchStart}
-                onTouchEnd={onTouchEnd}
-                onMouseDown={onMouseDown}
-            >
+        <div className="flex flex-col h-full">
+            <div className="max-w-[1400px] mx-auto w-full px-4">
                 <div
-                    className="absolute flex h-full"
-                    style={{
-                        transform: getTransform(),
-                        transition: touchStart ? 'none' : `transform ${config.transitionDuration}ms ease-out`,
-                        width: `${totalPages * 100}%`,
-                    }}
+                    ref={containerRef}
+                    className="relative w-full h-full"
+                    onTouchStart={onTouchStart}
+                    onTouchEnd={onTouchEnd}
+                    onMouseDown={onMouseDown}
                 >
-                    {Array.from({ length: totalPages }).map((_, index) => (
-                        <div
-                            key={index}
-                            className="flex min-w-full px-4"
-                            style={{
-                                justifyContent: 'flex-start',
-                                gap: '1rem',
-                                width: `${100 / totalPages}%`
-                            }}
-                        >
-                            {getPageOrders(index + 1).map(order => (
-                                <div
-                                    key={`${order.order_main_cd}_${order.order_count}`}
-                                    className="flex-shrink-0"
-                                    style={{ width: '320px' }}
-                                >
-                                    <OrderCard
-                                        time={order.formatted_time}
-                                        type={order.type}
-                                        number={`${order.order_main_cd}-${order.order_count}`}
-                                        customer={order.table_name}
-                                        items={order.items}
-                                        status={order.status}
-                                        elapsedTime={order.elapsedTime}
-                                    />
-                                </div>
-                            ))}
-                        </div>
-                    ))}
+                    <div
+                        className="absolute flex h-full"
+                        style={{
+                            transform: getTransform(),
+                            transition: touchStart ? 'none' : `transform ${config.transitionDuration}ms ease-out`,
+                            width: `${totalPages * 100}%`,
+                        }}
+                    >
+                        {Array.from({ length: totalPages }).map((_, index) => (
+                            <div
+                                key={index}
+                                className="flex min-w-full gap-4"
+                                style={{
+                                    justifyContent: 'flex-start',
+                                    gap: '1rem',
+                                    width: `${100 / totalPages}%`
+                                }}
+                            >
+                                {getPageOrders(index + 1).map(order => (
+                                    <div
+                                        key={`${order.order_main_cd}_${order.order_count}`}
+                                        className="flex-shrink-0 w-[320px]"
+                                        style={{ width: '320px' }}
+                                    >
+                                        <OrderCard
+                                            time={order.formatted_time}
+                                            type={order.type}
+                                            number={`${order.order_main_cd}-${order.order_count}`}
+                                            customer={order.table_name}
+                                            items={order.items}
+                                            status={order.status}
+                                            elapsedTime={order.elapsedTime}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className={`absolute inset-0 pointer-events-none 
+                        ${Math.abs(dragOffset) > 0 ? 'opacity-100' : 'opacity-0'}
+                        transition-opacity duration-200`}>
+                        <div className={`absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/5 to-transparent
+                        ${dragOffset < 0 ? 'opacity-100' : 'opacity-0'}`} />
+                        <div className={`absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/5 to-transparent
+                        ${dragOffset > 0 ? 'opacity-100' : 'opacity-0'}`} />
+                    </div>
                 </div>
 
-                <div className={`absolute inset-0 pointer-events-none 
-                    ${Math.abs(dragOffset) > 0 ? 'opacity-100' : 'opacity-0'}
-                    transition-opacity duration-200`}>
-                    <div className={`absolute inset-y-0 left-0 w-16 bg-gradient-to-r from-black/5 to-transparent
-                      ${dragOffset < 0 ? 'opacity-100' : 'opacity-0'}`} />
-                    <div className={`absolute inset-y-0 right-0 w-16 bg-gradient-to-l from-black/5 to-transparent
-                      ${dragOffset > 0 ? 'opacity-100' : 'opacity-0'}`} />
-                </div>
-            </div>
-
-            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
-                bg-black/75 text-white px-6 py-3 rounded-full text-lg 
-                backdrop-blur-sm select-none">
-                {currentPage} / {totalPages}
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
+    bg-black/60 text-white px-3 py-1 rounded-full text-sm 
+    backdrop-blur-sm select-none">
+    {currentPage} / {totalPages}
+</div>
             </div>
         </div>
     );
