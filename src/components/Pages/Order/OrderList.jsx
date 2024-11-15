@@ -111,7 +111,7 @@ const OrderList = ({ orders }) => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="max-w-[1400px] mx-auto w-full px-4">
+            <div className="max-w-[1200px] mx-auto w-full px-4">
                 <div
                     ref={containerRef}
                     className="relative w-full h-full"
@@ -132,28 +132,41 @@ const OrderList = ({ orders }) => {
                                 key={index}
                                 className="flex min-w-full gap-4"
                                 style={{
-                                    justifyContent: 'flex-start',
-                                    gap: '1rem',
                                     width: `${100 / totalPages}%`
                                 }}
                             >
-                                {getPageOrders(index + 1).map(order => (
-                                    <div
-                                        key={`${order.order_main_cd}_${order.order_count}`}
-                                        className="flex-shrink-0 w-[320px]"
-                                        style={{ width: '320px' }}
-                                    >
-                                        <OrderCard
-                                            time={order.formatted_time}
-                                            type={order.type}
-                                            number={`${order.order_main_cd}-${order.order_count}`}
-                                            customer={order.table_name}
-                                            items={order.items}
-                                            status={order.status}
-                                            elapsedTime={order.elapsedTime}
-                                        />
-                                    </div>
-                                ))}
+                                <div className="flex min-w-full gap-3">
+                                    {getPageOrders(index + 1).map(order => (
+                                        <div
+                                            key={`${order.order_main_cd}_${order.order_count}`}
+                                            className="flex-shrink-0 w-full 
+                                            min-w-[100px] 
+                                            max-w-[130px] 
+                                            sm:max-w-[160px] 
+                                            md:max-w-[200px] 
+                                            lg:max-w-[240px]
+                                            xl:max-w-[280px]
+                                            2xl:max-w-[300px]
+                                            transition-all 
+                                            duration-300 
+                                            ease-in-out"
+                                            style={{
+                                                width: `calc((100% - ${(ordersPerPage - 1) * 0.75}rem) / ${ordersPerPage})`,
+                                                minHeight: '300px'
+                                            }}
+                                        >
+                                            <OrderCard
+                                                time={order.formatted_time}
+                                                type={order.type}
+                                                number={`${order.order_main_cd}-${order.order_count}`}
+                                                customer={order.table_name}
+                                                items={order.items}
+                                                status={order.status}
+                                                elapsedTime={order.elapsedTime}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -169,10 +182,10 @@ const OrderList = ({ orders }) => {
                 </div>
 
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
-    bg-black/60 text-white px-3 py-1 rounded-full text-sm 
-    backdrop-blur-sm select-none">
-    {currentPage} / {totalPages}
-</div>
+                    bg-black/60 text-white px-3 py-1 rounded-full text-sm 
+                    backdrop-blur-sm select-none">
+                    {currentPage} / {totalPages}
+                </div>
             </div>
         </div>
     );

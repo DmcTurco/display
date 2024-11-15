@@ -1,14 +1,15 @@
 import { ShoppingBag, Truck, Users } from "lucide-react";
 import React from "react";
+import UrgentAlert from './UrgentAlert';
 
-const OrderHeader = ({ time, type, number, customer }) => {
+const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
   const getTypeIcon = () => {
     switch (type) {
       case "delivery":
         return <Truck className="w-5 h-5 text-blue-500" />;
       case "takeout":
         return <ShoppingBag className="w-5 h-5 text-green-500" />;
-      case "dine-in":
+      case 1:
         return <Users className="w-5 h-5 text-purple-500" />;
       default:
         return null;
@@ -16,19 +17,28 @@ const OrderHeader = ({ time, type, number, customer }) => {
   };
 
   return (
-    <div className="mb-4">
-      {/* Título (Mesa o nombre de mesa) */}
-      <h2 className="text-ls font-bold text-gray-800 mb-2 text-center">
-        mesa: {customer}
-      </h2>
-      
-      {/* Información secundaria en una fila */}
-      <div className="flex justify-between items-center text-sm text-gray-500">
+    <div className="space-y-2">
+      {/* Título con icono */}
+      <div className="flex items-center justify-center gap-2">
+        {getTypeIcon()}
+        <h2 className="text-sm sm:text-base font-bold text-gray-800">
+          mesa: {customer}
+        </h2>
+      </div>
+
+      {/* Información en una sola fila */}
+      <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 px-1">
         <div className="flex items-center">
-          <span className="mr-1">{time}</span>
-          {getTypeIcon()}
+          <span className="inline-flex items-center">
+            {time}
+            {status === 'urgente' && (
+              <span className="ml-1 inline-flex items-center">
+                <UrgentAlert elapsedTime={elapsedTime} />
+              </span>
+            )}
+          </span>
         </div>
-        <div>#{number}</div>
+        <span>#{number}</span>
       </div>
     </div>
   );

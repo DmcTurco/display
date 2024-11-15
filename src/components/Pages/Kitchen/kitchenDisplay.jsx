@@ -3,7 +3,7 @@ import OrderList from '../Order/OrderList';
 import { useOrders } from '../../../js/useOrders';
 import { FaExclamationCircle, FaClipboardList, FaSpinner, FaWifi, FaServer } from 'react-icons/fa';
 
-const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
+const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
 
   const { orders, loading, error, getTodayOrders } = useOrders()
   const [refreshInterval, setRefreshInterval] = useState(30000);
@@ -54,6 +54,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount }) => {
     if (orders?.length > 0) {
       const pendingCount = orders.filter((order) => order.status == "no-iniciado").length
       const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
+      const urgentCount = orders.filter((order) => order.status == "urgente").length;
+      // const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
+      setUrgentCount(urgentCount);
       setPendingCount(pendingCount)
       setInProgressCount(inProgressCount)
     }

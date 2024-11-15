@@ -13,15 +13,19 @@ const formatTime = (dateString) => {
 
 
 const calculateElapsedTime = (recordDate) => {
-    const orderTime = new Date(recordDate);
-    const now = new Date();
-    return Math.floor((now - orderTime) / (1000 * 60));
+    const japanTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });// Convierte la fecha del pedido a objeto Date
+    const currentTime = new Date(japanTime); // Obtener la hora actual en Japón
+    const orderTime = new Date(recordDate);// Convertir la fecha del pedido a objeto Date
+    return Math.floor((currentTime - orderTime) / (1000 * 60));// Calcula la diferencia en minutos
 };
 
 const determineStatus = (recordDate, currentStatus) => {
     const elapsedMinutes = calculateElapsedTime(recordDate);
+    // Para debug en desarrollo
     if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) {
         return 'urgente';
+        //si el pedido no esta iniciado lo que hace esta funcion es verificar si han pasado
+        // 15 mnts y si es asi cambia el estado a urgente
     }
     return currentStatus;
 };
@@ -53,20 +57,20 @@ export function useOrders() {
 
                 if (!acc[uniqueId]) {
                     acc[uniqueId] = {
-                        order_main_cd: order.order_main_cd,
-                        order_count: order.order_count,
-                        formatted_time: formatTime(order.record_date),
+                        order_main_cd: order.order_main_cd, //
+                        order_count: order.order_count,//  1
+                        formatted_time: formatTime(order.record_date), //fecha y hora
                         table_name: order.table_name || 'Sin mesa',
-                        type: order.type || 'dine-in',
+                        type: order.type || 1,//  preguntar si tenemos un tipo de orden - LOCAL
                         status: currentStatus,
-                        elapsedTime: elapsedTime,
-                        items: order.order_details.map(detail => ({
+                        elapsedTime: elapsedTime, // tiempo transcurrido
+                        items: order.order_details.map(detail => ({ //
                             id: detail.cd,
                             name: detail.menu_name,
                             quantity: detail.quantity,
                             uid: detail.uid,
                             pid: detail.pid,
-                            kitchen_status: detail.kitchen_status || 1
+                            kitchen_status: detail.kitchen_status
                         }))
                     };
                 }
@@ -155,40 +159,3 @@ export function useProducts() {
 
     return { products, loading, error, getProductsByCategory };
 }
-
-// import React, { useState } from 'react'
-
-// function useOrders() {
-
-//     const [orders, setOrders] = useState([])
-//     const [loading, setLoading] = useState(true)
-//     const [error, setError] = useState(null)
-
-//     const getOrders = async () => {
-
-//         try {
-
-//             setLoading(true);
-//             // const url = process.env.REACT_APP_API_URL || 'http://localhost:5000/orders';
-//             const url = 'http://localhost:5000/orders'
-//             const reponse = await fetch(url)
-
-//             if (!reponse.ok) {
-//                 throw new Error('Error al obtener los pedidos');
-//             }
-//             const data = await reponse.json()
-//             setOrders(data)
-//         } catch (err) {
-//             setError(err.message)
-//         }
-//         finally {
-//             setLoading(false)
-//         }
-//     }
-
-
-
-//     return { orders, loading, error, getOrders }
-// }
-
-// export default useOrders

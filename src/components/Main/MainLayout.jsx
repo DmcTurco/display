@@ -10,6 +10,7 @@ const MainLayout = ({ content }) => {
 
   const [pendingCount, setPendingCount] = useState(0);
   const [inProgressCount, setInProgressCount] = useState(0);
+  const [urgentCount, setUrgentCount] = useState(0);
   const isConfigPage = content === 'config';
 
 
@@ -19,12 +20,13 @@ const MainLayout = ({ content }) => {
         <KitchenHeader
           pendingCount={pendingCount}
           inProgressCount={inProgressCount}
+          urgentCount={urgentCount}
           isConfigPage={isConfigPage}
         />
       </div>
 
-      <div className="flex-1 overflow-hidden px-20">
-        {isConfigPage ? <ConfigView /> : <KitchenDisplay setPendingCount={setPendingCount} setInProgressCount={setInProgressCount} />}
+      <div className="flex-1 overflow-hidden px-4">
+        {isConfigPage ? <ConfigView /> : <KitchenDisplay setPendingCount={setPendingCount} setInProgressCount={setInProgressCount} setUrgentCount={setUrgentCount}/>}
       </div>
 
       {/* <div className="p-3">
