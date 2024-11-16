@@ -54,29 +54,27 @@ const OrderItems = ({ items }) => {
     if (item.kitchen_status !== 1) {
       try {
         if (isAdditionalItem) {
-          // console.log('Item adicional a actualizar:', {
-          //   id: item.id,  // Verifica si es id o cd
-          //   status: 1
-          // });
           // Cuando haces click en un hijo (plato individual del combo)
           await updateKitchenStatus(item.id, 1); // Este hijo se pintará de verde
-          // Al hacer la llamada a la API y actualizarse el estado, 
+          // Al hacer la llamada a la API y actualizarse el estado,
           // el componente se re-renderizará mostrando este item en verde
         } else {
           // Cuando intentas hacer click en el padre (el combo completo)
-          const hasAdditionalItems = item.additionalItems && item.additionalItems.length > 0;
-
-          if (hasAdditionalItems) {
-            // Verifica si TODOS los hijos están en estado 1 (verde/completado)
+          const hasAdditionalItems =
+            item.additionalItems && item.additionalItems.length > 0;
+          if (!hasAdditionalItems) {
+            // Si no tiene items adicionales, actualizamos directamente
+            console.log("Actualizando item principal sin hijos:", item.id);
+            await updateKitchenStatus(item.id, 1);
+          } else {
+            // Lógica para items con adicionales
             const allAdditionalsComplete = item.additionalItems.every(
-              additionalItem => additionalItem.kitchen_status === 1
+              (additionalItem) => additionalItem.kitchen_status === 1
             );
 
             if (allAdditionalsComplete) {
-              // Solo si todos los hijos están en verde, actualiza el padre
               await updateKitchenStatus(item.id, 1);
             }
-            // Si no están todos completados, no hace nada
           }
         }
       } catch (error) {
@@ -86,7 +84,7 @@ const OrderItems = ({ items }) => {
   };
 
   const areAllAdditionalsComplete = (additionalItems) => {
-    return additionalItems.every(item => item.kitchen_status === 1);
+    return additionalItems.every((item) => item.kitchen_status === 1);
   };
 
   return (
@@ -94,15 +92,18 @@ const OrderItems = ({ items }) => {
       {Object.values(organizedItems).map((item) => {
         const hasAdditionals = item.additionalItems.length > 0;
         const allAdditionalsComplete = hasAdditionals && areAllAdditionalsComplete(item.additionalItems);
+        const isCompleted = item.kitchen_status === 1; // Para mejor legibilidad
 
         return (
           <div
             key={item.uid}
             onClick={() => handleItemClick(item)}
-            className={`bg-white rounded-lg p-3 shadow-sm
+            className={`
+              rounded-lg p-3 shadow-sm
               transition-all duration-300
-              ${item.kitchen_status === 1 ? 'bg-green-200' : 'bg-white hover:bg-gray-50'}
-              ${(item.kitchen_status === 1 || hasAdditionals) ? '' : 'cursor-pointer'}`}
+              ${isCompleted ? "bg-green-200" : "bg-white hover:bg-green-200"}
+              ${isCompleted || hasAdditionals ? "" : "cursor-pointer"}
+            `}
           >
             {/* Item principal */}
             <div className="flex items-start justify-between">
@@ -112,37 +113,42 @@ const OrderItems = ({ items }) => {
                 </span>
                 <span className="flex-1 text-sm">{item.name}</span>
               </div>
-              {(item.kitchen_status === 1 || allAdditionalsComplete) &&
+              {(isCompleted || allAdditionalsComplete) && (
                 <CheckCircle2 className="h-4 w-4 text-green-500" />
-              }
+              )}
             </div>
 
             {/* Items adicionales */}
-            {item.additionalItems.length > 0 && (
+            {hasAdditionals && (
               <div className="ml-4 mt-1 space-y-0.5 border-l-2 border-gray-200 pl-2">
-                {item.additionalItems.map((additionalItem) => (
-                  <div
-                    key={additionalItem.uid}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleItemClick(additionalItem, true);
-                    }}
-                    className={`flex items-start justify-between gap-1 text-xs text-gray-600
-                      transition-all duration-300
-                      ${additionalItem.kitchen_status === 1 ? 'bg-green-200' : 'hover:bg-gray-50'}
-                      ${additionalItem.kitchen_status === 1 ? '' : 'cursor-pointer'}`}
-                  >
-                    <div className="flex gap-1">
-                      <span className="font-medium">
-                        {additionalItem.quantity}x
-                      </span>
-                      <span className="flex-1">{additionalItem.name}</span>
+                {item.additionalItems.map((additionalItem) => {
+                  const isAdditionalCompleted = additionalItem.kitchen_status === 1;
+                  return (
+                    <div
+                      key={additionalItem.uid}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleItemClick(additionalItem, true);
+                      }}
+                      className={`
+                        flex items-start justify-between gap-1 text-xs text-gray-600
+                        transition-all duration-300
+                        ${isAdditionalCompleted ? "bg-green-200" : "hover:bg-gray-200"}
+                        ${isAdditionalCompleted ? "" : "cursor-pointer"}
+                      `}
+                    >
+                      <div className="flex gap-1">
+                        <span className="font-medium">
+                          {additionalItem.quantity}x
+                        </span>
+                        <span className="flex-1">{additionalItem.name}</span>
+                      </div>
+                      {isAdditionalCompleted && (
+                        <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      )}
                     </div>
-                    {additionalItem.kitchen_status === 1 &&
-                      <CheckCircle2 className="h-3 w-3 text-green-500" />
-                    }
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

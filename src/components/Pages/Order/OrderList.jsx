@@ -10,6 +10,7 @@ const OrderList = ({ orders }) => {
     const containerRef = useRef(null);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
+    const lastPageRef = useRef(currentPage); // Añadir esta línea
 
     const config = {
         minSwipeDistance: 70,
@@ -17,6 +18,18 @@ const OrderList = ({ orders }) => {
         transitionDuration: 250,
         dragSensitivity: 1.5
     };
+    // Añadir este useEffect para guardar la última página conocida
+    useEffect(() => {
+        lastPageRef.current = currentPage;
+    }, [currentPage]);
+
+    useEffect(() => {
+        if (lastPageRef.current > totalPages) {
+            setCurrentPage(totalPages);
+        } else {
+            setCurrentPage(lastPageRef.current);
+        }
+    }, [orders, totalPages]);
 
     useEffect(() => {
         const container = containerRef.current;
