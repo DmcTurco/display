@@ -1,24 +1,43 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OrderCard from './OrderCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useSwipe } from '../../../js/useSwipe';
+
 
 const OrderList = ({ orders }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const [touchStart, setTouchStart] = useState(null);
-    const [touchEnd, setTouchEnd] = useState(null);
-    const [dragOffset, setDragOffset] = useState(0);
-    const containerRef = useRef(null);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
-    const lastPageRef = useRef(currentPage); // Añadir esta línea
+    const lastPageRef = useRef(currentPage);
 
-    const config = {
-        minSwipeDistance: 70,
-        resistanceFactor: 0.3,
-        transitionDuration: 250,
-        dragSensitivity: 1.5
-    };
-    // Añadir este useEffect para guardar la última página conocida
+    // Usar el hook de swipe
+    const {
+        containerRef,
+        dragOffset,
+        touchStart,
+        getTransform,
+        onTouchStart,
+        onTouchEnd,
+        onMouseDown,
+        transitionDuration
+    } = useSwipe({
+        onSwipeLeft: () => {
+            if (currentPage < totalPages) {
+                setCurrentPage(prev => prev + 1);
+            }
+        },
+        onSwipeRight: () => {
+            if (currentPage > 1) {
+                setCurrentPage(prev => prev - 1);
+            }
+        },
+        currentPage,
+        totalPages,
+        direction: 'horizontal',
+        enabled: true  // Lo añadimos explícitamente
+    });
+
+    // Mantener estos useEffect
     useEffect(() => {
         lastPageRef.current = currentPage;
     }, [currentPage]);
@@ -31,95 +50,11 @@ const OrderList = ({ orders }) => {
         }
     }, [orders, totalPages]);
 
-    useEffect(() => {
-        const container = containerRef.current;
-        if (!container) return;
-
-        const touchMoveHandler = (e) => {
-            e.preventDefault();
-            const point = e.touches ? e.touches[0].clientX : e.clientX;
-            setTouchEnd(point);
-
-            const currentOffset = (touchStart - point) * config.dragSensitivity;
-
-            if ((currentPage === 1 && currentOffset < 0) ||
-                (currentPage === totalPages && currentOffset > 0)) {
-                setDragOffset(currentOffset * config.resistanceFactor);
-            } else {
-                setDragOffset(currentOffset);
-            }
-        };
-
-        // Agregar event listener con passive: false
-        container.addEventListener('touchmove', touchMoveHandler, { passive: false });
-
-        return () => {
-            container.removeEventListener('touchmove', touchMoveHandler);
-        };
-    }, [touchStart, currentPage, totalPages]);
-
+    // Mantener la función getPageOrders
     const getPageOrders = (page) => {
         const indexOfLastOrder = page * ordersPerPage;
         const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
         return orders.slice(indexOfFirstOrder, indexOfLastOrder);
-    };
-
-    const onTouchStart = (e) => {
-        const point = e.touches ? e.touches[0].clientX : e.clientX;
-        setTouchStart(point);
-        setTouchEnd(point);
-    };
-
-    const onTouchEnd = () => {
-        if (!touchStart || !touchEnd) return;
-
-        const distance = touchStart - touchEnd;
-        const isLeftSwipe = distance > config.minSwipeDistance;
-        const isRightSwipe = distance < -config.minSwipeDistance;
-
-        if (isLeftSwipe && currentPage < totalPages) {
-            setCurrentPage(prev => prev + 1);
-        } else if (isRightSwipe && currentPage > 1) {
-            setCurrentPage(prev => prev - 1);
-        }
-
-        setTouchStart(null);
-        setTouchEnd(null);
-        setDragOffset(0);
-    };
-
-    const onMouseDown = (e) => {
-        e.preventDefault();
-        onTouchStart(e);
-        document.addEventListener('mousemove', onMouseMove);
-        document.addEventListener('mouseup', onMouseUp);
-    };
-
-    const onMouseMove = (e) => {
-        e.preventDefault();
-        const point = e.clientX;
-        setTouchEnd(point);
-
-        const currentOffset = (touchStart - point) * config.dragSensitivity;
-
-        if ((currentPage === 1 && currentOffset < 0) ||
-            (currentPage === totalPages && currentOffset > 0)) {
-            setDragOffset(currentOffset * config.resistanceFactor);
-        } else {
-            setDragOffset(currentOffset);
-        }
-    };
-
-    const onMouseUp = (e) => {
-        onTouchEnd(e);
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-    };
-
-    const getTransform = () => {
-        const baseTransform = -((currentPage - 1) * 100);
-        const dragPercent = (dragOffset / window.innerWidth) * 100;
-        return `translateX(calc(${baseTransform}% - ${dragPercent}px))`;
     };
 
     return (
@@ -136,7 +71,7 @@ const OrderList = ({ orders }) => {
                         className="absolute flex h-full"
                         style={{
                             transform: getTransform(),
-                            transition: touchStart ? 'none' : `transform ${config.transitionDuration}ms ease-out`,
+                            transition: touchStart ? 'none' : `transform ${transitionDuration}ms ease-out`,
                             width: `${totalPages * 100}%`,
                         }}
                     >
