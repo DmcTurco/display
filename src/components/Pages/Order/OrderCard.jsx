@@ -5,7 +5,7 @@ import OrderItems from './OrderItem/OrderItems';
 import UrgentAlert from './UrgentAlert';
 import ActionButton from './ActionButton';
 
-function OrderCard({ time, type, number, customer, items, status, elapsedTime }) {
+function OrderCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId }) {
 
   const getStatusColor = () => {
     switch (status) {
@@ -33,7 +33,7 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime })
         />
       </div>
       <div className="p-2 sm:p-2 flex-1 overflow-hidden"> {/* Cambiamos a overflow-hidden */}
-        <OrderItems items={items} />
+        <OrderItems items={items} expandedItemId={expandedItemId} setExpandedItemId={setExpandedItemId} />
       </div>
       <div className="p-1 sm:p-1 mt-auto">
         {/* <ActionButton status={status} /> */}

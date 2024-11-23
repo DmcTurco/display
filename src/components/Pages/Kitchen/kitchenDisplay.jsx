@@ -5,6 +5,8 @@ import { FaExclamationCircle, FaClipboardList, FaSpinner, FaWifi, FaServer } fro
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
 
+  const [expandedItemId, setExpandedItemId] = useState(null);
+
   const { orders, loading, error, getTodayOrders } = useOrders()
   const [refreshInterval, setRefreshInterval] = useState(30000);
 
@@ -124,7 +126,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       );
     }
 
-    return <OrderList orders={orders} />;
+    return <OrderList orders={orders} expandedItemId={expandedItemId} setExpandedItemId={setExpandedItemId} />;
   };
 
 

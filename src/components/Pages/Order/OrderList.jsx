@@ -5,7 +5,7 @@ import { useSwipe } from '../../../hooks/useSwipe';
 
 
 
-const OrderList = ({ orders }) => {
+const OrderList = ({ orders, expandedItemId, setExpandedItemId }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
@@ -112,6 +112,8 @@ const OrderList = ({ orders }) => {
                                                 items={order.items}
                                                 status={order.status}
                                                 elapsedTime={order.elapsedTime}
+                                                expandedItemId={expandedItemId}
+                                                setExpandedItemId={setExpandedItemId}
                                             />
                                         </div>
                                     ))}

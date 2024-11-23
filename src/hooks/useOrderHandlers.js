@@ -3,8 +3,8 @@ import { useState, useRef } from 'react';
 import { useOrders } from '../js/useOrders';
 
 
-export const useOrderHandlers = (organizedItems) => {
-  const [expandedItemId, setExpandedItemId] = useState(null);
+export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId) => {
+  // const [expandedItemId, setExpandedItemId] = useState(null);
   const { updateKitchenStatus } = useOrders();
 
   const lastTapRef = useRef(0);
