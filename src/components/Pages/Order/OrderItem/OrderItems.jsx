@@ -1,16 +1,11 @@
-import React, { useState } from 'react';
-import { useOrders } from '../../../../js/useOrders';
-import { CheckCircle2, Clock, X } from 'lucide-react';
-import Modal from './modal';
+import React from 'react';
+import { X, ChefHat } from 'lucide-react';
 import MainItem from './MainItem';
-import { useSwipe } from '../../../../js/useSwipe';
-
+import { useOrderHandlers } from '../../../../hooks/useOrderHandlers';
+import { useSwipe } from '../../../../hooks/useSwipe';
 
 
 const OrderItems = ({ items }) => {
-  const [selectedItem, setSelectedItem] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const { updateKitchenStatus } = useOrders();
 
   // Usar el hook de swipe para scroll vertical
   const {
@@ -23,7 +18,7 @@ const OrderItems = ({ items }) => {
   } = useSwipe({
     direction: 'vertical',
     enabled: true,
-    currentPage: 1, // para scroll vertical esto no importa tanto
+    currentPage: 1,
     totalPages: 1,
   });
 
@@ -45,60 +40,20 @@ const OrderItems = ({ items }) => {
     return acc;
   }, {});
 
-  const getStatusStyle = (status) => {
-    switch (status) {
-      case 0:
-        return 'hover:bg-gray-50';
-      case 1:
-        return 'bg-yellow-200 hover:bg-yellow-100';
-      case 2:
-        return 'bg-green-200';
-      default:
-        return 'hover:bg-gray-50';
-    }
-  }
-
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 1:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
-      case 2:
-        return <CheckCircle2 className="h-4 w-4 text-green-500" />;
-      default:
-        return null;
-    }
-  }
-
-  const handleItemClick = (item, isAdditionalItem = false) => {
-    if (item.kitchen_status !== 1) {
-      setSelectedItem(item);
-      setShowModal(true);
-    }
-  };
-
-  const handleConfirm = async () => {
-    if (!selectedItem) return;
-
-    try {
-      if (selectedItem) {
-        await updateKitchenStatus(selectedItem.id, 1);
-      }
-      setShowModal(false);
-      setSelectedItem(null);
-    } catch (error) {
-      console.error('Error al actualizar el estado:', error);
-    }
-  };
-
-  const areAllAdditionalsComplete = (additionalItems) => {
-    return additionalItems.every((item) => item.kitchen_status === 1);
-  };
+  // Usar el hook personalizado
+  const {
+    expandedItemId,
+    handleItemClick,
+    handleConfirm,
+    handleCancel,
+    areAllAdditionalsComplete
+  } = useOrderHandlers(organizedItems);
 
   return (
     <>
-      <div 
+      <div
         ref={containerRef}
-        className="space-y-4 max-h-[calc(100vh-350px)] overflow-y-auto"
+        className="space-y-2 sm:space-y-3 md:space-y-4 w-full max-w-2xl mx-auto px-2 sm:px-4 max-h-[calc(100vh-350px)] overflow-y-auto"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}
@@ -110,45 +65,50 @@ const OrderItems = ({ items }) => {
         {Object.values(organizedItems).map((item) => {
           const hasAdditionals = item.additionalItems.length > 0;
           const allAdditionalsComplete = hasAdditionals && areAllAdditionalsComplete(item.additionalItems);
-          
+          const isExpanded = expandedItemId === item.uid;
+
           return (
-            <MainItem
-              key={item.uid}
-              item={item}
-              onItemClick={handleItemClick}
-              allAdditionalsComplete={allAdditionalsComplete}
-              hasAdditionals={hasAdditionals}
-            />
+            <div key={item.uid} className="relative w-full">
+              <MainItem
+                item={item}
+                onItemClick={handleItemClick}
+                allAdditionalsComplete={allAdditionalsComplete}
+                hasAdditionals={hasAdditionals}
+                expandedItemId={expandedItemId}
+              />
+
+              {isExpanded && !hasAdditionals && (
+                <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleCancel();
+                        }}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50"
+                      >
+                        <X className="h-4 w-4" />
+                        <span>No</span>
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleConfirm(item);
+                        }}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        <ChefHat className="h-4 w-4" />
+                        <span>¡Listo!</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           );
         })}
       </div>
-
-      <Modal open={showModal} onClose={() => setShowModal(false)}>
-        <div className="text-center w-96">
-          <div className="mx-auto my-4">
-            <h3 className="text-lg font-medium text-gray-800 mb-2">
-              Confirmar cambio de estado
-            </h3>
-            <p className="text-sm text-gray-500">
-              ¿Deseas marcar {selectedItem?.quantity}x {selectedItem?.name} como en progreso?
-            </p>
-          </div>
-          <div className="flex gap-4 justify-end mt-6">
-            <button
-              className="px-4 py-2 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200"
-              onClick={() => setShowModal(false)}
-            >
-              Cancelar
-            </button>
-            <button
-              className="px-4 py-2 text-sm text-white bg-blue-500 rounded hover:bg-blue-600"
-              onClick={handleConfirm}
-            >
-              Confirmar
-            </button>
-          </div>
-        </div>
-      </Modal>
     </>
   );
 };

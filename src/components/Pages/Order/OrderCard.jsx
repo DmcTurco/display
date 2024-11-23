@@ -22,7 +22,7 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime })
 
   return (
     <div className={`rounded-lg shadow-md flex-shrink-0 w-full h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
-      <div className="p-2 sm:p-4">
+      <div className="p-2 sm:p-2">
         <OrderHeader
           time={time}
           type={type}

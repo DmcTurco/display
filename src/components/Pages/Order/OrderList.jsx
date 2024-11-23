@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import OrderCard from './OrderCard';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSwipe } from '../../../js/useSwipe';
+import { useSwipe } from '../../../hooks/useSwipe';
+
 
 
 const OrderList = ({ orders }) => {
