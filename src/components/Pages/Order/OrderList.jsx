@@ -60,14 +60,14 @@ const OrderList = ({ orders, expandedItemId, setExpandedItemId }) => {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="max-w-[1200px] mx-auto w-full px-4">
-                <div
-                    ref={containerRef}
-                    className="relative w-full h-full"
-                    onTouchStart={onTouchStart}
-                    onTouchEnd={onTouchEnd}
-                    onMouseDown={onMouseDown}
-                >
+            <div 
+                ref={containerRef}
+                className="max-w-[1200px] mx-auto w-full px-4 h-full"
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={onMouseDown}
+            >
+                <div className="relative w-full h-full">
                     <div
                         className="absolute flex h-full"
                         style={{

@@ -93,7 +93,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
           if (expandedItemId && expandedItemId !== item.uid) {
             setExpandedItemId(item.uid); // Cambia al nuevo item
           } else {
-            setExpandedItemId(expandedItemId === item.uid ? null : item.uid);// Toggle
+            setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
           }
         }, 150);
       }
@@ -104,67 +104,12 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
       if(expandedItemId && expandedItemId !== item.uid){
         setExpandedItemId(item.uid);// Cambia al nuevo item
       }else{
-        setExpandedItemId(expandedItemId === item.uid ? null : item.uid); Toggle
+        setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
       }
     }
 
   };
 
-  // const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false) => {
-  //   // No procesar si es un item principal con hijos
-  //   if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
-  //     return;
-  //   }
-
-  //   // Si el item ya está completado, no hacer nada
-  //   if (item.kitchen_status === 1) {
-  //     return;
-  //   }
-
-  //   // Manejar cancelación
-  //   if (isCancel) {
-  //     setExpandedItemId(null);
-  //     return;
-  //   }
-
-  //   // Manejar doble toque
-  //   if (isDoubleTap) {
-  //     handleConfirm(item, isAdditional);
-  //     return;
-  //   }
-
-  //   // Manejar toque simple
-  //   if (isAdditional) {
-  //     // Para items adicionales
-  //     if (expandedItemId && expandedItemId !== item.uid) {
-  //       // Si hay otro item expandido, cerrarlo y abrir este
-  //       setExpandedItemId(item.uid);
-  //     } else {
-  //       // Si no hay otro item expandido o es el mismo, toggle
-  //       setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
-  //     }
-  //   } else {
-  //     // Para items principales
-  //     const now = Date.now();
-  //     if (now - lastTapRef.current < 300) {
-  //       // Doble toque detectado
-  //       clearTimeout(tapTimeoutRef.current);
-  //       handleConfirm(item, false);
-  //     } else {
-  //       // Toque simple
-  //       tapTimeoutRef.current = setTimeout(() => {
-  //         if (expandedItemId && expandedItemId !== item.uid) {
-  //           // Si hay otro item expandido, cerrarlo y abrir este
-  //           setExpandedItemId(item.uid);
-  //         } else {
-  //           // Si no hay otro item expandido o es el mismo, toggle
-  //           setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
-  //         }
-  //       }, 150);
-  //     }
-  //     lastTapRef.current = now;
-  //   }
-  // };
 
   return {
     expandedItemId,
