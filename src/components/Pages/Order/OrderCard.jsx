@@ -1,9 +1,6 @@
-import React, { useState, useEffect } from 'react'
-import { AlertTriangle } from 'lucide-react'
+import React from 'react'
 import OrderHeader from './OrderHeader';
 import OrderItems from './OrderItem/OrderItems';
-import UrgentAlert from './UrgentAlert';
-import ActionButton from './ActionButton';
 
 function OrderCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId }) {
 

@@ -2,18 +2,23 @@ import React, { useState, useEffect } from 'react';
 import OrderList from '../Order/OrderList';
 import { useOrders } from '../../../js/useOrders';
 import { FaExclamationCircle, FaClipboardList, FaSpinner, FaWifi, FaServer } from 'react-icons/fa';
+import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
 
   const [expandedItemId, setExpandedItemId] = useState(null);
 
   const { orders, loading, error, getTodayOrders } = useOrders()
+  const { config, loading: configLoading, error: configError, initializeConfig } = useKitchenSetup();
   const [refreshInterval, setRefreshInterval] = useState(30000);
-
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isServerError, setIsServerError] = useState(false);
   const [showReconnectBanner, setShowReconnectBanner] = useState(false);
 
+  //inicializar configuracion al cargar
+  useEffect(() => {
+    initializeConfig();
+  }, []);
 
 
   useEffect(() => {
@@ -38,17 +43,21 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        await getTodayOrders();
-        setIsServerError(false);
+        if (config?.cd) {
+          await getTodayOrders(config.cd);
+          setIsServerError(false);
+        }
       } catch (err) {
         setIsServerError(true);
       }
     };
+    if (config) {
+      fetchOrders();
+      const interval = setInterval(fetchOrders, refreshInterval);
+      return () => clearInterval(interval);
+    }
 
-    fetchOrders();
-    const interval = setInterval(fetchOrders, refreshInterval);
-    return () => clearInterval(interval);
-  }, [refreshInterval]);
+  }, [config,refreshInterval]);
 
 
 

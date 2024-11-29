@@ -40,10 +40,11 @@ export function useOrders() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
-    const getTodayOrders = async () => {
+    const getTodayOrders = async (kitchenCd) => {
         try {
             setLoading(true);
-            const response = await fetch(`${API_URL}?action=today_orders`);
+            // console.log('Haciendo petición con kitchen_cd=101');
+            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}`);
 
             if (!response.ok) {
                 throw new Error('Error al obtener los pedidos');
@@ -124,14 +125,40 @@ export function useOrders() {
                 })
             });
 
-            if (!response.ok) {
-                throw new Error('Error al actualizar el estado');
-            }
-
+            if(!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
-            if (data.status === 'error') {
-                throw new Error(data.message);
-            }
+
+            if(data.status === 'error') throw new Error(data.message);
+
+            setOrders(prevOrders => prevOrders.map(order => {
+                let hasUpdates = false;
+                const updateItems = order.items.map(item =>{
+                    //si el item es principal a actulizar
+                    if(item.id == orderDetailId){
+                        hasUpdates = true;
+                        return {...item, kitchen_status: newStatus};
+                    }
+
+                    //si es un item relacionado (mismo pid o mismo grupo)
+                    if(item.pid === item.pid || item.group_id === item.group_id){
+                        //verificar y actualizar estados relacionados si es necesario
+                        if(item.kitchen_status !== newStatus){
+                            return { ...item, kitchen_status: newStatus};
+                        }
+                    }
+
+                    return item;
+                });
+            }))
+
+            // if (!response.ok) {
+            //     throw new Error('Error al actualizar el estado');
+            // }
+
+            // const data = await response.json();
+            // if (data.status === 'error') {
+            //     throw new Error(data.message);
+            // }
 
             // Actualizar el estado local después de una actualización exitosa
             await getTodayOrders();
