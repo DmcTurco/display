@@ -5,21 +5,20 @@ import { FaExclamationCircle, FaClipboardList, FaSpinner, FaWifi, FaServer } fro
 import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
-
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const { orders, loading, error, getTodayOrders } = useOrders()
+  const { orders, setOrders, loading, error, getTodayOrders } = useOrders(); // Exponer setOrders
   const { config, loading: configLoading, error: configError, initializeConfig } = useKitchenSetup();
-  const [refreshInterval, setRefreshInterval] = useState(30000);
+  const [refreshInterval, setRefreshInterval] = useState(30000); // Intervalo inicial
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isServerError, setIsServerError] = useState(false);
   const [showReconnectBanner, setShowReconnectBanner] = useState(false);
 
-  //inicializar configuracion al cargar
+  // Inicializar configuración
   useEffect(() => {
     initializeConfig();
   }, []);
 
-
+  // Manejar eventos de conexión/desconexión
   useEffect(() => {
     const handleOnline = () => {
       setIsOnline(true);
@@ -37,40 +36,55 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     };
   }, []);
 
-
-
+  // Polling para obtener pedidos
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         if (config?.cd) {
-          await getTodayOrders(config.cd);
+          const newOrders = await getTodayOrders(config.cd);
+          console.log(newOrders);
+          setIsServerError(false);
+          // Verificar si los pedidos han cambiado
+          setOrders((prevOrders) => {
+            const hasChanged =
+              !prevOrders ||
+              prevOrders.length !== newOrders.length ||
+              JSON.stringify(prevOrders) !== JSON.stringify(newOrders);
+
+            if (hasChanged) {
+              console.log('Pedidos actualizados:', newOrders);
+              return newOrders;
+            }
+            return prevOrders; // No actualizar si no hay cambios
+          });
+
           setIsServerError(false);
         }
       } catch (err) {
+        console.error('Error al obtener pedidos:', err);
         setIsServerError(true);
       }
     };
+
     if (config) {
-      fetchOrders();
+      fetchOrders(); 
       const interval = setInterval(fetchOrders, refreshInterval);
       return () => clearInterval(interval);
     }
+  }, [config, refreshInterval]);
 
-  }, [config,refreshInterval]);
-
-
-
+  // Actualizar contadores
   useEffect(() => {
     if (orders?.length > 0) {
-      const pendingCount = orders.filter((order) => order.status == "no-iniciado").length
-      const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
-      const urgentCount = orders.filter((order) => order.status == "urgente").length;
-      setUrgentCount(urgentCount);
-      setPendingCount(pendingCount)
-      setInProgressCount(inProgressCount)
-    }
-  }, [orders, setPendingCount, setInProgressCount]);
+      const pendingCount = orders.filter((order) => order.status === 'no-iniciado').length;
+      const inProgressCount = orders.filter((order) => order.status === 'en-progreso').length;
+      const urgentCount = orders.filter((order) => order.status === 'urgente').length;
 
+      setPendingCount(pendingCount);
+      setInProgressCount(inProgressCount);
+      setUrgentCount(urgentCount);
+    }
+  }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
 
   const renderContent = () => {
     if (!isOnline) {
@@ -109,18 +123,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       );
     }
 
-    if (error) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center">
-            <FaExclamationCircle className="text-red-500 text-6xl mx-auto mb-4 animate-bounce" />
-            <p className="text-2xl font-semibold text-red-700">Error al cargar las Ordenes</p>
-            <p className="text-sm text-gray-500">Por favor, inténtalo de nuevo más tarde.</p>
-          </div>
-        </div>
-      );
-    }
-
     if (orders?.length === 0) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -136,7 +138,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     return <OrderList orders={orders} expandedItemId={expandedItemId} setExpandedItemId={setExpandedItemId} />;
   };
 
-
   return (
     <div className="bg-gray-100 flex flex-col h-full">
       {showReconnectBanner && (
@@ -144,10 +145,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
           Reconectado exitosamente
         </div>
       )}
-      {/* Container principal con altura fija */}
-      <div className="flex-1 overflow-hidden">
-        {renderContent()}
-      </div>
+      <div className="flex-1 overflow-hidden">{renderContent()}</div>
     </div>
   );
 };

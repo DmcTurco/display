@@ -40,68 +40,81 @@ export function useOrders() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
+    const processOrders = (data) => {
+        const groupedOrders = data.reduce((acc, order) => {
+            const uniqueId = `${order.order_main_cd}_${order.order_count}`;
+            const elapsedTime = calculateElapsedTime(order.record_date);
+
+            if (!acc[uniqueId]) {
+                const mappedItems = order.order_details.map((detail) => ({
+                    id: detail.cd,
+                    name: detail.menu_name,
+                    quantity: detail.quantity,
+                    uid: detail.uid,
+                    pid: detail.pid,
+                    group_id: detail.group_id || null,
+                    kitchen_status: detail.kitchen_status,
+                }));
+
+                const hasInProgressItem = mappedItems.some(
+                    (item) => item.kitchen_status === 1
+                );
+
+                const currentStatus = determineStatus(
+                    order.record_date,
+                    'no-iniciado',
+                    hasInProgressItem ? 1 : 0
+                );
+
+                acc[uniqueId] = {
+                    order_main_cd: order.order_main_cd,
+                    order_count: order.order_count,
+                    formatted_time: formatTime(order.record_date),
+                    table_name: order.table_name || 'Sin mesa',
+                    type: order.type || 1,
+                    status: currentStatus,
+                    elapsedTime: elapsedTime,
+                    items: mappedItems,
+                };
+            }
+            return acc;
+        }, {});
+        return Object.values(groupedOrders).sort(
+            (a, b) => new Date(a.record_date) - new Date(b.record_date)
+        );
+    };
+
     const getTodayOrders = async (kitchenCd) => {
         try {
             setLoading(true);
-            // console.log('Haciendo petición con kitchen_cd=101');
             const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}`);
+            if (!response.ok) throw new Error('Error al obtener los pedidos');
 
-            if (!response.ok) {
-                throw new Error('Error al obtener los pedidos');
+            const newData = await response.json();
+            if (newData.status === 'error') throw new Error(newData.message);
+
+            if (!Array.isArray(newData.data)) {
+                throw new Error('El formato de la respuesta no es válido, se esperaba un arreglo en `data`.');
             }
-
-            const data = await response.json();
-            if (data.status === 'error') {
-                throw new Error(data.message);
-            }
-
-            // Procesamos y agrupamos los datos en un solo lugar
-            const groupedOrders = data.data.reduce((acc, order) => {
-                const uniqueId = `${order.order_main_cd}_${order.order_count}`;
-                const elapsedTime = calculateElapsedTime(order.record_date);
-                // const currentStatus = determineStatus(order.record_date, 'no-iniciado', order.items.kitchen_status);
-
-                if (!acc[uniqueId]) {
-
-                    // Primero mapeamos los items
-                    const mappedItems = order.order_details.map(detail => ({
-                        id: detail.cd,
-                        name: detail.menu_name,
-                        quantity: detail.quantity,
-                        uid: detail.uid,
-                        pid: detail.pid,
-                        kitchen_status: detail.kitchen_status
-                    }));
-                    
-                    // Verificamos si algún item tiene status 1
-                    const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
-
-                    // Determinamos el estado basado en los items
-                    const currentStatus = determineStatus(
-                        order.record_date,
-                        'no-iniciado',
-                        hasInProgressItem ? 1 : 0
+            // Actualizar las órdenes solo si es necesario
+            setOrders((prevOrders) => {
+                const needsUpdate = newData.data.some((newOrder) => {
+                    const existingOrder = prevOrders.find(
+                        (po) =>
+                            po.order_main_cd === newOrder.order_main_cd &&
+                            po.order_count === newOrder.order_count
                     );
-                    acc[uniqueId] = {
-                        order_main_cd: order.order_main_cd,
-                        order_count: order.order_count,
-                        formatted_time: formatTime(order.record_date),
-                        table_name: order.table_name || 'Sin mesa',
-                        type: order.type || 1,
-                        status: currentStatus,
-                        elapsedTime: elapsedTime,
-                        items: mappedItems
-                    };
-                }
-                return acc;
-            }, {});
+                    // Si no existe el pedido actual en prevOrders, necesitamos actualizar
+                    if (!existingOrder) return true;
+                    // Comparar el estado de los artículos
+                    return existingOrder.items.some((item) => {
+                        const newItem = newOrder.order_details.find((ni) => ni.cd === item.id);
+                        return newItem && newItem.kitchen_status !== item.kitchen_status;
+                    });
+                });
 
-            // Convertir a array y ordenar por fecha
-            const sortedOrders = Object.values(groupedOrders).sort((a, b) =>
-                new Date(a.record_date) - new Date(b.record_date)
-            );
-
-            setOrders(sortedOrders);
+                return needsUpdate ? processOrders(newData.data) : prevOrders;
+            });
             setError(null);
         } catch (err) {
             setError(err.message);
@@ -113,7 +126,6 @@ export function useOrders() {
 
     const updateKitchenStatus = async (orderDetailId, newStatus) => {
         try {
-            console.log('Actualizando estado:', { orderDetailId, newStatus }); // Para debug
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {
@@ -121,48 +133,48 @@ export function useOrders() {
                 },
                 body: JSON.stringify({
                     order_detail_cd: orderDetailId,
-                    kitchen_status: newStatus
-                })
+                    kitchen_status: newStatus,
+                }),
             });
 
-            if(!response.ok) throw new Error('Error al actualizar el estado');
+            if (!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
 
-            if(data.status === 'error') throw new Error(data.message);
+            if (data.status === 'error') throw new Error(data.message);
 
-            setOrders(prevOrders => prevOrders.map(order => {
-                let hasUpdates = false;
-                const updateItems = order.items.map(item =>{
-                    //si el item es principal a actulizar
-                    if(item.id == orderDetailId){
-                        hasUpdates = true;
-                        return {...item, kitchen_status: newStatus};
-                    }
-
-                    //si es un item relacionado (mismo pid o mismo grupo)
-                    if(item.pid === item.pid || item.group_id === item.group_id){
-                        //verificar y actualizar estados relacionados si es necesario
-                        if(item.kitchen_status !== newStatus){
-                            return { ...item, kitchen_status: newStatus};
+            setOrders((prevOrders) =>
+                prevOrders.map((order) => {
+                    const updatedItems = order.items.map((item) => {
+                        // Actualiza el estado del ítem principal
+                        if (item.id === orderDetailId) {
+                            return { ...item, kitchen_status: newStatus };
                         }
-                    }
 
-                    return item;
-                });
-            }))
+                        // Actualiza ítems relacionados (mismo pid o grupo)
+                        if (
+                            item.pid === order.items.find((i) => i.id === orderDetailId)?.pid ||
+                            item.group_id === order.items.find((i) => i.id === orderDetailId)?.group_id
+                        ) {
+                            if (item.kitchen_status !== newStatus) {
+                                return { ...item, kitchen_status: newStatus };
+                            }
+                        }
 
-            // if (!response.ok) {
-            //     throw new Error('Error al actualizar el estado');
-            // }
+                        return item;
+                    });
 
-            // const data = await response.json();
-            // if (data.status === 'error') {
-            //     throw new Error(data.message);
-            // }
+                    return {
+                        ...order,
+                        items: updatedItems,
+                        status: determineStatus(
+                            order.record_date,
+                            order.status,
+                            updatedItems.some((i) => i.kitchen_status === 1) ? 1 : 0
+                        ),
+                    };
+                })
+            );
 
-            // Actualizar el estado local después de una actualización exitosa
-            await getTodayOrders();
-            
             return data;
         } catch (error) {
             setError(error.message);
@@ -172,6 +184,7 @@ export function useOrders() {
 
     return {
         orders,
+        setOrders,
         loading,
         error,
         getTodayOrders,
