@@ -5,7 +5,7 @@ import MainLayout from './components/Main/MainLayout';
 
 function App() {
   return (
-    <BrowserRouter basename={process.env.BASE_URL}>
+    <BrowserRouter basename={import.meta.env.VITE_BASE_PATH}>
       <Routes>
         <Route path="/" element={<MainLayout content="kitchen" />} />
         <Route path="/kitchen/:uid" element={<MainLayout content="kitchen" />} />

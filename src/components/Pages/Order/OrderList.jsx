@@ -7,7 +7,7 @@ import { useSwipe } from '../../../hooks/useSwipe';
 
 const OrderList = ({ orders, expandedItemId, setExpandedItemId }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const ordersPerPage = 4;
+    const ordersPerPage = import.meta.env.VITE_MAX_ORDERS_PER_PAGE;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
 

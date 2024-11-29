@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://192.168.18.4/kitchen_display/api/get_order.php';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {

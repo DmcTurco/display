@@ -19,7 +19,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     error: configError,
     initializeConfig,
   } = useKitchenSetup();
-  const [refreshInterval, setRefreshInterval] = useState(30000); // Intervalo inicial
+  const [refreshInterval, setRefreshInterval] = useState(import.meta.env.VITE_API_TIMEOUT); // Intervalo inicial
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isServerError, setIsServerError] = useState(false);
   const [showReconnectBanner, setShowReconnectBanner] = useState(false);
@@ -34,7 +34,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     const handleOnline = () => {
       setIsOnline(true);
       setShowReconnectBanner(true);
-      setTimeout(() => setShowReconnectBanner(false), 3000);
+      setTimeout(() => setShowReconnectBanner(false), import.meta.env.VITE_REFRESH_INTERVAL);
     };
     const handleOffline = () => setIsOnline(false);
 
