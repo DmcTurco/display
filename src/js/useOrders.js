@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://192.168.18.34/kitchen_display/api/get_order.php';
+const API_URL = 'http://192.168.18.4/kitchen_display/api/get_order.php';
 
 const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {
@@ -93,8 +93,9 @@ export function useOrders() {
             const newData = await response.json();
             if (newData.status === 'error') throw new Error(newData.message);
 
-            if (!Array.isArray(newData.data)) {
-                throw new Error('El formato de la respuesta no es válido, se esperaba un arreglo en `data`.');
+            if (!newData.data) {
+                setOrders([]);
+                return;
             }
             // Actualizar las órdenes solo si es necesario
             setOrders((prevOrders) => {
@@ -118,7 +119,7 @@ export function useOrders() {
             setError(null);
         } catch (err) {
             setError(err.message);
-            throw err;
+            setOrders([]); // En caso de error, establecer array vacío
         } finally {
             setLoading(false);
         }

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 
-const API_URL = 'http://192.168.18.34/kitchen_display/api/get_order.php';
+const API_URL = 'http://192.168.18.4/kitchen_display/api/get_order.php';
 const CONFIG_STORAGE_KEY = 'kitchenConfig';
 const LAST_UID_KEY = 'lastKitchenUID';
 

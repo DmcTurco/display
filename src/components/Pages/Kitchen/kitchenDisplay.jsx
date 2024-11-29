@@ -1,13 +1,24 @@
-import React, { useState, useEffect } from 'react';
-import OrderList from '../Order/OrderList';
-import { useOrders } from '../../../js/useOrders';
-import { FaExclamationCircle, FaClipboardList, FaSpinner, FaWifi, FaServer } from 'react-icons/fa';
-import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
+import React, { useState, useEffect } from "react";
+import OrderList from "../Order/OrderList";
+import { useOrders } from "../../../js/useOrders";
+import {
+  FaExclamationCircle,
+  FaClipboardList,
+  FaSpinner,
+  FaWifi,
+  FaServer,
+} from "react-icons/fa";
+import { useKitchenSetup } from "../../../hooks/useKitchenSetup";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const { orders, setOrders, loading, error, getTodayOrders } = useOrders(); // Exponer setOrders
-  const { config, loading: configLoading, error: configError, initializeConfig } = useKitchenSetup();
+  const { orders, loading, error, getTodayOrders } = useOrders(); 
+  const {
+    config,
+    loading: configLoading,
+    error: configError,
+    initializeConfig,
+  } = useKitchenSetup();
   const [refreshInterval, setRefreshInterval] = useState(30000); // Intervalo inicial
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isServerError, setIsServerError] = useState(false);
@@ -36,28 +47,11 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     };
   }, []);
 
-  // Polling para obtener pedidos
   useEffect(() => {
     const fetchOrders = async () => {
       try {
         if (config?.cd) {
-          const newOrders = await getTodayOrders(config.cd);
-          console.log(newOrders);
-          setIsServerError(false);
-          // Verificar si los pedidos han cambiado
-          setOrders((prevOrders) => {
-            const hasChanged =
-              !prevOrders ||
-              prevOrders.length !== newOrders.length ||
-              JSON.stringify(prevOrders) !== JSON.stringify(newOrders);
-
-            if (hasChanged) {
-              console.log('Pedidos actualizados:', newOrders);
-              return newOrders;
-            }
-            return prevOrders; // No actualizar si no hay cambios
-          });
-
+          await getTodayOrders(config.cd);
           setIsServerError(false);
         }
       } catch (err) {
