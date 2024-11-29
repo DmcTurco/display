@@ -7,7 +7,6 @@ import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
 
   const [expandedItemId, setExpandedItemId] = useState(null);
-
   const { orders, loading, error, getTodayOrders } = useOrders()
   const { config, loading: configLoading, error: configError, initializeConfig } = useKitchenSetup();
   const [refreshInterval, setRefreshInterval] = useState(30000);
@@ -66,7 +65,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       const pendingCount = orders.filter((order) => order.status == "no-iniciado").length
       const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
       const urgentCount = orders.filter((order) => order.status == "urgente").length;
-      // const inProgressCount = orders.filter((order) => order.status === "en-progreso").length;
       setUrgentCount(urgentCount);
       setPendingCount(pendingCount)
       setInProgressCount(inProgressCount)

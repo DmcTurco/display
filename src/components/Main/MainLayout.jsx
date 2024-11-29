@@ -1,7 +1,4 @@
 import React, { useState } from "react";
-import { useLocation } from "react-router-dom";
-import KitchenFooter from "../Footer/KitchenFooter";
-
 import KitchenHeader from "../Header/KitchenHeader";
 import ConfigView from "../Pages/Config/ConfigView";
 import KitchenDisplay from "../Pages/Kitchen/kitchenDisplay";
