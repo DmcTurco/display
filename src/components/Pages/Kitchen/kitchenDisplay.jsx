@@ -10,10 +10,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
   const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  // const [refreshInterval, setRefreshInterval] = useState(import.meta.env.VITE_API_TIMEOUT); // Intervalo inicial
-  // const [isOnline, setIsOnline] = useState(navigator.onLine);
-  // const [isServerError, setIsServerError] = useState(false);
-  // const [showReconnectBanner, setShowReconnectBanner] = useState(false);
 
   // Inicializar configuración
   useEffect(() => {
@@ -117,9 +113,10 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     if (!Array.isArray(orders) || orders.length === 0) {
       return (
         <div className="flex items-center justify-center h-full">
-          <div className="text-center">
+          <div className="text-center animate-bounce">
             <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
             <p className="text-2xl font-semibold text-gray-700">No hay órdenes disponibles</p>
+            <p className="text-sm text-gray-500">Por favor, inténtalo más tarde.</p>
           </div>
         </div>
       );

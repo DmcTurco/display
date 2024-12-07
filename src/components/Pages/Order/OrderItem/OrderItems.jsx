@@ -85,8 +85,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {
                           e.stopPropagation();
                           handleCancel();
                         }}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50"
-                      >
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
                         <X className="h-4 w-4" />
                         <span>No</span>
                       </button>
