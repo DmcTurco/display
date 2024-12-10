@@ -10,6 +10,9 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
   const lastTapRef = useRef(0);
   const tapTimeoutRef = useRef(null);
 
+  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  const kitchen_cd = config.cd; 
+
   //Verifica si todos los Items adicionales (hijos ) esten completados
   //retorna true solo si todos los items tiene kitchen_status === 1
   // se usa para saber si se puede completar el Item Padre
@@ -24,7 +27,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     const parent = organizedItems[parentId];
     if (parent && areAllAdditionalsComplete(parent.additionalItems)) {
       try {
-        await updateKitchenStatus(parent.id, 1);
+        await updateKitchenStatus(parent.id, 1, kitchen_cd); // Pasar kitchen_cd
       } catch (error) {
         console.error('Error al actualizar el estado del padre:', error);
       }
@@ -36,14 +39,15 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
   //si es un item adicional, verifica si el padre pueder ser completado
   const handleConfirm = async (item, isAdditional) => {
     try {
-      await updateKitchenStatus(item.id, 1);
+
+      await updateKitchenStatus(item.id, 1, kitchen_cd); // Pasar kitchen_cd
       setExpandedItemId(null);
 
       if (isAdditional && item.pid) {
         await checkAndUpdateParent(item.pid);
       }
     } catch (error) {
-      console.error('Error al actualizar el estado:', error);
+      console.error('Error al actualizar el estado en useOrderHandlers :', error);
     }
   };
 

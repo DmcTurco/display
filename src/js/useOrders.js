@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback  } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL;
+const API_URL = localStorage.getItem('apiUrl');
+console.log(API_URL);
 
 const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {
@@ -83,6 +84,11 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
+
+            if (!kitchenCd) {
+                throw new Error('kitchen_cd es requerido');
+            }
+
             setLoading(true);
             setKitchenCode(kitchenCd); // Guardamos el código de cocina
 
@@ -110,7 +116,7 @@ export function useOrders() {
         }
     }, []);
 
-    const updateKitchenStatus = async (orderDetailId, newStatus) => {
+    const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
@@ -122,17 +128,32 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-
+    
             if (!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
-
-            // Después de actualizar el estado, obtenemos los datos actualizados
-            if (kitchenCode) {
-                await getTodayOrders(kitchenCode);
+    
+            // // Actualizar el estado local inmediatamente
+            // setOrders(prevOrders => {
+            //     return prevOrders.map(order => ({
+            //         ...order,
+            //         items: order.items.map(item => {
+            //             if (item.id === orderDetailId) {
+            //                 return {
+            //                     ...item,
+            //                     kitchen_status: newStatus
+            //                 };
+            //             }
+            //             return item;
+            //         })
+            //     }));
+            // });
+    
+            // También obtener los datos actualizados del servidor
+            if (kitchen_cd) {
+                await getTodayOrders(kitchen_cd);
             }
-
-            return data;
+    
         } catch (error) {
             setError(error.message);
             throw error;
