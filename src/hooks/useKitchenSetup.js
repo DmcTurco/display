@@ -6,15 +6,12 @@ const CONFIG_STORAGE_KEY = 'kitchenConfig';
 const LAST_UID_KEY = 'lastKitchenUID';
 const API_URL_KEY = 'apiUrl';
 
-// Mover buildApiUrl fuera del hook y antes de usarla
-const buildApiUrl = () => {
+export const buildApiUrl = () => {
     const currentUrl = window.location.href;
     const url = new URL(currentUrl);
     const baseUrl = `${url.protocol}//${url.hostname}`;
     const apiPath = '/kitchen_display/api/get_order.php';
-    const fullUrl = baseUrl + apiPath;
-    localStorage.setItem(API_URL_KEY, fullUrl);
-    return fullUrl;
+    return baseUrl + apiPath;
 };
 
 const FULL_API_URL = buildApiUrl();

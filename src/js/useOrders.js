@@ -1,7 +1,12 @@
 import { useState, useEffect, useCallback  } from 'react';
+import { buildApiUrl } from '../hooks/useKitchenSetup';
 
-const API_URL = localStorage.getItem('apiUrl');
-console.log(API_URL);
+
+let API_URL = localStorage.getItem('apiUrl');
+if (!API_URL) {
+    API_URL = buildApiUrl();
+    localStorage.setItem('apiUrl', API_URL);
+}
 
 const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {
