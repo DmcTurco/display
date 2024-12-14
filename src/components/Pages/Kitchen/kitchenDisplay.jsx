@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import OrderList from "../Order/OrderList";
 import { useOrders } from "../../../js/useOrders";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
 import { useKitchenSetup } from "../../../hooks/useKitchenSetup";
+import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
+import OrderGrid from "../Order/GridLayout/OrderGrid";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -10,6 +11,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
   const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+
+  // Obtener el tipo de layout de la configuración
+  const layoutType = (config?.layoutType || 'swipe');
 
   // Inicializar configuración
   useEffect(() => {
@@ -72,6 +76,22 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     setUrgentCount(counts.urgent);
   }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
 
+  const renderOrderLayout = () => {
+    const layoutProps = {
+      orders,
+      expandedItemId,
+      setExpandedItemId
+    };
+
+    switch (layoutType) {
+      case 'grid':
+        return <OrderGrid {...layoutProps} />;
+      case 'swipe':
+      default:
+        return <OrderSwipe {...layoutProps} />;
+    }
+  };
+
   const renderContent = () => {
     if (!isOnline) {
       return (
@@ -122,13 +142,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       );
     }
 
-    return (
-      <OrderList
-        orders={orders}
-        expandedItemId={expandedItemId}
-        setExpandedItemId={setExpandedItemId}
-      />
-    );
+    return renderOrderLayout();
   };
 
   return (

@@ -1,8 +1,8 @@
 import React from 'react';
 import { X, ChefHat } from 'lucide-react';
 import MainItem from './MainItem';
-import { useOrderHandlers } from '../../../../hooks/useOrderHandlers';
-import { useSwipe } from '../../../../hooks/useSwipe';
+import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
+import { useSwipe } from '../../../../../hooks/useSwipe';
 
 
 const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {

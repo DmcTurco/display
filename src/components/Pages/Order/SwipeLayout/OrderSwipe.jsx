@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import OrderCard from './OrderCard';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useSwipe } from '../../../hooks/useSwipe';
+
+import { useSwipe } from '../../../../hooks/useSwipe';
+import OrderCard from '../Base/OrderCard';
 
 
 
-const OrderList = ({ orders, expandedItemId, setExpandedItemId }) => {
+const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
@@ -142,4 +142,4 @@ const OrderList = ({ orders, expandedItemId, setExpandedItemId }) => {
     );
 };
 
-export default OrderList;
+export default OrderSwipe;
