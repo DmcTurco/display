@@ -1,6 +1,7 @@
 import React from 'react'
-import OrderHeader from './OrderHeader';
-import OrderItems from './OrderItem/OrderItems';
+import OrderHeader from '../Base/OrderHeader';
+import OrderItems from '../Base/OrderItem/OrderItems';
+import ActionButton from '../Base/ActionButton';
 
 function OrderCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId }) {
 
@@ -33,7 +34,7 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime, e
         <OrderItems items={items} expandedItemId={expandedItemId} setExpandedItemId={setExpandedItemId} />
       </div>
       <div className="p-1 sm:p-1 mt-auto">
-        {/* <ActionButton status={status} /> */}
+        <ActionButton status={status} />
       </div>
     </div>
   );

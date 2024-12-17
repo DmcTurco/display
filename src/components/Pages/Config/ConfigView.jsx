@@ -1,16 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const ConfigView = () => {
     const navigate = useNavigate();
-    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-
+    const [config, setConfig] = useState(JSON.parse(localStorage.getItem('kitchenConfig')) || {});
+    
     const handleLayoutChange = (event) => {
-        // Guardar la configuración actualizada
         const updatedConfig = {
             ...config,
             layoutType: event.target.value
         };
+        setConfig(updatedConfig);
         localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
     };
 
@@ -50,19 +50,19 @@ const ConfigView = () => {
                         <dd>{config.uid}</dd>
                     </div>
 
-                    {/* Selector de Layout */}
-                    <div className="grid grid-cols-2">
-                        <dt className="font-medium text-gray-600">Tipo de Vista:</dt>
-                        <dd>
-                            <select
-                                value={config.layoutType || 'swipe'} // Valor predeterminado
-                                onChange={handleLayoutChange}
-                                className="w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="swipe">Vista Deslizable</option>
-                                <option value="grid">Vista Cuadrícula (4x2)</option>
-                            </select>
-                        </dd>
+                    {/* Layout Selector */}
+                    <div className="grid grid-cols-2 items-center py-2">
+                        <span className="font-medium text-gray-700">
+                            Tipo de Vista:
+                        </span>
+                        <select
+                            value={config.layoutType || 'swipe'}
+                            onChange={handleLayoutChange}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                            <option value="swipe">Vista Deslizable</option>
+                            <option value="grid">Vista Cuadrícula (4x2)</option>
+                        </select>
                     </div>
                 </dl>
             </div>

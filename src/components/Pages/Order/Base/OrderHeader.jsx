@@ -22,7 +22,7 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
       <div className="flex items-center justify-center gap-2">
         {getTypeIcon()}
         <h2 className="text-sm sm:text-base font-bold text-gray-800">
-        テーブル (mesa): {customer}
+        テーブル : {customer}
         </h2>
       </div>
 

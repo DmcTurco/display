@@ -86,8 +86,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {
                           handleCancel();
                         }}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
-                        <X className="h-4 w-4" />
-                        <span>No</span>
+                        <X className="h-4 w-10" />
                       </button>
                       <button
                         onClick={(e) => {
@@ -97,7 +96,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {
                         className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                       >
                         <ChefHat className="h-4 w-4" />
-                        <span>¡Listo!</span>
+                        <span>完了</span>
                       </button>
                     </div>
                   </div>

@@ -1,75 +1,119 @@
-import React, { useState, useEffect } from 'react';
-import OrderCard from '../Base/OrderCard';
+import React, { useState, useEffect, useRef } from 'react';
+import { useSwipe } from '../../../../hooks/useSwipe';
+import OrderGridCard from './OrderGridCard';
 
 const OrderGrid = ({ orders, expandedItemId, setExpandedItemId }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const ordersPerPage = 8; // 4x2 = 8 cards por página
+    const ordersPerPage = 8;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
+    const lastPageRef = useRef(currentPage);
 
-    // Función para obtener las órdenes de la página actual
+    const {
+        containerRef,
+        dragOffset,
+        touchStart,
+        getTransform,
+        onTouchStart,
+        onTouchEnd,
+        onMouseDown,
+        transitionDuration
+    } = useSwipe({
+        onSwipeLeft: () => {
+            if (currentPage < totalPages) {
+                setCurrentPage(prev => prev + 1);
+            }
+        },
+        onSwipeRight: () => {
+            if (currentPage > 1) {
+                setCurrentPage(prev => prev - 1);
+            }
+        },
+        currentPage,
+        totalPages,
+        direction: 'horizontal',
+        enabled: true
+    });
+
+    useEffect(() => {
+        lastPageRef.current = currentPage;
+    }, [currentPage]);
+
+    useEffect(() => {
+        if (lastPageRef.current > totalPages) {
+            setCurrentPage(totalPages);
+        } else {
+            setCurrentPage(lastPageRef.current);
+        }
+    }, [orders, totalPages]);
+
+    // Mantener la función getPageOrders
     const getPageOrders = (page) => {
         const indexOfLastOrder = page * ordersPerPage;
         const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
         return orders.slice(indexOfFirstOrder, indexOfLastOrder);
     };
 
-    // Botones de navegación
-    const nextPage = () => {
-        if (currentPage < totalPages) {
-            setCurrentPage(prev => prev + 1);
-        }
-    };
-
-    const prevPage = () => {
-        if (currentPage > 1) {
-            setCurrentPage(prev => prev - 1);
-        }
-    };
-
     return (
         <div className="flex flex-col h-full">
-            <div className="max-w-[1600px] mx-auto w-full px-4 h-full relative">
-                {/* Grid de 4x2 */}
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 auto-rows-fr">
-                    {getPageOrders(currentPage).map(order => (
-                        <div
-                            key={`${order.order_main_cd}_${order.order_count}`}
-                            className="min-h-[300px] transition-all duration-300 ease-in-out"
-                        >
-                            <OrderCard
-                                time={order.formatted_time}
-                                type={order.type}
-                                number={`${order.order_main_cd}-${order.order_count}`}
-                                customer={order.table_name}
-                                items={order.items}
-                                status={order.status}
-                                elapsedTime={order.elapsedTime}
-                                expandedItemId={expandedItemId}
-                                setExpandedItemId={setExpandedItemId}
-                            />
-                        </div>
-                    ))}
+            <div
+                ref={containerRef}
+                className="max-w-[1600px] mx-auto w-full px-4 h-full relative"
+                onTouchStart={onTouchStart}
+                onTouchEnd={onTouchEnd}
+                onMouseDown={onMouseDown}
+            >
+                <div className="relative w-full h-full overflow-hidden">
+                    <div
+                        className="absolute flex h-full"
+                        style={{
+                            transform: getTransform(),
+                            transition: touchStart ? 'none' : `transform ${transitionDuration}ms ease-out`,
+                            width: `${totalPages * 100}%`,
+                        }}
+                    >
+                        {Array.from({ length: totalPages }).map((_, index) => {
+                            return (
+                                <div
+                                    key={index}
+                                    className="float-left h-full flex-shrink-0"
+                                    style={{
+                                        width: `${60 / totalPages}%`,
+                                    }}
+                                >
+                                    <div className="grid grid-cols-4 grid-rows-2 gap-4 h-full p-2">
+                                        {getPageOrders(index + 1).map(order => (
+                                            <div
+                                                key={`${order.order_main_cd}_${order.order_count}`}
+                                                className="h-full"
+                                            >
+                                                {order && (
+                                                    <OrderGridCard
+                                                        time={order.formatted_time}
+                                                        type={order.type}
+                                                        number={`${order.order_main_cd}-${order.order_count}`}
+                                                        customer={order.table_name}
+                                                        items={order.items}
+                                                        status={order.status}
+                                                        elapsedTime={order.elapsedTime}
+                                                        expandedItemId={expandedItemId}
+                                                        setExpandedItemId={setExpandedItemId}
+                                                    />
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            );
+                        })}
+
+                    </div>
                 </div>
 
-                {/* Navegación y contador de páginas */}
+
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
-                    flex items-center gap-4 bg-black/60 text-white px-4 py-2 
-                    rounded-full text-sm backdrop-blur-sm select-none">
-                    <button
-                        onClick={prevPage}
-                        disabled={currentPage === 1}
-                        className={`${currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:text-blue-400'}`}
-                    >
-                        ←
-                    </button>
-                    <span>{currentPage} / {totalPages}</span>
-                    <button
-                        onClick={nextPage}
-                        disabled={currentPage === totalPages}
-                        className={`${currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:text-blue-400'}`}
-                    >
-                        →
-                    </button>
+                    bg-black/60 text-white px-3 py-1 rounded-full text-sm 
+                    backdrop-blur-sm select-none">
+                    {currentPage} / {totalPages}
                 </div>
             </div>
         </div>
