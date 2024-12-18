@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback  } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../hooks/useKitchenSetup';
 
 
@@ -133,30 +133,26 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-    
+
             if (!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
-            if (data.status === 'error') throw new Error(data.message);
-    
-            // // Actualizar el estado local inmediatamente
-            // setOrders(prevOrders => {
-            //     return prevOrders.map(order => ({
-            //         ...order,
-            //         items: order.items.map(item => {
-            //             if (item.id === orderDetailId) {
-            //                 return {
-            //                     ...item,
-            //                     kitchen_status: newStatus
-            //                 };
-            //             }
-            //             return item;
-            //         })
-            //     }));
-            // });
-    
-            // También obtener los datos actualizados del servidor
+            if (data.status !== 'ok') throw new Error(data.message);
+
+            // Actualización local inmediata
+            setOrders(prevOrders => {
+                if (!prevOrders.length) return prevOrders;
+                return prevOrders.map(order => ({
+                    ...order,
+                    items: order.items.map(item =>
+                        item.id === orderDetailId ? { ...item, kitchen_status: newStatus } : item
+                    )
+                }));
+            });
+
+            // Re-sincronizar desde el servidor (opcional)
             if (kitchen_cd) {
-                await getTodayOrders(kitchen_cd);
+                const serverData = await getTodayOrders(kitchen_cd);
+                setOrders(processOrders(serverData.data));
             }
     
         } catch (error) {

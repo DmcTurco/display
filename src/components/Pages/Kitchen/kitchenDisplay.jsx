@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, memo } from "react";
 import { useOrders } from "../../../js/useOrders";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
 import { useKitchenSetup } from "../../../hooks/useKitchenSetup";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
 
-const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
+const KitchenDisplay = memo(({ setPendingCount, setInProgressCount, setUrgentCount }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
   const { orders, loading, error, getTodayOrders } = useOrders();
   const { config, initializeConfig } = useKitchenSetup();
@@ -150,6 +150,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       <div className="flex-1 overflow-hidden">{renderContent()}</div>
     </div>
   );
-};
+});
 
 export default KitchenDisplay;
