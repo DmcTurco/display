@@ -47,6 +47,23 @@ export function useOrders() {
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
 
+    // Agregar efecto para monitorear cambios en orders
+    useEffect(() => {
+        console.log('Estado de orders actualizado:', {
+            totalOrders: orders.length,
+            ordersWithItems: orders.map(order => ({
+                order_main_cd: order.order_main_cd,
+                table_name: order.table_name,
+                itemsCount: order.items.length,
+                itemsStatus: order.items.map(item => ({
+                    id: item.id,
+                    name: item.name,
+                    status: item.kitchen_status
+                }))
+            }))
+        });
+    }, [orders]);
+
     const processOrders = (data) => {
         const processedOrders = data.reduce((acc, order) => {
             const uniqueId = `${order.order_main_cd}_${order.order_count}`;
@@ -123,6 +140,48 @@ export function useOrders() {
 
     const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
+            console.log('Iniciando actualización:', {
+                itemToUpdate: orderDetailId,
+                newStatus,
+                currentOrders: orders.length
+            });
+    
+            let wasUpdated = false;
+    
+            // Actualización local
+            setOrders(prevOrders => {
+                const updatedOrders = prevOrders.map(order => ({
+                    ...order,
+                    items: order.items.map(item => {
+                        if (item.id === orderDetailId && !wasUpdated) {
+                            wasUpdated = true;
+                            console.log('Actualizando item:', {
+                                id: item.id,
+                                name: item.name,
+                                oldStatus: item.kitchen_status,
+                                newStatus
+                            });
+                            return { ...item, kitchen_status: newStatus };
+                        }
+                        return item;
+                    })
+                }));
+    
+                // Log del estado actualizado
+                if (wasUpdated) {
+                    console.log('Estado después de actualización:', {
+                        itemId: orderDetailId,
+                        updatedItem: updatedOrders
+                            .flatMap(order => order.items)
+                            .find(item => item.id === orderDetailId)
+                    });
+                }
+    
+                return wasUpdated ? updatedOrders : prevOrders;
+            });
+    
+            // Llamada al servidor
+            console.log('Enviando actualización al servidor...');
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {
@@ -133,34 +192,22 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-
-            if (!response.ok) throw new Error('Error al actualizar el estado');
+    
             const data = await response.json();
-            if (data.status !== 'ok') throw new Error(data.message);
-
-            // Actualización local inmediata
-            setOrders(prevOrders => {
-                if (!prevOrders.length) return prevOrders;
-                return prevOrders.map(order => ({
-                    ...order,
-                    items: order.items.map(item =>
-                        item.id === orderDetailId ? { ...item, kitchen_status: newStatus } : item
-                    )
-                }));
-            });
-
-            // Re-sincronizar desde el servidor (opcional)
-            if (kitchen_cd) {
-                const serverData = await getTodayOrders(kitchen_cd);
-                setOrders(processOrders(serverData.data));
+            
+            if (!response.ok || data.status !== 'ok') {
+                throw new Error(data.message || 'Error al actualizar el estado');
             }
     
+            console.log('Actualización completada exitosamente');
+            return true;
+    
         } catch (error) {
+            console.error('Error en updateKitchenStatus:', error);
             setError(error.message);
             throw error;
         }
     };
-
 
     // Efecto para actualización automática cada 30 segundos
     useEffect(() => {
@@ -169,7 +216,7 @@ export function useOrders() {
         if (kitchenCode) {
             interval = setInterval(() => {
                 getTodayOrders(kitchenCode);
-            }, 10000); // 30 segundos
+            }, 50000); // 30 segundos
         }
 
         return () => {
