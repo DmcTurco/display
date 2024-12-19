@@ -15,13 +15,14 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
   // Obtener el tipo de layout de la configuración
   const layoutType = (config?.layoutType || 'swipe');
 
-  // Inicializar configuración
-  useEffect(() => {
-    initializeConfig();
-  }, []);
+  // // Inicializar configuración
+  // useEffect(() => {
+  //   initializeConfig();
+  // }, []);
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
+    initializeConfig();
     const handleOnline = () => {
       setIsOnline(true);
       if (config?.cd) {

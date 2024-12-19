@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback  } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../hooks/useKitchenSetup';
+import { data } from 'autoprefixer';
 
 
 let API_URL = localStorage.getItem('apiUrl');
@@ -89,6 +90,7 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
+            console.log('renderizando')
 
             if (!kitchenCd) {
                 throw new Error('kitchen_cd es requerido');
@@ -107,7 +109,6 @@ export function useOrders() {
                 setOrders([]);
                 return;
             }
-
             const processedNewData = processOrders(newData.data);
             setOrders(processedNewData);
             setError(null);
@@ -133,32 +134,18 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-    
+
             if (!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
-    
-            // // Actualizar el estado local inmediatamente
-            // setOrders(prevOrders => {
-            //     return prevOrders.map(order => ({
-            //         ...order,
-            //         items: order.items.map(item => {
-            //             if (item.id === orderDetailId) {
-            //                 return {
-            //                     ...item,
-            //                     kitchen_status: newStatus
-            //                 };
-            //             }
-            //             return item;
-            //         })
-            //     }));
-            // });
-    
+
             // También obtener los datos actualizados del servidor
+            console.log("The kitchen is: ", kitchen_cd);
             if (kitchen_cd) {
-                await getTodayOrders(kitchen_cd);
+                // setTimeout(()=>{getTodayOrders(kitchen_cd)},2000)
+                getTodayOrders(kitchen_cd);
             }
-    
+
         } catch (error) {
             setError(error.message);
             throw error;
@@ -167,21 +154,24 @@ export function useOrders() {
 
 
     // Efecto para actualización automática cada 30 segundos
-    useEffect(() => {
-        let interval;
+    // useEffect(() => {
+    //     let interval;
 
-        if (kitchenCode) {
-            interval = setInterval(() => {
-                getTodayOrders(kitchenCode);
-            }, 10000); // 30 segundos
-        }
+    //     if (kitchenCode) {
+    //         interval = setInterval(() => {
+    //             getTodayOrders(kitchenCode);
+    //         }, 10000); // 30 segundos
+    //     }
 
-        return () => {
-            if (interval) {
-                clearInterval(interval);
-            }
-        };
-    }, [kitchenCode, getTodayOrders]);
+    //     return () => {
+    //         if (interval) {
+    //             clearInterval(interval);
+    //         }
+    //     };
+
+    // }, [kitchenCode]);
+
+
 
     return {
         orders,
