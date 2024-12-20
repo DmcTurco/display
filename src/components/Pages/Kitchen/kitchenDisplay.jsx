@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from "react";
-import { useOrders } from "../../../js/useOrders";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
 import { useKitchenSetup } from "../../../hooks/useKitchenSetup";
+import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const { orders, loading, error, getTodayOrders } = useOrders();
+  const { orders, loading, error, getTodayOrders } =  useOrders();
+  
   const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -17,11 +18,13 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
   // Inicializar configuración
   useEffect(() => {
+    console.log("Use Effect of initialize")
     initializeConfig();
   }, []);
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
+    console.log("Use Effect of checking connection")
     const handleOnline = () => {
       setIsOnline(true);
       if (config?.cd) {
@@ -36,6 +39,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
     if (config?.cd && isOnline) {
       getTodayOrders(config.cd).finally(() => {
+        console.log("setting load from 2 if")
         setIsInitialLoad(false);
       });
     }
@@ -49,6 +53,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
   // Actualizar contadores
   useEffect(() => {
+    console.log("Use Effect of update counters")
     if (!Array.isArray(orders) || orders.length === 0) {
       setPendingCount(0);
       setInProgressCount(0);
@@ -75,6 +80,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     setInProgressCount(counts.inProgress);
     setUrgentCount(counts.urgent);
   }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
+
 
   const renderOrderLayout = () => {
     const layoutProps = {

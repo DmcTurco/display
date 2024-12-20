@@ -36,9 +36,9 @@ function OrderGridCard({ time, type, number, customer, items, status, elapsedTim
           setExpandedItemId={setExpandedItemId} 
         />
       </div>
-      <div className="p-1 sm:p-1 mt-auto">
+      {/* <div className="p-1 sm:p-1 mt-auto">
         <ActionButton status={status} />
-      </div>
+      </div> */}
     </div>
   );
 }

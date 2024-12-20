@@ -4,7 +4,6 @@ import ConfigView from "../Pages/Config/ConfigView";
 import KitchenDisplay from "../Pages/Kitchen/kitchenDisplay";
 
 const MainLayout = ({ content }) => {
-
   const [pendingCount, setPendingCount] = useState(0);
   const [inProgressCount, setInProgressCount] = useState(0);
   const [urgentCount, setUrgentCount] = useState(0);
@@ -24,6 +23,7 @@ const MainLayout = ({ content }) => {
 
       <div className="flex-1 overflow-hidden px-4">
         {isConfigPage ? <ConfigView /> : <KitchenDisplay setPendingCount={setPendingCount} setInProgressCount={setInProgressCount} setUrgentCount={setUrgentCount}/>}
+
       </div>
 
       {/* <div className="p-3">

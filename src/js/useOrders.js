@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback  } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../hooks/useKitchenSetup';
 
 
@@ -47,6 +47,7 @@ export function useOrders() {
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
 
+
     const processOrders = (data) => {
         const processedOrders = data.reduce((acc, order) => {
             const uniqueId = `${order.order_main_cd}_${order.order_count}`;
@@ -89,7 +90,7 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
-
+            console.log("Checking  " + kitchenCd)
             if (!kitchenCd) {
                 throw new Error('kitchen_cd es requerido');
             }
@@ -109,7 +110,9 @@ export function useOrders() {
             }
 
             const processedNewData = processOrders(newData.data);
+
             setOrders(processedNewData);
+
             setError(null);
 
         } catch (err) {
@@ -133,11 +136,11 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-    
+
             if (!response.ok) throw new Error('Error al actualizar el estado');
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
-    
+
             // // Actualizar el estado local inmediatamente
             // setOrders(prevOrders => {
             //     return prevOrders.map(order => ({
@@ -153,33 +156,56 @@ export function useOrders() {
             //         })
             //     }));
             // });
-    
+
             // También obtener los datos actualizados del servidor
             if (kitchen_cd) {
+                window.location.reload();
                 await getTodayOrders(kitchen_cd);
             }
-    
+
         } catch (error) {
             setError(error.message);
             throw error;
         }
     };
 
+    useEffect(()=>{
+        console.log("orders ...");
+        console.log(orders);
+    },[orders])
+
 
     // Efecto para actualización automática cada 30 segundos
     useEffect(() => {
-        let interval;
-
+        console.log("Use Effect of user orders " + kitchenCode)
         if (kitchenCode) {
-            interval = setInterval(() => {
-                getTodayOrders(kitchenCode);
-            }, 10000); // 30 segundos
+            //window.reload();
+            //setInterval(() => {
+            //    getTodayOrders(kitchenCode);
+            //},10000);
+            // getTodayOrders(kitchenCode);
+
+            //setTimeout(() => { console.log("from the setTimeOut"); getTodayOrders(kitchenCode); }, 5000);
+            // setInterval(() => {
+            //     console.log("From interval " );
+            //     getTodayOrders(kitchenCode);
+            // }, 10000); // 30 segundos
         }
 
+
+        // let interval;
+        // let cadena = Math.floor(Math.random() * 10)
+        // if (kitchenCode) {
+        //     interval = setInterval(() => {
+        //         console.log("Calling interval " + cadena);
+        //         getTodayOrders(kitchenCode);
+        //     }, 10000); // 30 segundos
+        // }
+
         return () => {
-            if (interval) {
-                clearInterval(interval);
-            }
+            // if (interval) {
+            //     clearInterval(interval);
+            // }
         };
     }, [kitchenCode, getTodayOrders]);
 
