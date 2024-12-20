@@ -1,46 +1,34 @@
-// src/hooks/useOrderHandlers.js
 import { useState, useRef } from 'react';
-// import { useOrders } from '../js/useOrders';
+
 
 
 export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId,updateKitchenStatus) => {
-  // const [expandedItemId, setExpandedItemId] = useState(null);
-  // const { orders, updateKitchenStatus } = useOrders();
 
   const lastTapRef = useRef(0);
   const tapTimeoutRef = useRef(null);
-
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   const kitchen_cd = config.cd; 
 
-  //Verifica si todos los Items adicionales (hijos ) esten completados
-  //retorna true solo si todos los items tiene kitchen_status === 1
-  // se usa para saber si se puede completar el Item Padre
+
   const areAllAdditionalsComplete = (additionalItems) => {
     return additionalItems.every((item) => item.kitchen_status === 1);
   };
 
-  //verifica y actualiza el estado del item padre
-  //solo actualizara el padre si todos sus items adicionales estan completados 
-  // se llama despues de completar un item adicional
   const checkAndUpdateParent = async (parentId) => {
     const parent = organizedItems[parentId];
     if (parent && areAllAdditionalsComplete(parent.additionalItems)) {
       try {
-        await updateKitchenStatus(parent.id, 1, kitchen_cd); // Pasar kitchen_cd
+        await updateKitchenStatus(parent.id, 1, kitchen_cd);
       } catch (error) {
         console.error('Error al actualizar el estado del padre:', error);
       }
     }
   };
 
-  //Marca un Item como completado
-  //cierra el panel expandido
-  //si es un item adicional, verifica si el padre pueder ser completado
   const handleConfirm = async (item, isAdditional) => {
     try {
 
-      await updateKitchenStatus(item.id, 1, kitchen_cd); // Pasar kitchen_cd
+      await updateKitchenStatus(item.id, 1, kitchen_cd);
       setExpandedItemId(null);
 
       if (isAdditional && item.pid) {
@@ -51,15 +39,10 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     }
   };
 
-  //simplemente cierra el panel expandido
   const handleCancel = () => {
     setExpandedItemId(null);
   };
 
-  //Maneja toda la lógica de clicks/toques
-  //Diferencia entre Items principales y adicionales
-  //Maneja doble toque y toque simple
-  //controla la expansion/colapso de los paneles
   const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false) => {
     // No procesar si es un item principal con hijos
     if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {

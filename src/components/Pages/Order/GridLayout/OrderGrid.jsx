@@ -98,7 +98,6 @@ const OrderGrid = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStat
                                                         expandedItemId={expandedItemId}
                                                         setExpandedItemId={setExpandedItemId}
                                                         updateKitchenStatus={updateKitchenStatus}
-                                                        updateKitchenStatus={updateKitchenStatus}
                                                     />
                                                 )}
                                             </div>

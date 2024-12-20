@@ -11,17 +11,16 @@ const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {
         hour: '2-digit',
         minute: '2-digit',
-        // second: '2-digit',
-        hour12: false // Esto asegura el formato de 24 horas
+        hour12: false
     });
 };
 
 
 const calculateElapsedTime = (recordDate) => {
-    const japanTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });// Convierte la fecha del pedido a objeto Date
-    const currentTime = new Date(japanTime); // Obtener la hora actual en Japón
-    const orderTime = new Date(recordDate);// Convertir la fecha del pedido a objeto Date
-    return Math.floor((currentTime - orderTime) / (1000 * 60));// Calcula la diferencia en minutos
+    const japanTime = new Date().toLocaleString('ja-JP', { timeZone: 'Asia/Tokyo' });
+    const currentTime = new Date(japanTime);
+    const orderTime = new Date(recordDate);
+    return Math.floor((currentTime - orderTime) / (1000 * 60));
 };
 
 const determineStatus = (recordDate, currentStatus, itemStatus = '') => {
@@ -31,12 +30,10 @@ const determineStatus = (recordDate, currentStatus, itemStatus = '') => {
         return 'en-progreso';
     }
 
-    // Para debug en desarrollo
     if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) {
         return 'urgente';
-        //si el pedido no esta iniciado lo que hace esta funcion es verificar si han pasado
-        // 15 mnts y si es asi cambia el estado a urgente
     }
+    
     return currentStatus;
 };
 
@@ -89,13 +86,13 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
-            console.log("Checking  " + kitchenCd)
+            
             if (!kitchenCd) {
                 throw new Error('kitchen_cd es requerido');
             }
 
             setLoading(true);
-            setKitchenCode(kitchenCd); // Guardamos el código de cocina
+            setKitchenCode(kitchenCd);
 
             const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
@@ -122,6 +119,7 @@ export function useOrders() {
         }
     }, []);
 
+
     const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
@@ -139,26 +137,7 @@ export function useOrders() {
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
 
-            // // Actualizar el estado local inmediatamente
-            // setOrders(prevOrders => {
-            //     return prevOrders.map(order => ({
-            //         ...order,
-            //         items: order.items.map(item => {
-            //             if (item.id === orderDetailId) {
-            //                 return {
-            //                     ...item,
-            //                     kitchen_status: newStatus
-            //                 };
-            //             }
-            //             return item;
-            //         })
-            //     }));
-            // });
-
-            // También obtener los datos actualizados del servidor
-            console.log("The kitchen is: ", kitchen_cd);
             if (kitchen_cd) {
-                //window.location.reload();
                 await getTodayOrders(kitchen_cd);
             }
 
@@ -168,28 +147,18 @@ export function useOrders() {
         }
     };
 
-    useEffect(()=>{
-        console.log("orders ...");
-        console.log(orders);
-    },[orders])
-
 
     useEffect(() => {
-        console.log("Use Effect of user orders " + kitchenCode);
         let intervalId = null;
     
         if (kitchenCode) {
-            // Ejecutar inmediatamente la primera vez
             getTodayOrders(kitchenCode);
-    
-            // Configurar el intervalo
             intervalId = setInterval(() => {
                 console.log("Obteniendo datos actualizados...");
                 getTodayOrders(kitchenCode);
-            }, 10000); // 10 segundos
+            }, 10000);
         }
     
-        // Función de limpieza
         return () => {
             if (intervalId) {
                 console.log("Limpiando intervalo");

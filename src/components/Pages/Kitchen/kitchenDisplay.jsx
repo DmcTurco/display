@@ -12,18 +12,15 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Obtener el tipo de layout de la configuración
   const layoutType = (config?.layoutType || 'swipe');
 
   // Inicializar configuración
   useEffect(() => {
-    console.log("Use Effect of initialize")
     initializeConfig();
   }, []);
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
-    console.log("Use Effect of checking connection")
     const handleOnline = () => {
       setIsOnline(true);
       if (config?.cd) {
@@ -38,7 +35,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
     if (config?.cd && isOnline) {
       getTodayOrders(config.cd).finally(() => {
-        console.log("setting load from 2 if")
         setIsInitialLoad(false);
       });
     }
@@ -52,7 +48,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
   // Actualizar contadores
   useEffect(() => {
-    console.log("Use Effect of update counters")
     if (!Array.isArray(orders) || orders.length === 0) {
       setPendingCount(0);
       setInProgressCount(0);

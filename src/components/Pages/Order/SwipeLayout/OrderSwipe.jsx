@@ -114,7 +114,6 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                                                 expandedItemId={expandedItemId}
                                                 setExpandedItemId={setExpandedItemId}
                                                 updateKitchenStatus={updateKitchenStatus}
-                                                updateKitchenStatus={updateKitchenStatus}
                                             />
                                         </div>
                                     ))}
