@@ -1,7 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
 import { buildApiUrl } from '../hooks/useKitchenSetup';
-import { data } from 'autoprefixer';
-
 
 let API_URL = localStorage.getItem('apiUrl');
 if (!API_URL) {
@@ -136,8 +134,8 @@ export function useOrders() {
                     kitchen_status: newStatus,
                 }),
             });
-
-            if (!response.ok) throw new Error('Error al actualizar el estado');
+    
+            if (!response.ok) throw new Error('Error al actualizar el estado use Orders');
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
 
@@ -176,37 +174,27 @@ export function useOrders() {
     },[orders])
 
 
-    // Efecto para actualización automática cada 30 segundos
     useEffect(() => {
-        console.log("Use Effect of user orders " + kitchenCode)
+        console.log("Use Effect of user orders " + kitchenCode);
+        let intervalId = null;
+    
         if (kitchenCode) {
-            //window.reload();
-            //setInterval(() => {
-            //    getTodayOrders(kitchenCode);
-            //},10000);
-            // getTodayOrders(kitchenCode);
-
-            //setTimeout(() => { console.log("from the setTimeOut"); getTodayOrders(kitchenCode); }, 5000);
-            // setInterval(() => {
-            //     console.log("From interval " );
-            //     getTodayOrders(kitchenCode);
-            // }, 10000); // 30 segundos
+            // Ejecutar inmediatamente la primera vez
+            getTodayOrders(kitchenCode);
+    
+            // Configurar el intervalo
+            intervalId = setInterval(() => {
+                console.log("Obteniendo datos actualizados...");
+                getTodayOrders(kitchenCode);
+            }, 10000); // 10 segundos
         }
-
-
-        // let interval;
-        // let cadena = Math.floor(Math.random() * 10)
-        // if (kitchenCode) {
-        //     interval = setInterval(() => {
-        //         console.log("Calling interval " + cadena);
-        //         getTodayOrders(kitchenCode);
-        //     }, 10000); // 30 segundos
-        // }
-
+    
+        // Función de limpieza
         return () => {
-            // if (interval) {
-            //     clearInterval(interval);
-            // }
+            if (intervalId) {
+                console.log("Limpiando intervalo");
+                clearInterval(intervalId);
+            }
         };
     }, [kitchenCode, getTodayOrders]);
 
