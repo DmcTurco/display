@@ -48,6 +48,7 @@ export function useOrders() {
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
 
+
     const processOrders = (data) => {
         const processedOrders = data.reduce((acc, order) => {
             const uniqueId = `${order.order_main_cd}_${order.order_count}`;
@@ -90,8 +91,7 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
-            console.log('renderizando')
-
+            console.log("Checking  " + kitchenCd)
             if (!kitchenCd) {
                 throw new Error('kitchen_cd es requerido');
             }
@@ -110,7 +110,9 @@ export function useOrders() {
                 return;
             }
             const processedNewData = processOrders(newData.data);
+
             setOrders(processedNewData);
+
             setError(null);
 
         } catch (err) {
@@ -139,11 +141,27 @@ export function useOrders() {
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
 
+            // // Actualizar el estado local inmediatamente
+            // setOrders(prevOrders => {
+            //     return prevOrders.map(order => ({
+            //         ...order,
+            //         items: order.items.map(item => {
+            //             if (item.id === orderDetailId) {
+            //                 return {
+            //                     ...item,
+            //                     kitchen_status: newStatus
+            //                 };
+            //             }
+            //             return item;
+            //         })
+            //     }));
+            // });
+
             // También obtener los datos actualizados del servidor
             console.log("The kitchen is: ", kitchen_cd);
             if (kitchen_cd) {
-                // setTimeout(()=>{getTodayOrders(kitchen_cd)},2000)
-                getTodayOrders(kitchen_cd);
+                window.location.reload();
+                await getTodayOrders(kitchen_cd);
             }
 
         } catch (error) {
@@ -152,26 +170,45 @@ export function useOrders() {
         }
     };
 
+    useEffect(()=>{
+        console.log("orders ...");
+        console.log(orders);
+    },[orders])
+
 
     // Efecto para actualización automática cada 30 segundos
-    // useEffect(() => {
-    //     let interval;
+    useEffect(() => {
+        console.log("Use Effect of user orders " + kitchenCode)
+        if (kitchenCode) {
+            //window.reload();
+            //setInterval(() => {
+            //    getTodayOrders(kitchenCode);
+            //},10000);
+            // getTodayOrders(kitchenCode);
 
-    //     if (kitchenCode) {
-    //         interval = setInterval(() => {
-    //             getTodayOrders(kitchenCode);
-    //         }, 10000); // 30 segundos
-    //     }
-
-    //     return () => {
-    //         if (interval) {
-    //             clearInterval(interval);
-    //         }
-    //     };
-
-    // }, [kitchenCode]);
+            //setTimeout(() => { console.log("from the setTimeOut"); getTodayOrders(kitchenCode); }, 5000);
+            // setInterval(() => {
+            //     console.log("From interval " );
+            //     getTodayOrders(kitchenCode);
+            // }, 10000); // 30 segundos
+        }
 
 
+        // let interval;
+        // let cadena = Math.floor(Math.random() * 10)
+        // if (kitchenCode) {
+        //     interval = setInterval(() => {
+        //         console.log("Calling interval " + cadena);
+        //         getTodayOrders(kitchenCode);
+        //     }, 10000); // 30 segundos
+        // }
+
+        return () => {
+            // if (interval) {
+            //     clearInterval(interval);
+            // }
+        };
+    }, [kitchenCode, getTodayOrders]);
 
     return {
         orders,
