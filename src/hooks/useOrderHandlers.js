@@ -1,11 +1,11 @@
 // src/hooks/useOrderHandlers.js
 import { useState, useRef } from 'react';
-import { useOrders } from '../js/useOrders';
+//import { useOrders } from '../js/useOrders';
 
 
-export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId) => {
+export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId,updateKitchenStatus) => {
   // const [expandedItemId, setExpandedItemId] = useState(null);
-  const { updateKitchenStatus } = useOrders();
+  //const { updateKitchenStatus } = useOrders();
 
   const lastTapRef = useRef(0);
   const tapTimeoutRef = useRef(null);

@@ -160,7 +160,7 @@ export function useOrders() {
             // También obtener los datos actualizados del servidor
             console.log("The kitchen is: ", kitchen_cd);
             if (kitchen_cd) {
-                window.location.reload();
+                //window.location.reload();
                 await getTodayOrders(kitchen_cd);
             }
 

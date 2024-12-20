@@ -5,7 +5,7 @@ import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 
 
-const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {
+const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStatus}) => {
 
   // Usar el hook de swipe para scroll vertical
   const {
@@ -46,7 +46,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId }) => {
     handleConfirm,
     handleCancel,
     areAllAdditionalsComplete
-  } = useOrderHandlers(organizedItems, expandedItemId, setExpandedItemId);
+  } = useOrderHandlers(organizedItems, expandedItemId, setExpandedItemId,updateKitchenStatus);
 
   return (
     <>

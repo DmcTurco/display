@@ -7,7 +7,7 @@ import OrderGrid from "../Order/GridLayout/OrderGrid";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const { orders, loading, error, getTodayOrders } =  useOrders();
+  const { orders, loading, error, getTodayOrders, updateKitchenStatus} =  useOrders();
   
   const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -86,7 +86,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     const layoutProps = {
       orders,
       expandedItemId,
-      setExpandedItemId
+      setExpandedItemId,
+      updateKitchenStatus
     };
 
     switch (layoutType) {

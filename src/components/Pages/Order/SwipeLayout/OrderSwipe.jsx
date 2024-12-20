@@ -4,7 +4,7 @@ import { useSwipe } from '../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 
 
-const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId }) => {
+const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStatus }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
@@ -113,6 +113,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId }) => {
                                                 elapsedTime={order.elapsedTime}
                                                 expandedItemId={expandedItemId}
                                                 setExpandedItemId={setExpandedItemId}
+                                                updateKitchenStatus={updateKitchenStatus}
                                             />
                                         </div>
                                     ))}

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useSwipe } from '../../../../hooks/useSwipe';
 import OrderGridCard from './OrderGridCard';
 
-const OrderGrid = ({ orders, expandedItemId, setExpandedItemId }) => {
+const OrderGrid = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStatus }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 8;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
@@ -97,6 +97,7 @@ const OrderGrid = ({ orders, expandedItemId, setExpandedItemId }) => {
                                                         elapsedTime={order.elapsedTime}
                                                         expandedItemId={expandedItemId}
                                                         setExpandedItemId={setExpandedItemId}
+                                                        updateKitchenStatus={updateKitchenStatus}
                                                     />
                                                 )}
                                             </div>

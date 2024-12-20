@@ -3,7 +3,7 @@ import OrderHeader from '../Base/OrderHeader';
 import OrderItems from '../Base/OrderItem/OrderItems';
 import ActionButton from '../Base/ActionButton';
 
-function OrderGridCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId }) {
+function OrderGridCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId,updateKitchenStatus}) {
   const getStatusColor = () => {
     switch (status) {
       case 'urgente':
@@ -34,6 +34,7 @@ function OrderGridCard({ time, type, number, customer, items, status, elapsedTim
           items={items} 
           expandedItemId={expandedItemId} 
           setExpandedItemId={setExpandedItemId} 
+          updateKitchenStatus={updateKitchenStatus}
         />
       </div>
       {/* <div className="p-1 sm:p-1 mt-auto">
