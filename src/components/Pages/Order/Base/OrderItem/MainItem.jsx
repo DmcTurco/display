@@ -1,17 +1,27 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import AdditionalItems from './AdditionalItems';
 
 const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId }) => {
   const isCompleted = item.kitchen_status === 1;
+  const [isTouching, setIsTouching] = useState(false);
 
   return (
     <div
-      onClick={() => onItemClick(item, false)} // Agregado false para indicar que es un item principal
+      onClick={(e) => {
+        if (!isCompleted && (!hasAdditionals || allAdditionalsComplete)) {
+          onItemClick(item, false);
+        }
+      }}
+      onTouchStart={() => setIsTouching(true)}
+      onTouchEnd={() => setIsTouching(false)}
+      onTouchCancel={() => setIsTouching(false)}
       className={`
         rounded-lg p-3 shadow-sm
         transition-all duration-300
-        ${isCompleted ? "bg-green-200" : "bg-white hover:bg-green-200"}
+        ${isCompleted ? "bg-green-200" : "bg-white"}
+        ${!isCompleted && (!hasAdditionals || allAdditionalsComplete) ? 
+          "touch-none hover:bg-green-200 active:bg-green-200" : ""}
         ${isCompleted || (hasAdditionals && !allAdditionalsComplete) ? "" : "cursor-pointer"}
         ${isExpanded ? "rounded-b-none border-b border-gray-200" : ""}
       `}

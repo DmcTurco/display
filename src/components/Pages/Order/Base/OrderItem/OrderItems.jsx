@@ -5,7 +5,7 @@ import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 
 
-const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStatus}) => {
+const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenStatus }) => {
 
   // Usar el hook de swipe para scroll vertical
   const {
@@ -14,7 +14,8 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
     onTouchStart,
     onTouchEnd,
     onMouseDown,
-    getTransform
+    getTransform,
+    isDragging
   } = useSwipe({
     direction: 'vertical',
     enabled: true,
@@ -46,7 +47,15 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
     handleConfirm,
     handleCancel,
     areAllAdditionalsComplete
-  } = useOrderHandlers(organizedItems, expandedItemId, setExpandedItemId,updateKitchenStatus);
+  } = useOrderHandlers(organizedItems, expandedItemId, setExpandedItemId, updateKitchenStatus);
+
+
+  // Función modificada para manejar clicks
+  const handleItemClickWithDragCheck = (item, isAdditional = false) => {
+    if (!isDragging) {
+      handleItemClick(item, isAdditional);
+    }
+  };
 
   return (
     <>
@@ -70,10 +79,11 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
             <div key={item.uid} className="relative w-full">
               <MainItem
                 item={item}
-                onItemClick={handleItemClick}
+                onItemClick={handleItemClickWithDragCheck}
                 allAdditionalsComplete={allAdditionalsComplete}
                 hasAdditionals={hasAdditionals}
                 expandedItemId={expandedItemId}
+                isExpanded={isExpanded}
               />
 
               {isExpanded && !hasAdditionals && (
@@ -83,7 +93,9 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleCancel();
+                          if (!isDragging) {
+                            handleCancel();
+                          }
                         }}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
                         <X className="h-4 w-10" />
@@ -91,7 +103,9 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleConfirm(item);
+                          if (!isDragging) {
+                            handleConfirm(item);
+                          }
                         }}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
                       >

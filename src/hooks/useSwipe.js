@@ -13,13 +13,16 @@ export const useSwipe = ({
         minSwipeDistance: 70,
         resistanceFactor: 0.3,
         transitionDuration: 250,
-        dragSensitivity: 1.5
+        dragSensitivity: 1.5,
+        dragThreshold: 10
     };
 
     const [touchStart, setTouchStart] = useState(null);
     const [touchEnd, setTouchEnd] = useState(null);
     const [dragOffset, setDragOffset] = useState(0);
+    const [isDragging, setIsDragging] = useState(false);
     const containerRef = useRef(null);
+    const initialTouchRef = useRef(null);
 
     // En el useSwipe.js
     useEffect(() => {
@@ -33,7 +36,13 @@ export const useSwipe = ({
             if (direction === 'vertical') {
                 const touch = e.touches[0];
                 const currentY = touch.clientY;
+                const initialY = initialTouchRef.current;
                 const deltaY = touchStart - currentY;
+
+                //verificar si el movimiento supera el umbral
+                if(Math.abs(currentY - initialY) > config.dragThreshold){
+                    setIsDragging(true);
+                }
 
                 // Scroll directo basado en el movimiento del dedo
                 container.scrollTop += deltaY;
