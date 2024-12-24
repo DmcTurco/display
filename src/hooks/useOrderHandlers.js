@@ -1,39 +1,56 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 
 
 
-export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId,updateKitchenStatus) => {
+export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItemId, updateKitchenStatus) => {
 
   const lastTapRef = useRef(0);
   const tapTimeoutRef = useRef(null);
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-  const kitchen_cd = config.cd; 
+  const kitchen_cd = config.cd;
 
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      if (tapTimeoutRef.current) {
+        clearTimeout(tapTimeoutRef.current);
+      }
+    };
+  }, []); // Se ejecuta solo al desmontar
 
   const areAllAdditionalsComplete = (additionalItems) => {
     return additionalItems.every((item) => item.kitchen_status === 1);
   };
 
-  const checkAndUpdateParent = async (parentId) => {
-    const parent = organizedItems[parentId];
-    if (parent && areAllAdditionalsComplete(parent.additionalItems)) {
-      try {
-        await updateKitchenStatus(parent.id, 1, kitchen_cd);
-      } catch (error) {
-        console.error('Error al actualizar el estado del padre:', error);
-      }
-    }
-  };
 
   const handleConfirm = async (item, isAdditional) => {
     try {
 
-      await updateKitchenStatus(item.id, 1, kitchen_cd);
+      if (isAdditional && item.pid) {
+
+        const parent = organizedItems[item.pid];
+        const otherComplete = parent.additionalItems
+          .filter(siblingItem => siblingItem.id !== item.id)
+          .every(siblingItem => siblingItem.kitchen_status === 1);
+
+        if (otherComplete) {
+          console.log('Todos los hermanos completos, actualizando padre e hijo');
+          await Promise.all([
+            updateKitchenStatus(item.id, 1, kitchen_cd),
+            updateKitchenStatus(parent.id, 1, kitchen_cd)
+          ]);
+        } else {
+          console.log('Actualizando solo el hijo');
+          await updateKitchenStatus(item.id, 1, kitchen_cd);
+        }
+
+
+      } else {
+        await updateKitchenStatus(item.id, 1, kitchen_cd);
+      }
+
       setExpandedItemId(null);
 
-      if (isAdditional && item.pid) {
-        await checkAndUpdateParent(item.pid);
-      }
     } catch (error) {
       console.error('Error al actualizar el estado en useOrderHandlers :', error);
     }
@@ -86,11 +103,11 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
       }
       lastTapRef.current = now;
 
-    }else{
+    } else {
       //Para items adicionales
-      if(expandedItemId && expandedItemId !== item.uid){
+      if (expandedItemId && expandedItemId !== item.uid) {
         setExpandedItemId(item.uid);// Cambia al nuevo item
-      }else{
+      } else {
         setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
       }
     }

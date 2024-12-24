@@ -19,7 +19,7 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime, e
   };
 
   return (
-    <div className={`rounded-lg shadow-md flex-shrink-0 w-full h-[calc(80vh-4rem)] flex flex-col ${getStatusColor()}`}>
+    <div className={`rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col ${getStatusColor()}`}>
       <div className="p-2 sm:p-2">
         <OrderHeader
           time={time}
@@ -31,7 +31,12 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime, e
         />
       </div>
       <div className="p-2 sm:p-2 flex-1 overflow-hidden"> {/* Cambiamos a overflow-hidden */}
-        <OrderItems items={items} expandedItemId={expandedItemId} setExpandedItemId={setExpandedItemId} updateKitchenStatus={updateKitchenStatus}/>
+        <OrderItems 
+          items={items} 
+          expandedItemId={expandedItemId} 
+          setExpandedItemId={setExpandedItemId} 
+          updateKitchenStatus={updateKitchenStatus}
+        />
       </div>
       {/* <div className="p-1 sm:p-1 mt-auto">
         <ActionButton status={status} />

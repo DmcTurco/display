@@ -54,62 +54,56 @@ const OrderGrid = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStat
     };
 
     return (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-screen w-full">
             <div
                 ref={containerRef}
-                className="max-w-[1600px] mx-auto w-full px-4 h-full relative"
+                className="flex-1 w-full relative overflow-hidden"
                 onTouchStart={onTouchStart}
                 onTouchEnd={onTouchEnd}
                 onMouseDown={onMouseDown}
             >
-                <div className="relative w-full h-full overflow-hidden">
-                    <div
-                        className="absolute flex h-full"
-                        style={{
-                            transform: getTransform(),
-                            transition: touchStart ? 'none' : `transform ${transitionDuration}ms ease-out`,
-                            width: `${totalPages * 100}%`,
-                        }}
-                    >
-                        {Array.from({ length: totalPages }).map((_, index) => {
-                            return (
-                                <div
-                                    key={index}
-                                    className="float-left h-full flex-shrink-0"
-                                    style={{
-                                        width: `${60 / totalPages}%`,
-                                    }}
-                                >
-                                    <div className="grid grid-cols-4 grid-rows-2 gap-4 h-full p-2">
-                                        {getPageOrders(index + 1).map(order => (
-                                            <div
-                                                key={`${order.order_main_cd}_${order.order_count}`}
-                                                className="h-full"
-                                            >
-                                                {order && (
-                                                    <OrderGridCard
-                                                        time={order.formatted_time}
-                                                        type={order.type}
-                                                        number={`${order.order_main_cd}-${order.order_count}`}
-                                                        customer={order.table_name}
-                                                        items={order.items}
-                                                        status={order.status}
-                                                        elapsedTime={order.elapsedTime}
-                                                        expandedItemId={expandedItemId}
-                                                        setExpandedItemId={setExpandedItemId}
-                                                        updateKitchenStatus={updateKitchenStatus}
-                                                    />
-                                                )}
-                                            </div>
-                                        ))}
+                <div 
+                    className="absolute flex h-full w-full"
+                    style={{
+                        transform: getTransform(),
+                        transition: touchStart ? 'none' : `transform ${transitionDuration}ms ease-out`,
+                        width: `${totalPages * 100}%`,
+                    }}
+                >
+                    {Array.from({ length: totalPages }).map((_, index) => (
+                        <div
+                            key={index}
+                            className="float-left h-full flex-shrink-0 w-full"
+                            style={{
+                                width: `${100 / totalPages}%`,
+                            }}
+                        >
+                            <div className="grid grid-cols-4 grid-rows-2 gap-3 h-full p-4">
+                                {getPageOrders(index + 1).map(order => (
+                                    <div
+                                        key={`${order.order_main_cd}_${order.order_count}`}
+                                        className="h-full w-full"
+                                    >
+                                        {order && (
+                                            <OrderGridCard
+                                                time={order.formatted_time}
+                                                type={order.type}
+                                                number={`${order.order_main_cd}-${order.order_count}`}
+                                                customer={order.table_name}
+                                                items={order.items}
+                                                status={order.status}
+                                                elapsedTime={order.elapsedTime}
+                                                expandedItemId={expandedItemId}
+                                                setExpandedItemId={setExpandedItemId}
+                                                updateKitchenStatus={updateKitchenStatus}
+                                            />
+                                        )}
                                     </div>
-                                </div>
-                            );
-                        })}
-
-                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    ))}
                 </div>
-
 
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
                     bg-black/60 text-white px-3 py-1 rounded-full text-sm 

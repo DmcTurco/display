@@ -52,7 +52,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId,updateKitchenStat
     <>
       <div
         ref={containerRef}
-        className="space-y-2 sm:space-y-3 md:space-y-4 w-full max-w-2xl mx-auto px-2 sm:px-4 max-h-[calc(100vh-350px)] overflow-y-auto"
+        className="space-y-2 sm:space-y-3 md:space-y-2 w-full max-w-2xl mx-auto px-1 sm:px-1 max-h-[calc(100vh-260px)] overflow-y-auto"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}

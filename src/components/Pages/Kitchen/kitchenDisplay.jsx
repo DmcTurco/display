@@ -99,8 +99,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-pulse">
             <FaWifi className="text-red-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">Sin conexión a Internet</p>
-            <p className="text-sm text-gray-500">Por favor, verifica tu conexión.</p>
+            <p className="text-2xl font-semibold text-gray-700">インターネット接続がありません</p>
+            <p className="text-sm text-gray-500">接続を確認してください。</p>
           </div>
         </div>
       );
@@ -111,7 +111,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-pulse">
             <FaServer className="text-yellow-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">Error de conexión con el servidor</p>
+            <p className="text-2xl font-semibold text-gray-700">サーバー接続エラー</p>
             <p className="text-sm text-gray-500">{error}</p>
           </div>
         </div>
@@ -124,8 +124,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
         <div className="flex items-center justify-center h-full">
           <div className="text-center">
             <FaSpinner className="text-blue-500 text-6xl animate-spin mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">Cargando pedidos...</p>
-            <p className="text-sm text-gray-500">Por favor, espere un momento.</p>
+            <p className="text-2xl font-semibold text-gray-700">読み込み中</p>
+            <p className="text-sm text-gray-500">お待ちください</p>
           </div>
         </div>
       );
@@ -136,8 +136,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-bounce">
             <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">No hay órdenes disponibles</p>
-            <p className="text-sm text-gray-500">Por favor, inténtalo más tarde.</p>
+            <p className="text-2xl font-semibold text-gray-700">注文データがありません</p>
           </div>
         </div>
       );
