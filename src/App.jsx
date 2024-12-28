@@ -7,7 +7,6 @@ function App() {
   return (
     <BrowserRouter basename="/kitchen_display/tablet/">
       <Routes>
-        <Route path="/" element={<MainLayout content="kitchen" />} />
         <Route path="/kitchen/:uid" element={<MainLayout content="kitchen" />} />
         <Route path="/config" element={<MainLayout content="config" />} />
       </Routes>

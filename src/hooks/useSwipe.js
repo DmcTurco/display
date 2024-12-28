@@ -79,6 +79,8 @@ export const useSwipe = ({
             (direction === 'horizontal' ? e.clientX : e.clientY);
         setTouchStart(point);
         setTouchEnd(point);
+        initialTouchRef.current = point;
+        setIsDragging(false);
     };
 
     const onTouchEnd = () => {
@@ -88,23 +90,21 @@ export const useSwipe = ({
         const isLeftSwipe = distance > config.minSwipeDistance; // Usar config
         const isRightSwipe = distance < -config.minSwipeDistance; // Usar config
 
-        if (direction === 'horizontal') {
-            if (isLeftSwipe && onSwipeLeft) {
-                onSwipeLeft();
-            } else if (isRightSwipe && onSwipeRight) {
-                onSwipeRight();
-            }
-        } else {
-            if (isLeftSwipe && onSwipeLeft) {
-                onSwipeLeft();
-            } else if (isRightSwipe && onSwipeRight) {
-                onSwipeRight();
+
+        if (!isDragging) {
+            if (direction === 'horizontal') {
+                if (isLeftSwipe && onSwipeLeft) {
+                    onSwipeLeft();
+                } else if (isRightSwipe && onSwipeRight) {
+                    onSwipeRight();
+                }
             }
         }
 
         setTouchStart(null);
         setTouchEnd(null);
         setDragOffset(0);
+        setIsDragging(false);
     };
 
     const onMouseMove = (e) => {
@@ -112,6 +112,10 @@ export const useSwipe = ({
         e.preventDefault();
         const point = direction === 'horizontal' ? e.clientX : e.clientY;
         setTouchEnd(point);
+
+        if(Math.abs(point - initialTouchRef.current) > config.dragThreshold){
+            setIsDragging(true);
+        }
 
         const currentOffset = (touchStart - point) * config.dragSensitivity; // Usar config
 
@@ -153,6 +157,7 @@ export const useSwipe = ({
         onTouchEnd,
         onMouseDown,
         getTransform,
+        isDragging,
         transitionDuration: config.transitionDuration
     };
 };

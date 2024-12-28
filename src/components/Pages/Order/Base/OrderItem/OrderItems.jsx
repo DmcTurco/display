@@ -51,9 +51,9 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
 
 
   // Función modificada para manejar clicks
-  const handleItemClickWithDragCheck = (item, isAdditional = false) => {
+  const handleItemClickWithDragCheck = (item, isAdditional = false, isConfirm = false, isCancel = false) => {
     if (!isDragging) {
-      handleItemClick(item, isAdditional);
+      handleItemClick(item, isAdditional, isConfirm, isCancel);
     }
   };
 

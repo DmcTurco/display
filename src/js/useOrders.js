@@ -23,19 +23,36 @@ const calculateElapsedTime = (recordDate) => {
     return Math.floor((currentTime - orderTime) / (1000 * 60));
 };
 
-const determineStatus = (recordDate, currentStatus, itemStatus = '') => {
+const determineStatus = (recordDate, currentStatus, kitchenStatus = 0, servingStatus = 0) => {
     const elapsedMinutes = calculateElapsedTime(recordDate);
+    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    const type = config.type || 1;
 
-    if (itemStatus === 1) {
-        return 'en-progreso';
+    if (type === 2) { // Serving
+        if (servingStatus === 1) return 'servido';
+        if (kitchenStatus === 1) return 'listo-para-servir';
+        return 'en-cocina';
+    } else { // Kitchen
+        if (kitchenStatus === 1) return 'en-progreso';
+        if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) return 'urgente';
+        return currentStatus;
     }
 
-    if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) {
-        return 'urgente';
-    }
-    
-    return currentStatus;
-};
+}
+
+// const determineStatus = (recordDate, currentStatus, itemStatus = '') => {
+//     const elapsedMinutes = calculateElapsedTime(recordDate);
+
+//     if (itemStatus === 1) {
+//         return 'en-progreso';
+//     }
+
+//     if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) {
+//         return 'urgente';
+//     }
+
+//     return currentStatus;
+// };
 
 export function useOrders() {
     const [orders, setOrders] = useState([]);
@@ -59,6 +76,7 @@ export function useOrders() {
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
+            const allServed = mappedItems.every(item => item.serving_status === 1);
 
             acc[uniqueId] = {
                 order_main_cd: order.order_main_cd,
@@ -69,7 +87,8 @@ export function useOrders() {
                 status: determineStatus(
                     order.record_date,
                     'no-iniciado',
-                    hasInProgressItem ? 1 : 0
+                    hasInProgressItem ? 1 : 0,
+                    allServed ? 1 : 0
                 ),
                 elapsedTime: calculateElapsedTime(order.record_date),
                 items: mappedItems,
@@ -86,15 +105,20 @@ export function useOrders() {
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
-            
+
             if (!kitchenCd) {
                 throw new Error('kitchen_cd es requerido');
             }
 
+            // Obtener el tipo del localStorage
+            const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+            const type = config.type || 1; // Por defecto kitchen (1) si no hay tipo
+
             setLoading(true);
             setKitchenCode(kitchenCd);
-
-            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}`);
+            // console.log('kitchen : ', kitchenCd);
+            // console.log('type : ', type);
+            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&type=${type}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
 
             const newData = await response.json();
@@ -104,6 +128,7 @@ export function useOrders() {
                 setOrders([]);
                 return;
             }
+            // console.log(newData.data);
             const processedNewData = processOrders(newData.data);
 
             setOrders(processedNewData);
@@ -122,25 +147,30 @@ export function useOrders() {
 
     const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
-            const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
+            const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+            const type = config.type || 1;
+    
+            const endpoint = type === 2 ? 'update_serving_status' : 'update_kitchen_status';
+    
+            const response = await fetch(`${API_URL}?action=${endpoint}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     order_detail_cd: orderDetailId,
-                    kitchen_status: newStatus,
+                    [type === 2 ? 'serving_status' : 'kitchen_status']: newStatus,
                 }),
             });
     
-            if (!response.ok) throw new Error('Error al actualizar el estado use Orders');
+            if (!response.ok) throw new Error(`Error al actualizar el estado ${type === 2 ? 'serving' : 'kitchen'}`);
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
-
+    
             if (kitchen_cd) {
                 await getTodayOrders(kitchen_cd);
             }
-
+    
         } catch (error) {
             setError(error.message);
             throw error;
@@ -150,18 +180,16 @@ export function useOrders() {
 
     useEffect(() => {
         let intervalId = null;
-    
+
         if (kitchenCode) {
             getTodayOrders(kitchenCode);
             intervalId = setInterval(() => {
-                console.log("Obteniendo datos actualizados...");
                 getTodayOrders(kitchenCode);
             }, 10000);
         }
-    
+
         return () => {
             if (intervalId) {
-                console.log("Limpiando intervalo");
                 clearInterval(intervalId);
             }
         };

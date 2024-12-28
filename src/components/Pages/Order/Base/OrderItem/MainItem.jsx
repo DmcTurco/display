@@ -8,9 +8,10 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
 
   return (
     <div
-      onClick={(e) => {
+      onClick={() => {
+
         if (!isCompleted && (!hasAdditionals || allAdditionalsComplete)) {
-          onItemClick(item, false);
+          onItemClick(item, false)
         }
       }}
       onTouchStart={() => setIsTouching(true)}
@@ -20,10 +21,11 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
         rounded-lg p-3 shadow-sm
         transition-all duration-300
         ${isCompleted ? "bg-green-200" : "bg-white"}
-        ${!isCompleted && (!hasAdditionals || allAdditionalsComplete) ? 
-          "touch-none hover:bg-green-200 active:bg-green-200" : ""}
+        ${!isCompleted && (!hasAdditionals || allAdditionalsComplete) ?
+          "touch-none hover:bg-gray-200 active:bg-gray-200" : ""}
         ${isCompleted || (hasAdditionals && !allAdditionalsComplete) ? "" : "cursor-pointer"}
         ${isExpanded ? "rounded-b-none border-b border-gray-200" : ""}
+        ${isTouching ? "bg-white" : ""}
       `}
     >
       {/* Item principal */}

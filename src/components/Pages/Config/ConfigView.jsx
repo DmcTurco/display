@@ -14,13 +14,18 @@ const ConfigView = () => {
         localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
     };
 
-    const handleBack = () => {
-        if (config.uid) {
-            navigate(`/kitchen/${config.uid}`);
-        } else {
-            navigate('/kitchen');
-        }
-    };
+    // const handleBack = () => {
+    //     if (config.uid) {
+    //         navigate(`/kitchen/${config.uid}`);
+    //     } else {
+    //         navigate('/kitchen');
+    //     }
+    // };
+
+    const typeLabels = {
+        1: '調理',
+        2: '配膳'
+    }
 
     return (
         <div className="p-4">
@@ -39,7 +44,7 @@ const ConfigView = () => {
                     </div>
                     <div className="grid grid-cols-2">
                         <dt className="font-medium text-gray-600">タイプ:</dt>
-                        <dd>{config.type}</dd>
+                        <dd>{typeLabels[config.type] || config.type}</dd>
                     </div>
                     {/* <div className="grid grid-cols-2">
                         <dt className="font-medium text-gray-600">ステータス:</dt>

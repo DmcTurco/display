@@ -45,35 +45,56 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
     };
   }, [config?.cd, isOnline]);
 
-
   // Actualizar contadores
-  useEffect(() => {
-    if (!Array.isArray(orders) || orders.length === 0) {
+  useEffect(() =>{
+
+    if(orders && config?.type != 2){
+
+      const pendingOrders = orders.filter(order => order.status == 'no-iniciado').length;
+      const inProgressOrders = orders.filter(order => order.status === 'en-progreso').length;
+      const urgentOrders = orders.filter(order => order.status === 'urgente').length;
+
+      setPendingCount(pendingOrders);
+      setInProgressCount(inProgressOrders);
+      setUrgentCount(urgentOrders);
+
+    } else if (config?.type === 'serving') {
+      // Si es serving, establecer contadores en 0
       setPendingCount(0);
       setInProgressCount(0);
       setUrgentCount(0);
-      return;
     }
 
-    const counts = orders.reduce((acc, order) => {
-      switch (order.status) {
-        case 'no-iniciado':
-          acc.pending += 1;
-          break;
-        case 'en-progreso':
-          acc.inProgress += 1;
-          break;
-        case 'urgente':
-          acc.urgent += 1;
-          break;
-      }
-      return acc;
-    }, { pending: 0, inProgress: 0, urgent: 0 });
+  }, [orders, config?.type]);
 
-    setPendingCount(counts.pending);
-    setInProgressCount(counts.inProgress);
-    setUrgentCount(counts.urgent);
-  }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
+  // Actualizar contadores
+  // useEffect(() => {
+  //   if (!Array.isArray(orders) || orders.length === 0) {
+  //     setPendingCount(0);
+  //     setInProgressCount(0);
+  //     setUrgentCount(0);
+  //     return;
+  //   }
+
+  //   const counts = orders.reduce((acc, order) => {
+  //     switch (order.status) {
+  //       case 'no-iniciado':
+  //         acc.pending += 1;
+  //         break;
+  //       case 'en-progreso':
+  //         acc.inProgress += 1;
+  //         break;
+  //       case 'urgente':
+  //         acc.urgent += 1;
+  //         break;
+  //     }
+  //     return acc;
+  //   }, { pending: 0, inProgress: 0, urgent: 0 });
+
+  //   setPendingCount(counts.pending);
+  //   setInProgressCount(counts.inProgress);
+  //   setUrgentCount(counts.urgent);
+  // }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
 
 
   const renderOrderLayout = () => {

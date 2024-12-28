@@ -22,7 +22,7 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
         {headerTitle}
       </h1>
       
-      {!isConfigPage && (
+      {!isConfigPage && config.type == 1 && (
         <div className="flex items-center space-x-6">
           <div className="flex items-center bg-gray-100 p-2 rounded-lg">
             <PauseCircle className="w-6 h-6 mr-2 text-gray-600" />
