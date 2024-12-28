@@ -3,19 +3,38 @@ import OrderHeader from '../Base/OrderHeader';
 import OrderItems from '../Base/OrderItem/OrderItems';
 import ActionButton from '../Base/ActionButton';
 
-function OrderCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId,updateKitchenStatus }) {
+function OrderCard({ time, type, type_display, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId,updateKitchenStatus }) {
 
   const getStatusColor = () => {
-    switch (status) {
-      case 'urgente':
-        return 'bg-red-100 border-l-4 border-red-500';
-      case 'en-progreso':
-        return 'bg-yellow-100 border-l-4 border-yellow-500';
-      case 'listo':
-        return 'bg-green-100 border-l-4 border-green-500';
-      default:
-        return 'bg-gray-200';
+
+    if(type_display == 2){
+
+      switch (status) {
+        case 'listo-para-servir':
+          return 'bg-green-100 border-l-4 border-green-500';
+        case 'servido':
+          return 'bg-blue-100 border-l-4 border-blue-500';
+        case 'en-cocina':
+          return 'bg-yellow-100 border-l-4 border-yellow-500';
+        default:
+          return 'bg-gray-200';
+      }
+
+    }else{
+
+      switch (status) {
+        case 'urgente':
+          return 'bg-red-100 border-l-4 border-red-500';
+        case 'en-progreso':
+          return 'bg-yellow-100 border-l-4 border-yellow-500';
+        case 'listo':
+          return 'bg-green-100 border-l-4 border-green-500';
+        default:
+          return 'bg-gray-200';
+      }
+      
     }
+
   };
 
   return (
@@ -36,6 +55,7 @@ function OrderCard({ time, type, number, customer, items, status, elapsedTime, e
           expandedItemId={expandedItemId} 
           setExpandedItemId={setExpandedItemId} 
           updateKitchenStatus={updateKitchenStatus}
+          type_display={type_display}
         />
       </div>
       {/* <div className="p-1 sm:p-1 mt-auto">

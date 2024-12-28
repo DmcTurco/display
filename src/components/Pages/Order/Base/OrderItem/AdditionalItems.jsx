@@ -66,8 +66,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId }) => {
                     }}
                     className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2 py-1 text-xs bg-white rounded border hover:bg-gray-50"
                   >
-                    <X className="h-3 w-3" />
-                    <span>No</span>
+                    <X className="h-4 w-10" />
                   </button>
                   <button
                     onClick={(e) => {
@@ -77,7 +76,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId }) => {
                     className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600"
                   >
                     <ChefHat className="h-3 w-3" />
-                    <span>¡Listo!</span>
+                    <span>完了</span>
                   </button>
                 </div>
               </div>

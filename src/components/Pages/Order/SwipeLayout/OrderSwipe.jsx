@@ -106,6 +106,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                                             <OrderCard
                                                 time={order.formatted_time}
                                                 type={order.type}
+                                                type_display={order.type_display}
                                                 number={`${order.order_main_cd}-${order.order_count}`}
                                                 customer={order.table_name}
                                                 items={order.items}

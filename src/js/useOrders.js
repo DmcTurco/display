@@ -6,7 +6,7 @@ if (!API_URL) {
     API_URL = buildApiUrl();
     localStorage.setItem('apiUrl', API_URL);
 }
-
+const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 const formatTime = (dateString) => {
     return new Date(dateString).toLocaleTimeString('es-ES', {
         hour: '2-digit',
@@ -25,7 +25,6 @@ const calculateElapsedTime = (recordDate) => {
 
 const determineStatus = (recordDate, currentStatus, kitchenStatus = 0, servingStatus = 0) => {
     const elapsedMinutes = calculateElapsedTime(recordDate);
-    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const type = config.type || 1;
 
     if (type === 2) { // Serving
@@ -40,26 +39,13 @@ const determineStatus = (recordDate, currentStatus, kitchenStatus = 0, servingSt
 
 }
 
-// const determineStatus = (recordDate, currentStatus, itemStatus = '') => {
-//     const elapsedMinutes = calculateElapsedTime(recordDate);
-
-//     if (itemStatus === 1) {
-//         return 'en-progreso';
-//     }
-
-//     if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) {
-//         return 'urgente';
-//     }
-
-//     return currentStatus;
-// };
 
 export function useOrders() {
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
-
+    const type = config.type || 1;
 
     const processOrders = (data) => {
         const processedOrders = data.reduce((acc, order) => {
@@ -73,6 +59,7 @@ export function useOrders() {
                 pid: detail.pid,
                 group_id: detail.group_id || null,
                 kitchen_status: detail.kitchen_status,
+                serving_status: detail.serving_status,
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
@@ -84,6 +71,7 @@ export function useOrders() {
                 formatted_time: formatTime(order.record_date),
                 table_name: order.table_name || 'Sin mesa',
                 type: order.type || 1,
+                type_display: config.type || 1,
                 status: determineStatus(
                     order.record_date,
                     'no-iniciado',
@@ -111,7 +99,6 @@ export function useOrders() {
             }
 
             // Obtener el tipo del localStorage
-            const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
             const type = config.type || 1; // Por defecto kitchen (1) si no hay tipo
 
             setLoading(true);

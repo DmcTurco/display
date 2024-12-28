@@ -67,35 +67,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
   }, [orders, config?.type]);
 
-  // Actualizar contadores
-  // useEffect(() => {
-  //   if (!Array.isArray(orders) || orders.length === 0) {
-  //     setPendingCount(0);
-  //     setInProgressCount(0);
-  //     setUrgentCount(0);
-  //     return;
-  //   }
-
-  //   const counts = orders.reduce((acc, order) => {
-  //     switch (order.status) {
-  //       case 'no-iniciado':
-  //         acc.pending += 1;
-  //         break;
-  //       case 'en-progreso':
-  //         acc.inProgress += 1;
-  //         break;
-  //       case 'urgente':
-  //         acc.urgent += 1;
-  //         break;
-  //     }
-  //     return acc;
-  //   }, { pending: 0, inProgress: 0, urgent: 0 });
-
-  //   setPendingCount(counts.pending);
-  //   setInProgressCount(counts.inProgress);
-  //   setUrgentCount(counts.urgent);
-  // }, [orders, setPendingCount, setInProgressCount, setUrgentCount]);
-
 
   const renderOrderLayout = () => {
     const layoutProps = {
