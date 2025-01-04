@@ -78,7 +78,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     setExpandedItemId(null);
   };
 
-  const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false) => {
+  const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false, isServing = false) => {
 
     // No procesar si es un item principal con hijos
 

@@ -5,7 +5,7 @@ import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 
 
-const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenStatus,type_display }) => {
+const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenStatus, type_display }) => {
 
   // Usar el hook de swipe para scroll vertical
   const {
@@ -51,9 +51,9 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
 
 
   // Función modificada para manejar clicks
-  const handleItemClickWithDragCheck = (item, isAdditional = false, isConfirm = false, isCancel = false) => {
+  const handleItemClickWithDragCheck = (item, isAdditional = false, isConfirm = false, isCancel = false, isServing = false) => {
     if (!isDragging) {
-      handleItemClick(item, isAdditional, isConfirm, isCancel);
+      handleItemClick(item, isAdditional, isConfirm, isCancel, isServing);
     }
   };
 
@@ -74,6 +74,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
           const hasAdditionals = item.additionalItems.length > 0;
           const allAdditionalsComplete = hasAdditionals && areAllAdditionalsComplete(item.additionalItems);
           const isExpanded = expandedItemId === item.uid;
+          // const isServing = type_display == 2;
 
           return (
             <div key={item.uid} className="relative w-full">
@@ -86,41 +87,103 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
                 isExpanded={isExpanded}
                 type_display={type_display}
               />
-
               {isExpanded && !hasAdditionals && (
                 <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className="flex gap-2 w-full sm:w-auto">
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isDragging) {
-                                  handleCancel();
-                                }
-                              }}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isDragging) {
+                            handleCancel();
+                          }
+                        }}
                         className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
-                              <X className="h-4 w-10" />
-                            </button>
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (!isDragging) {
-                                  handleConfirm(item);
-                                }
-                              }}
-                              className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                            >
-                              <ChefHat className="h-4 w-4" />
-                              <span>完了</span>
-                            </button>
+                        <X className="h-4 w-10" />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!isDragging) {
+                            handleConfirm(item);
+                          }
+                        }}
+                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                      >
+                        <ChefHat className="h-4 w-4" />
+                        <span>完了</span>
+                      </button>
                     </div>
                   </div>
                 </div>
               )}
+              {/* {isServing ? (
+                isExpanded && !hasAdditionals && (
+                  <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDragging) {
+                              handleCancel();
+                            }
+                          }}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
+                          <X className="h-4 w-10" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDragging) {
+                              handleConfirm(item);
+                            }
+                          }}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                          <ChefHat className="h-4 w-4" />
+                          <span>完了</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              ) : (
+                isExpanded && !hasAdditionals && (
+                  <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div className="flex gap-2 w-full sm:w-auto">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDragging) {
+                              handleCancel();
+                            }
+                          }}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
+                          <X className="h-4 w-10" />
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isDragging) {
+                              handleConfirm(item);
+                            }
+                          }}
+                          className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+                        >
+                          <ChefHat className="h-4 w-4" />
+                          <span>完了</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )
+              )} */}
             </div>
           );
         })}
-      </div>
+      </div >
     </>
   );
 };

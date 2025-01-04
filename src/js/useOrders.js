@@ -60,6 +60,7 @@ export function useOrders() {
                 group_id: detail.group_id || null,
                 kitchen_status: detail.kitchen_status,
                 serving_status: detail.serving_status,
+                modification: detail.modification,
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
@@ -117,7 +118,6 @@ export function useOrders() {
             }
             // console.log(newData.data);
             const processedNewData = processOrders(newData.data);
-
             setOrders(processedNewData);
 
             setError(null);
@@ -136,29 +136,33 @@ export function useOrders() {
         try {
             const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
             const type = config.type || 1;
-    
-            const endpoint = type === 2 ? 'update_serving_status' : 'update_kitchen_status';
-    
-            const response = await fetch(`${API_URL}?action=${endpoint}`, {
+            const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
                     order_detail_cd: orderDetailId,
-                    [type === 2 ? 'serving_status' : 'kitchen_status']: newStatus,
+                    kitchen_status: newStatus,
+                    type: type  // Agregamos el type al body
                 }),
             });
-    
-            if (!response.ok) throw new Error(`Error al actualizar el estado ${type === 2 ? 'serving' : 'kitchen'}`);
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                console.error('Error response:', errorData); // Para debugging
+                throw new Error(JSON.stringify(errorData));
+            }
             const data = await response.json();
             if (data.status === 'error') throw new Error(data.message);
-    
+
             if (kitchen_cd) {
                 await getTodayOrders(kitchen_cd);
             }
-    
+
         } catch (error) {
+            console.error('Error completo:', error);
+            console.error('Request data:', { orderDetailId, newStatus, type: config.type }); // Para debugging
             setError(error.message);
             throw error;
         }

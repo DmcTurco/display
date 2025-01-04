@@ -9,12 +9,16 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   const isServing = type_display == 2;
   // Para serving, el item está disponible si está completado en cocina pero no servido
   const isClickable = isServing ? (isCompleted && !isServed) : (!isCompleted && (!hasAdditionals || allAdditionalsComplete));
-
+  // handleItemClick(item, isAdditional, isConfirm, isCancel, isServing);
   return (
     <div
       onClick={() => {
         if (isClickable) {
-          onItemClick(item, false);
+          if (isServing) {
+            onItemClick(item, false, false, false, true);
+          } else {
+            onItemClick(item, false);
+          }
         }
       }}
       onTouchStart={() => setIsTouching(true)}
@@ -23,7 +27,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
       className={`
         rounded-lg p-3 shadow-sm
         transition-all duration-300
-        ${isServing 
+        ${isServing
           ? (isServed ? "bg-blue-200" : "bg-white") // En serving: azul si está servido, blanco si no
           : (isCompleted ? "bg-green-200" : "bg-white") // En kitchen: verde si está completado, blanco si no
         }
@@ -38,11 +42,14 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
           <span className="font-medium text-sm sm:text-base text-gray-700 whitespace-nowrap">
             {item.quantity}
           </span>
+          {item.modification && item.modification !== "　" && (
+            <span className="text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center">
+              {item.modification}
+            </span>
+          )}
           <span className="flex-1 text-sm sm:text-base break-words">{item.name}</span>
         </div>
-        {isServing 
-          ? (isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />)
-          : ((isCompleted || allAdditionalsComplete) && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />)
+        {isServing ? (isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />) : ((isCompleted || allAdditionalsComplete) && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />)
         }
       </div>
 
@@ -54,6 +61,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
             onItemClick={onItemClick}
             expandedItemId={expandedItemId}
             allAdditionalsComplete={allAdditionalsComplete}
+            type_display={type_display}
           />
         </div>
       )}
