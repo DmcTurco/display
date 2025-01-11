@@ -22,6 +22,15 @@ const ConfigView = () => {
     //     }
     // };
 
+    const handleFontSizeChange = (event) => {
+        const updatedConfig = {
+            ...config,
+            fontSize: event.target.value
+        };
+        setConfig(updatedConfig);
+        localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
+    }
+
     const typeLabels = {
         1: '調理',
         2: '配膳'
@@ -55,6 +64,22 @@ const ConfigView = () => {
                         <dd>{config.uid}</dd>
                     </div>
 
+                    {/* Selector de tamaño de fuente */}
+                    <div className="grid grid-cols-2 items-center py-2">
+                        <span className="font-medium text-gray-700">
+                            文字サイズ:
+                        </span>
+                        <select
+                            value={config.fontSize || 'normal'}
+                            onChange={handleFontSizeChange}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                            <option value="small">小</option>
+                            <option value="normal">中</option>
+                            <option value="large">大</option>
+                        </select>
+                    </div>
+                    
                     {/* Layout Selector */}
                     {/* <div className="grid grid-cols-2 items-center py-2">
                         <span className="font-medium text-gray-700">

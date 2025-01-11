@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { CheckCircle2, X, ChefHat } from 'lucide-react';
 
-const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display }) => {
+const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, getFontSizeClass, getQuantityFontSizeClass }) => {
   // Referencias para el doble toque para cada item
   const lastTapsRef = useRef({});
   const tapTimeoutsRef = useRef({});
@@ -66,15 +66,15 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display }) =
               `}
             >
               <div className="flex gap-1">
-                <span className="font-medium text-sm sm:text-base text-gray-700 whitespace-nowrap">
+                <span className={`font-medium ${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap`}>
                   {additionalItem.quantity}
                 </span>
                 {additionalItem.modification && additionalItem.modification !== "　" && (
-                  <span className="text-xs bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center">
+                  <span className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center`}>
                     {additionalItem.modification}
                   </span>
                 )}
-                <span className="flex-1 text-sm sm:text-base">{additionalItem.name}</span>
+                <span className={`flex-1 ${getFontSizeClass()}`}>{additionalItem.name}</span>
               </div>
               {isAdditionalCompleted && (
                 <CheckCircle2 className={`h-3 w-3 ${isServing ? "text-blue-500" : "text-green-500"}`} />

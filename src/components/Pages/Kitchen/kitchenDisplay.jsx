@@ -21,11 +21,12 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
+    if (config) {  // Solo si hay config
     const handleOnline = () => {
       setIsOnline(true);
-      if (config?.cd) {
+      // if (config?.cd) {
         getTodayOrders(config.cd);
-      }
+      // }
     };
 
     const handleOffline = () => setIsOnline(false);
@@ -43,7 +44,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount })
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [config?.cd, isOnline]);
+  }
+  }, [config, isOnline]);
 
   // Actualizar contadores
   useEffect(() =>{
