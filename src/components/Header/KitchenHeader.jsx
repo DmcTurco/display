@@ -1,27 +1,50 @@
 import React from "react";
-import { AlertTriangle, Cog, PauseCircle, PlayCircle } from "lucide-react";
+import { AlertTriangle, Cog, PauseCircle, PlayCircle, RefreshCw } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useKitchenSetup } from "../../hooks/useKitchenSetup";
 
-const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPage }) => {
+const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPage, config }) => {
   // Obtener la configuración y el UID del localStorage
-  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-  const uid = localStorage.getItem('lastKitchenUID');
-  
-  const headerTitle = isConfigPage 
-    ? "設定" 
-    : (config.terminal_name || "Terminal Sin Nombre");
+  // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  // console.log('config',config);
+  // const uid = localStorage.getItem('lastKitchenUID');
+  const { initializeConfig } = useKitchenSetup();
+
+  const headerTitle = isConfigPage
+    ? "設定"
+    : (config?.terminal_name || "Terminal Sin Nombre");
 
   // Determinar la ruta de navegación basada en si estamos en la página de configuración
-  const navigationPath = isConfigPage 
-    ? `/kitchen/${uid}` 
+  const navigationPath = isConfigPage
+    ? `/kitchen/${config.uid}`
     : "/config";
+
+  const handleRefresh = async () => {
+    try {
+      await initializeConfig();
+      window.location.reload();
+    } catch (error) {
+      console.error('Error al actualizar configuración:', error);
+    }
+  };
 
   return (
     <header className="bg-gradient-to-t from-blue-500 to-blue-800 shadow-md rounded-lg p-4 flex justify-between items-center mb-4">
-      <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
-        {headerTitle}
-      </h1>
-      
+      <div className="flex items-center gap-2">
+        <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
+          {headerTitle}
+        </h1>
+        {!isConfigPage && (
+          <button
+            onClick={handleRefresh}
+            className="p-2 rounded-full hover:bg-blue-700 transition-colors"
+            title="Actualizar configuración"
+          >
+            <RefreshCw className="w-6 h-6 text-slate-100" />
+          </button>
+        )}
+      </div>
+
       {!isConfigPage && config.type == 1 && (
         <div className="flex items-center space-x-6">
           <div className="flex items-center bg-gray-100 p-2 rounded-lg">

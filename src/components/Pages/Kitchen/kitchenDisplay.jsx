@@ -1,56 +1,52 @@
 import React, { useState, useEffect } from "react";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
-import { useKitchenSetup } from "../../../hooks/useKitchenSetup";
+import { buildApiUrl, useKitchenSetup } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
 
-const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount }) => {
+const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const { orders, loading, error, getTodayOrders, updateKitchenStatus} =  useOrders();
-  const { config, initializeConfig } = useKitchenSetup();
+  const API_URL = buildApiUrl();
+  const { orders, loading, error, getTodayOrders, updateKitchenStatus } = useOrders(config, API_URL);
+  // const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const layoutType = (config?.layoutType || 'swipe');
-
-  // Inicializar configuración
-  useEffect(() => {
-    initializeConfig();
-  }, []);
-
+  
   // Manejar conexión y obtener órdenes
   useEffect(() => {
     if (config) {  // Solo si hay config
-    const handleOnline = () => {
-      setIsOnline(true);
-      // if (config?.cd) {
+      const handleOnline = () => {
+        setIsOnline(true);
+        // if (config?.cd) {
         getTodayOrders(config.cd);
-      // }
-    };
+        // }
+      };
 
-    const handleOffline = () => setIsOnline(false);
+      const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+      window.addEventListener('online', handleOnline);
+      window.addEventListener('offline', handleOffline);
 
-    if (config?.cd && isOnline) {
-      getTodayOrders(config.cd).finally(() => {
-        setIsInitialLoad(false);
-      });
+      if (config?.cd && isOnline) {
+        getTodayOrders(config.cd).finally(() => {
+          setIsInitialLoad(false);
+        });
+      }
+
+      return () => {
+        window.removeEventListener('online', handleOnline);
+        window.removeEventListener('offline', handleOffline);
+      };
     }
-
-    return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
-    };
-  }
   }, [config, isOnline]);
 
   // Actualizar contadores
-  useEffect(() =>{
+  useEffect(() => {
 
-    if(orders && config?.type != 2){
+    if (orders && config?.type != 2) {
 
       const pendingOrders = orders.filter(order => order.status == 'no-iniciado').length;
       const inProgressOrders = orders.filter(order => order.status === 'en-progreso').length;
