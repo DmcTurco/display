@@ -1,8 +1,37 @@
 import { ShoppingBag, Truck, Users } from "lucide-react";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import UrgentAlert from './UrgentAlert';
 
 const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
+  const [config, setConfig] = useState({});
+
+  useEffect(() => {
+    const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    setConfig(savedConfig);
+  }, []);
+
+  const getFontSizeClass = () => {
+    switch (config.fontSize) {
+      case 'small':
+        return 'text-xs sm:text-sm';
+      case 'large':
+        return 'text-base sm:text-lg';
+      default: // normal
+        return 'text-sm sm:text-base';
+    }
+  };
+
+  const getQuantityFontSizeClass = () => {
+    switch (config.fontSize) {
+      case 'small':
+        return 'text-xs sm:text-sm';
+      case 'large':
+        return 'text-base sm:text-lg';
+      default: // normal
+        return 'text-sm sm:text-base';
+    }
+  };
+
   const getTypeIcon = () => {
     switch (type) {
       case "delivery":
@@ -21,15 +50,15 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
       {/* Título con icono */}
       <div className="flex items-center justify-center gap-2">
         {getTypeIcon()}
-        <h2 className="text-sm sm:text-base font-bold text-gray-800">
-        テーブル : {customer}
+        <h2 className={`${getFontSizeClass()} font-bold text-gray-800`}>
+          テーブル : {customer}
         </h2>
       </div>
 
       {/* Información en una sola fila */}
       <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 px-1">
         <div className="flex items-center">
-          <span className="inline-flex items-center">
+          <span className={`${getQuantityFontSizeClass()} inline-flex items-center`}>
             {time}
             {status === 'urgente' && (
               <span className="ml-1 inline-flex items-center">
@@ -38,7 +67,7 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
             )}
           </span>
         </div>
-        <span>#{number}</span>
+        <span className={`${getQuantityFontSizeClass()}`}>#{number}</span>
       </div>
     </div>
   );
