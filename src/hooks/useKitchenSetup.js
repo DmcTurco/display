@@ -38,7 +38,6 @@ export function useKitchenSetup() {
             if (data.status !== 'ok') throw new Error(data.message);
 
             const configData = data.data;
-            // console.log('Nueva configuración recibida:', configData);
 
             localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configData));
             localStorage.setItem(LAST_UID_KEY, uid);
@@ -58,39 +57,10 @@ export function useKitchenSetup() {
     const initializeConfig = async () => {
         setLoading(true);
         try {
-            // Siempre limpiamos la configuración anterior
+
             clearConfig();
-            // Obtenemos nueva configuración
             await fetchConfig(uid);
             
-            // Primero limpiar todo si el UID cambió
-            // const lastUID = localStorage.getItem(LAST_UID_KEY);
-            // if (uid !== lastUID) {
-            //     console.log('UID diferente, limpiando configuración');
-            //     clearConfig();
-            // }
-
-            // const storedConfig = getStoredConfig();
-            
-            // // Si no hay config o UID es diferente, obtener nueva
-            // if (!storedConfig || uid !== lastUID) {
-            //     await fetchConfig(uid);
-            //     return;
-            // }
-
-            // // Verificar si el tipo cambió
-            // const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
-            // const newConfigData = await newConfigResponse.json();
-
-            // if (newConfigData.status === 'ok' && newConfigData.data.type !== storedConfig.type) {
-            //     console.log('Tipo diferente, actualizando config');
-            //     clearConfig();
-            //     await fetchConfig(uid);
-            // } else {
-            //     console.log('Usando config almacenada');
-            //     setConfig(storedConfig);
-            //     setIsConfigured(true);
-            // }
         } catch (err) {
             setError(err.message);
         } finally {
@@ -106,17 +76,6 @@ export function useKitchenSetup() {
         setIsConfigured(false);
         
     };
-
-    // // Efecto para detectar cambios de UID
-    // useEffect(() => {
-    //     if (uid) {
-    //         initializeConfig();
-    //     }
-    //     // Función de limpieza
-    //     return () => {
-    //         console.log('Limpiando efecto de UID');
-    //     };
-    // }, [uid]);
 
     return {
         config,

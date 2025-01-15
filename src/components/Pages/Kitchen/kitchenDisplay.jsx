@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
-import { buildApiUrl, useKitchenSetup } from "../../../hooks/useKitchenSetup";
+import { buildApiUrl } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
@@ -14,7 +14,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   const layoutType = (config?.layoutType || 'swipe');
-  
+
   // Manejar conexión y obtener órdenes
   useEffect(() => {
     if (config) {  // Solo si hay config

@@ -4,10 +4,7 @@ import { Link } from "react-router-dom";
 import { useKitchenSetup } from "../../hooks/useKitchenSetup";
 
 const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPage, config }) => {
-  // Obtener la configuración y el UID del localStorage
-  // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-  // console.log('config',config);
-  // const uid = localStorage.getItem('lastKitchenUID');
+
   const { initializeConfig } = useKitchenSetup();
 
   const headerTitle = isConfigPage
@@ -15,9 +12,7 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
     : (config?.terminal_name || "Terminal Sin Nombre");
 
   // Determinar la ruta de navegación basada en si estamos en la página de configuración
-  const navigationPath = isConfigPage
-    ? `/kitchen/${config.uid}`
-    : "/config";
+  const navigationPath = isConfigPage ? `/kitchen/${config.uid}` : `/config/${config.uid}`;
 
   const handleRefresh = async () => {
     try {
