@@ -1,18 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
 
 const ConfigView = () => {
     const navigate = useNavigate();
-    const [config, setConfig] = useState(JSON.parse(localStorage.getItem('kitchenConfig')) || {});
+    // const [config, setConfig] = useState(JSON.parse(localStorage.getItem('kitchenConfig')) || {});
+    const { updateCustomSettings } = useKitchenSetup();
 
+    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    // const handleLayoutChange = (event) => {
+    //     const updatedConfig = {
+    //         ...config,
+    //         layoutType: event.target.value
+    //     };
+    //     setConfig(updatedConfig);
+    //     localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
+    // };
     const handleLayoutChange = (event) => {
-        const updatedConfig = {
-            ...config,
+        updateCustomSettings({
             layoutType: event.target.value
-        };
-        setConfig(updatedConfig);
-        localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
+        });
     };
+
 
     // const handleBack = () => {
     //     if (config.uid) {
@@ -23,13 +32,19 @@ const ConfigView = () => {
     // };
 
     const handleFontSizeChange = (event) => {
-        const updatedConfig = {
-            ...config,
+        updateCustomSettings({
             fontSize: event.target.value
-        };
-        setConfig(updatedConfig);
-        localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
-    }
+        });
+    };
+
+    // const handleFontSizeChange = (event) => {
+    //     const updatedConfig = {
+    //         ...config,
+    //         fontSize: event.target.value
+    //     };
+    //     setConfig(updatedConfig);
+    //     localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
+    // }
 
     const typeLabels = {
         1: '調理',
@@ -79,9 +94,9 @@ const ConfigView = () => {
                             <option value="large">大</option>
                         </select>
                     </div>
-                    
+
                     {/* Layout Selector */}
-                    {/* <div className="grid grid-cols-2 items-center py-2">
+                    <div className="grid grid-cols-2 items-center py-2">
                         <span className="font-medium text-gray-700">
                             表示種別:
                         </span>
@@ -90,10 +105,11 @@ const ConfigView = () => {
                             onChange={handleLayoutChange}
                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
                         >
-                            <option value="swipe">Vista Deslizable</option>
-                            <option value="grid">Vista Cuadrícula (4x2)</option>
+                            <option value="swipe">Orden de Pedido</option>
+                            <option value="table">Orden por Menu</option>
+                            <option value="grid">Orden por Mesa</option>
                         </select>
-                    </div> */}
+                    </div>
                 </dl>
             </div>
 

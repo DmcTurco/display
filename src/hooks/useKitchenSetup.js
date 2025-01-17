@@ -38,7 +38,6 @@ export function useKitchenSetup() {
             if (data.status !== 'ok') throw new Error(data.message);
 
             const configData = data.data;
-
             localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(configData));
             localStorage.setItem(LAST_UID_KEY, uid);
             localStorage.setItem('apiUrl', buildApiUrl());
@@ -57,10 +56,48 @@ export function useKitchenSetup() {
     const initializeConfig = async () => {
         setLoading(true);
         try {
+            const lastUID = localStorage.getItem(LAST_UID_KEY);
+            const storedConfig = getStoredConfig();
 
-            clearConfig();
-            await fetchConfig(uid);
-            
+            // Guardar configuraciones personalizadas antes de cualquier operación
+            const customSettings = storedConfig ? {
+                layoutType: storedConfig.layoutType,
+                fontSize: storedConfig.fontSize
+            } : {};
+
+            if (uid !== lastUID) {
+                console.log('UID diferente, limpiando configuración');
+                clearConfig();
+                await fetchConfig(uid);
+            } else if (!storedConfig) {
+                await fetchConfig(uid);
+            } else {
+                // Verificar si el tipo cambió
+                const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
+                const newConfigData = await newConfigResponse.json();
+
+                if (newConfigData.status === 'ok' && newConfigData.data.type !== storedConfig.type) {
+                    console.log('Tipo diferente, actualizando config');
+                    clearConfig();
+                    await fetchConfig(uid);
+                } else {
+                    console.log('Usando config almacenada');
+                    setConfig(storedConfig);
+                    setIsConfigured(true);
+                }
+            }
+
+            // Restaurar configuraciones personalizadas después de cualquier actualización
+            const currentConfig = getStoredConfig();
+            if (currentConfig) {
+                const mergedConfig = {
+                    ...currentConfig,
+                    ...customSettings
+                };
+                localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(mergedConfig));
+                setConfig(mergedConfig);
+            }
+
         } catch (err) {
             setError(err.message);
         } finally {
@@ -74,7 +111,19 @@ export function useKitchenSetup() {
         localStorage.removeItem('apiUrl');
         setConfig(null);
         setIsConfigured(false);
-        
+    };
+
+    // Nuevo método para actualizar solo configuraciones personalizadas
+    const updateCustomSettings = (newSettings) => {
+        const currentConfig = getStoredConfig();
+        if (currentConfig) {
+            const updatedConfig = {
+                ...currentConfig,
+                ...newSettings
+            };
+            localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(updatedConfig));
+            setConfig(updatedConfig);
+        }
     };
 
     return {
@@ -83,6 +132,7 @@ export function useKitchenSetup() {
         error,
         isConfigured,
         initializeConfig,
-        clearConfig
+        clearConfig,
+        updateCustomSettings
     };
 }

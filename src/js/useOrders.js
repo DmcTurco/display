@@ -1,13 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { buildApiUrl } from '../hooks/useKitchenSetup';
-
-// let API_URL = localStorage.getItem('apiUrl');
-// if (!API_URL) {
-//     console.log('API_URL no encontrado, construyendo nuevo');
-//     API_URL = buildApiUrl();
-//     localStorage.setItem('apiUrl', API_URL);
-// }
-// const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
 export function useOrders(config, API_URL) {  // Recibimos config y API_URL como parámetros
     const [orders, setOrders] = useState([]);
@@ -103,7 +94,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&type=${config?.type || 1}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
-
+            
             const newData = await response.json();
             if (newData.status === 'error') throw new Error(newData.message);
 

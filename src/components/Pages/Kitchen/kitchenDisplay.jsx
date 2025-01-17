@@ -4,6 +4,7 @@ import { buildApiUrl } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
+import OrderTablet from "../Order/TabletLayout/OrderTablet";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -12,8 +13,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   // const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [localConfig, setConfig] = useState(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {});
 
-  const layoutType = (config?.layoutType || 'swipe');
+  const layoutType = (localConfig?.layoutType || 'swipe');
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
@@ -77,6 +79,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
     switch (layoutType) {
       case 'grid':
         return <OrderGrid {...layoutProps} />;
+      case 'table':
+        return <OrderTablet {...layoutProps} />; 
       case 'swipe':
       default:
         return <OrderSwipe {...layoutProps} />;
