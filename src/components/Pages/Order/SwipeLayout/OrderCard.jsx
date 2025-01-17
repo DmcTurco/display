@@ -3,12 +3,9 @@ import OrderHeader from '../Base/OrderHeader';
 import OrderItems from '../Base/OrderItem/OrderItems';
 import ActionButton from '../Base/ActionButton';
 
-function OrderCard({ time, type, type_display, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId,updateKitchenStatus }) {
-
+function OrderCard({ time, type, type_display, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId, updateKitchenStatus }) {
   const getStatusColor = () => {
-
-    if(type_display == 2){
-
+    if (type_display == 2) {
       switch (status) {
         case 'listo-para-servir':
           return 'bg-green-100 border-l-4 border-green-500';
@@ -19,9 +16,7 @@ function OrderCard({ time, type, type_display, number, customer, items, status, 
         default:
           return 'bg-gray-200';
       }
-
-    }else{
-
+    } else {
       switch (status) {
         case 'urgente':
           return 'bg-red-100 border-l-4 border-red-500';
@@ -32,9 +27,7 @@ function OrderCard({ time, type, type_display, number, customer, items, status, 
         default:
           return 'bg-gray-200';
       }
-      
     }
-
   };
 
   return (
@@ -49,21 +42,60 @@ function OrderCard({ time, type, type_display, number, customer, items, status, 
           elapsedTime={elapsedTime}
         />
       </div>
-      <div className="p-2 sm:p-2 flex-1 overflow-hidden"> {/* Cambiamos a overflow-hidden */}
-        <OrderItems 
-          items={items} 
-          expandedItemId={expandedItemId} 
-          setExpandedItemId={setExpandedItemId} 
-          updateKitchenStatus={updateKitchenStatus}
-          type_display={type_display}
-        />
+      <div className="p-2 sm:p-2 flex-1 overflow-hidden">
+        <div className="h-full overflow-auto scrollbar-container">
+          <OrderItems
+            items={items}
+            expandedItemId={expandedItemId}
+            setExpandedItemId={setExpandedItemId}
+            updateKitchenStatus={updateKitchenStatus}
+            type_display={type_display}
+          />
+        </div>
       </div>
-      {/* <div className="p-1 sm:p-1 mt-auto">
-        <ActionButton status={status} />
-      </div> */}
+
+      <style>{`
+        .scrollbar-container {
+          scrollbar-width: thin;
+          scrollbar-color: #9CA3AF #F3F4F6;
+          -webkit-overflow-scrolling: touch;
+        }
+
+        .scrollbar-container::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+
+        .scrollbar-container::-webkit-scrollbar-track {
+          background: #F3F4F6;
+          border-radius: 4px;
+        }
+
+        .scrollbar-container::-webkit-scrollbar-thumb {
+          background-color: #9CA3AF;
+          border-radius: 4px;
+          border: 2px solid #F3F4F6;
+        }
+
+        .scrollbar-container::-webkit-scrollbar-thumb:hover {
+          background-color: #6B7280;
+        }
+
+        /* Estilos específicos para dispositivos táctiles */
+        @media (hover: none) and (pointer: coarse) {
+          .scrollbar-container::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+          }
+          
+          .scrollbar-container::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.8);
+            border: none;
+          }
+        }
+      `}</style>
     </div>
   );
-
 }
 
-export default OrderCard
+export default OrderCard;

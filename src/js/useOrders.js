@@ -120,8 +120,8 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
     const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
-            const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-            const type = config.type || 1;
+            // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+            // const type = config.type || 1;
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {
