@@ -1,62 +1,62 @@
 import React, { useMemo, useState } from 'react';
 import _ from 'lodash';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../ui/alert-dialog';
 
 const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
-
-    
+    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const { uniqueItems, uniqueTables, orderMatrix, itemsMap } = useMemo(() => {
         const items = new Set();
         const tables = new Set();
         const matrix = {};
-        const itemsMap = {}; // Para mantener los items originales
-
+        const itemsMap = {};
 
         orders.forEach(order => {
             const tableName = order.table_name || 'Sin Mesa';
             tables.add(tableName);
-            // console.log(order)
+
             order.items?.forEach(item => {
-                const itemName = item.name;
-                // console.log(itemName);
-                items.add(itemName);
-
-                // Almacenamos los items por nombre y mesa
-                if (!itemsMap[itemName]) {
-                    itemsMap[itemName] = {};
-                }
-                if (!itemsMap[itemName][tableName]) {
-                    itemsMap[itemName][tableName] = [];
-                }
-
-                itemsMap[itemName][tableName].push(item);
-
-                if (!matrix[itemName]) {
-                    matrix[itemName] = {
-                        totals: 0,
-                        byTable: {},
-                        pendingByTable: {} // Para contar solo los items pendientes
-                    };
-                }
-                if (!matrix[itemName].byTable[tableName]) {
-                    matrix[itemName].byTable[tableName] = 0;
-                    matrix[itemName].pendingByTable[tableName] = 0;
-                }
-
-
-                matrix[itemName].byTable[tableName] += item.quantity;
-                // Solo contamos los items pendientes (kitchen_status !== 1)
+                // Solo procesamos si no está completado
                 if (item.kitchen_status !== 1) {
-                    matrix[itemName].pendingByTable[tableName] += item.quantity;
-                }
-                matrix[itemName].totals += item.quantity;
+                    const itemName = item.name;
+                    items.add(itemName);
 
+                    if (!itemsMap[itemName]) {
+                        itemsMap[itemName] = {};
+                    }
+                    if (!itemsMap[itemName][tableName]) {
+                        itemsMap[itemName][tableName] = [];
+                    }
+                    itemsMap[itemName][tableName].push(item);
+
+                    if (!matrix[itemName]) {
+                        matrix[itemName] = {
+                            totals: 0,
+                            byTable: {},
+                            pendingByTable: {}
+                        };
+                    }
+                    if (!matrix[itemName].byTable[tableName]) {
+                        matrix[itemName].byTable[tableName] = 0;
+                        matrix[itemName].pendingByTable[tableName] = 0;
+                    }
+
+                    // Solo sumamos los pendientes
+                    matrix[itemName].byTable[tableName] += item.quantity;
+                    matrix[itemName].pendingByTable[tableName] += item.quantity;
+                    matrix[itemName].totals += item.quantity;
+                }
             });
         });
 
+        // Filtramos los items que no tienen pendientes
+        const filteredItems = Array.from(items).filter(item =>
+            matrix[item] && matrix[item].totals > 0
+        );
+
         return {
-            uniqueItems: Array.from(items),
+            uniqueItems: filteredItems,
             uniqueTables: Array.from(tables).sort(),
             orderMatrix: matrix,
             itemsMap
@@ -67,7 +67,6 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
 
     const toggleRowSelection = (item) => {
-
         // Solo permitir selección si hay items pendientes
         const hasPendingItems = Object.values(orderMatrix[item].pendingByTable).some(count => count > 0);
         if (!hasPendingItems) return;
@@ -107,7 +106,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     };
 
     const toggleCellSelection = (item, table, quantity) => {
-        if (quantity > 0 && orderMatrix[item].pendingByTable[table] > 0) {
+        if (quantity > 0) {
             setSelectedCells(prev => {
                 const cellKey = `${item}-${table}`;
                 const newSet = new Set(prev);
@@ -120,13 +119,18 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
             });
         }
     };
+    
+    const handleConfirm = () => {
+        handleUpdate();
+        setShowConfirmDialog(false);
+    };
 
     const handleUpdate = () => {
-
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
         }
+
         const updateItem = (item) => {
             if (item && item.id && item.kitchen_status !== 1) {
                 updateKitchenStatus(item.id, 1, kitchen_cd);
@@ -153,7 +157,6 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         setSelectedCells(new Set());
     };
 
-    // Calcular total de items pendientes seleccionados
     const getSelectedPendingCount = () => {
         let count = 0;
 
@@ -181,7 +184,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
             {(selectedRows.size > 0 || selectedCells.size > 0) && (
                 <div className="sticky top-0 z-40 mb-2">
                     <button
-                        onClick={handleUpdate}
+                        onClick={() => setShowConfirmDialog(true)}  // Cambiar aquí
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
                         更新 ({getSelectedPendingCount()} pendientes)
@@ -269,6 +272,25 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                     </div>
                 </div>
             </div>
+            {/* Modal de confirmación */}
+            <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>確認</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            選択したアイテム ({getSelectedPendingCount()} 点) を更新してもよろしいですか？
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel onClick={() => setShowConfirmDialog(false)}>
+                            キャンセル
+                        </AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirm}>
+                            更新する
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             <style>{`
                 /* Estilos generales para scrollbars */
