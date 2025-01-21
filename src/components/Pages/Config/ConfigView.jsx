@@ -107,7 +107,8 @@ const ConfigView = () => {
                         >
                             <option value="swipe">Orden de Pedido</option>
                             <option value="table">Orden por Menu</option>
-                            <option value="grid">Orden por Mesa</option>
+                            {/* <option value="grid">Orden por Mesa</option> */}
+                            <option value="timeline">Orden por Hora</option>
                         </select>
                     </div>
                 </dl>

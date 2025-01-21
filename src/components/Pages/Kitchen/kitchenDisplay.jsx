@@ -5,6 +5,7 @@ import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
 import OrderGrid from "../Order/GridLayout/OrderGrid";
 import OrderTablet from "../Order/TabletLayout/OrderTablet";
+import OrderTimeline from "../Order/TimelineLayout/OrderTimeline";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -80,7 +81,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       case 'grid':
         return <OrderGrid {...layoutProps} />;
       case 'table':
-        return <OrderTablet {...layoutProps} />; 
+        return <OrderTablet {...layoutProps} />;
+      case 'timeline':
+        return <OrderTimeline {...layoutProps} />;
       case 'swipe':
       default:
         return <OrderSwipe {...layoutProps} />;
