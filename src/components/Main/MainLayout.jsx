@@ -31,9 +31,9 @@ const MainLayout = ({ content }) => {
         <div className="text-center p-8 rounded-lg">
           <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
           <h2 className="text-xl font-semibold text-gray-700 mb-2">
-            Cargando Configuración
+            設定を取得しています。
           </h2>
-          <p className="text-gray-500">Por favor espere un momento...</p>
+          <p className="text-gray-500">お待ちください。</p>
         </div>
       </div>
     );
@@ -59,7 +59,7 @@ const MainLayout = ({ content }) => {
             </svg>
           </div>
           <h2 className="text-xl font-bold text-gray-800 mb-2">
-            Error al cargar la configuración
+            設定の取得に失敗しました。
           </h2>
           <p className="text-gray-600 mb-4">
             {error}
@@ -68,7 +68,7 @@ const MainLayout = ({ content }) => {
             onClick={() => window.location.reload()}
             className="bg-red-500 hover:bg-red-600 text-white font-semibold px-6 py-2 rounded-lg transition-colors duration-200"
           >
-            Reintentar
+            リトライする
           </button>
         </div>
       </div>

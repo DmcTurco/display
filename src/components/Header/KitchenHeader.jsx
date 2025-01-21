@@ -9,7 +9,7 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
 
   const headerTitle = isConfigPage
     ? "設定"
-    : (config?.terminal_name || "Terminal Sin Nombre");
+    : (config?.terminal_name || "");
 
   // Determinar la ruta de navegación basada en si estamos en la página de configuración
   const navigationPath = isConfigPage ? `/kitchen/${config.uid}` : `/config/${config.uid}`;
@@ -71,7 +71,7 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
       >
         <Cog className="w-6 h-6" />
         <span className="ml-2 font-semibold text-slate-100">
-          {isConfigPage ? (config?.terminal_name || "Terminal Sin Nombre") : "設定"}
+          {isConfigPage ? (config?.terminal_name || "") : "設定"}
         </span>
       </Link>
     </header>
