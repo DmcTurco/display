@@ -2,10 +2,11 @@ import React, { useState, useEffect } from "react";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
 import { buildApiUrl } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
-import OrderSwipe from "../Order/SwipeLayout/OrderSwipe";
-import OrderGrid from "../Order/GridLayout/OrderGrid";
-import OrderTablet from "../Order/TabletLayout/OrderTablet";
-import OrderTimeline from "../Order/TimelineLayout/OrderTimeline";
+import OrderSwipe from "../Order/KitchenLayout/SwipeLayout/OrderSwipe";
+import OrderGrid from "../Order/KitchenLayout/GridLayout/OrderGrid";
+import OrderTablet from "../Order/KitchenLayout/TabletLayout/OrderTablet";
+import OrderTimeline from "../Order/KitchenLayout/TimelineLayout/OrderTimeline";
+import ServingTimeline from "../Order/ServingLayout/ServingTimelineLayout/ServiceTimeline";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -79,15 +80,20 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
 
     switch (layoutType) {
       case 'grid':
-        return <OrderGrid {...layoutProps} />;
+          return <OrderGrid {...layoutProps} />;
       case 'table':
-        return <OrderTablet {...layoutProps} />;
+          return <OrderTablet {...layoutProps} />;
       case 'timeline':
-        return <OrderTimeline {...layoutProps} />;
+          return <OrderTimeline {...layoutProps} />;
+      // Nuevos casos para Serving
+      case 'serving-timeline':
+          return <ServingTimeline {...layoutProps} />;
+      // case 'serving-completed':
+      //     return <ServingStatus {...layoutProps} />;
       case 'swipe':
       default:
-        return <OrderSwipe {...layoutProps} />;
-    }
+          return <OrderSwipe {...layoutProps} />;
+  }
   };
 
   const renderContent = () => {

@@ -22,7 +22,6 @@ const ConfigView = () => {
         });
     };
 
-
     // const handleBack = () => {
     //     if (config.uid) {
     //         navigate(`/kitchen/${config.uid}`);
@@ -50,6 +49,25 @@ const ConfigView = () => {
         1: '調理',
         2: '配膳'
     }
+
+    // Layout options based on type
+    const getLayoutOptions = () => {
+        if (config.type === "1") {
+            return [
+                { value: "swipe", label: "Orden de Pedido" },
+                { value: "table", label: "Orden por Menu" },
+                { value: "timeline", label: "Orden por Hora" }
+            ];
+        } else if (config.type === "2") {
+            return [
+                { value: "swipe", label: "Vista de Servicio" },
+                { value: "serving-timeline", label: "Vista de Servicio por tabla" },
+                // { value: "serving-completed", label: "Vista de Servicio completados" },
+                // { value: "grid", label: "Vista por Mesa" }
+            ];
+        }
+        return [];
+    };
 
     return (
         <div className="p-4">
@@ -105,10 +123,11 @@ const ConfigView = () => {
                             onChange={handleLayoutChange}
                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
                         >
-                            <option value="swipe">Orden de Pedido</option>
-                            <option value="table">Orden por Menu</option>
-                            {/* <option value="grid">Orden por Mesa</option> */}
-                            <option value="timeline">Orden por Hora</option>
+                            {getLayoutOptions().map((option) => (
+                                <option key={option.value} value={option.value}>
+                                    {option.label}
+                                </option>
+                            ))}
                         </select>
                     </div>
                 </dl>

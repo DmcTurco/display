@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useSwipe } from '../../../../hooks/useSwipe';
+import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderGridCard from './OrderGridCard';
 
 const OrderGrid = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStatus }) => {

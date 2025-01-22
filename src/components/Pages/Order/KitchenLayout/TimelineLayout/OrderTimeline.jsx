@@ -34,7 +34,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         });
 
         return {
-            orderItems: _.sortBy(orderItems, item => -new Date(item.originalOrder.record_date)),
+            orderItems: _.sortBy(orderItems, item => new Date(item.originalOrder.record_date)),
             itemTotals
         };
     }, [orders]);

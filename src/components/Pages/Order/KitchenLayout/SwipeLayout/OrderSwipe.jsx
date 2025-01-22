@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 
-import { useSwipe } from '../../../../hooks/useSwipe';
+import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 
 

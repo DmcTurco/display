@@ -1,7 +1,7 @@
 import React from 'react';
-import OrderHeader from '../Base/OrderHeader';
-import OrderItems from '../Base/OrderItem/OrderItems';
-import ActionButton from '../Base/ActionButton';
+import OrderHeader from '../../Base/OrderHeader';
+import OrderItems from '../../Base/OrderItem/OrderItems';
+import ActionButton from '../../Base/ActionButton';
 
 function OrderGridCard({ time, type, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId,updateKitchenStatus}) {
   const getStatusColor = () => {
