@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 
 export function useOrders(config, API_URL) {  // Recibimos config y API_URL como parámetros
     const [orders, setOrders] = useState([]);
+    const [completedOrders, setCompletedOrders] = useState([]); // Nuevo estado para órdenes completadas
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
@@ -81,7 +82,6 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             .sort((a, b) => new Date(a.record_date) - new Date(b.record_date));
     };
 
-
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
 
@@ -94,7 +94,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&type=${config?.type || 1}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
-            
+
             const newData = await response.json();
             if (newData.status === 'error') throw new Error(newData.message);
 
@@ -102,7 +102,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 setOrders([]);
                 return;
             }
-            // console.log(newData.data);
+
             const processedNewData = processOrders(newData.data);
             setOrders(processedNewData);
 
@@ -117,6 +117,38 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
         }
     }, [config, API_URL]);
 
+    const getTodayCompletedOrders = useCallback(async (kitchenCd) => {
+        try {
+            if (!kitchenCd) {
+                throw new Error('kitchen_cd es requerido');
+            }
+
+            setLoading(true);
+            setKitchenCode(kitchenCd);
+
+            const response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}`);
+            if (!response.ok) throw new Error('Error al obtener los pedidos completados');
+
+            const newData = await response.json();
+            if (newData.status === 'error') throw new Error(newData.message);
+
+            if (!newData.data) {
+                setCompletedOrders([]); // Usar el nuevo estado
+                return;
+            }
+
+            const processedNewData = processOrders(newData.data);
+            setCompletedOrders(processedNewData); // Usar el nuevo estado
+            setError(null);
+
+        } catch (err) {
+            console.error('Error en getTodayCompletedOrders:', err);
+            setError(err.message);
+            setCompletedOrders([]); // Usar el nuevo estado
+        } finally {
+            setLoading(false);
+        }
+    }, [API_URL]);
 
     const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
         try {
@@ -157,26 +189,30 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
     useEffect(() => {
         let intervalId = null;
-
+    
         if (kitchenCode) {
             getTodayOrders(kitchenCode);
+            getTodayCompletedOrders(kitchenCode);
             intervalId = setInterval(() => {
+                getTodayCompletedOrders(kitchenCode);
                 getTodayOrders(kitchenCode);
             }, 10000);
         }
-
+    
         return () => {
             if (intervalId) {
                 clearInterval(intervalId);
             }
         };
-    }, [kitchenCode, getTodayOrders]);
+    }, [kitchenCode, getTodayOrders,getTodayCompletedOrders]);
 
     return {
         orders,
+        completedOrders,
         loading,
         error,
         getTodayOrders,
+        getTodayCompletedOrders,
         updateKitchenStatus
     };
 }

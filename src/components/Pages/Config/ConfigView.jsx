@@ -62,7 +62,7 @@ const ConfigView = () => {
             return [
                 { value: "swipe", label: "Vista de Servicio" },
                 { value: "serving-timeline", label: "Vista de Servicio por tabla" },
-                // { value: "serving-completed", label: "Vista de Servicio completados" },
+                { value: "serving-completed", label: "Vista de Servicio completados" },
                 // { value: "grid", label: "Vista por Mesa" }
             ];
         }

@@ -7,18 +7,19 @@ import OrderGrid from "../Order/KitchenLayout/GridLayout/OrderGrid";
 import OrderTablet from "../Order/KitchenLayout/TabletLayout/OrderTablet";
 import OrderTimeline from "../Order/KitchenLayout/TimelineLayout/OrderTimeline";
 import ServingTimeline from "../Order/ServingLayout/ServingTimelineLayout/ServiceTimeline";
+import ServingCompleted from "../Order/ServingLayout/ServingCompletedLayout/ServingCompleted";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
   const API_URL = buildApiUrl();
-  const { orders, loading, error, getTodayOrders, updateKitchenStatus } = useOrders(config, API_URL);
+  const { orders, completedOrders, loading, error, getTodayOrders, updateKitchenStatus } = useOrders(config, API_URL);
   // const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const [localConfig, setConfig] = useState(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {});
 
   const layoutType = (localConfig?.layoutType || 'swipe');
-
+  
   // Manejar conexión y obtener órdenes
   useEffect(() => {
     if (config) {  // Solo si hay config
@@ -73,6 +74,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   const renderOrderLayout = () => {
     const layoutProps = {
       orders,
+      completedOrders,
       expandedItemId,
       setExpandedItemId,
       updateKitchenStatus
@@ -80,20 +82,20 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
 
     switch (layoutType) {
       case 'grid':
-          return <OrderGrid {...layoutProps} />;
+        return <OrderGrid {...layoutProps} />;
       case 'table':
-          return <OrderTablet {...layoutProps} />;
+        return <OrderTablet {...layoutProps} />;
       case 'timeline':
-          return <OrderTimeline {...layoutProps} />;
+        return <OrderTimeline {...layoutProps} />;
       // Nuevos casos para Serving
       case 'serving-timeline':
-          return <ServingTimeline {...layoutProps} />;
-      // case 'serving-completed':
-      //     return <ServingStatus {...layoutProps} />;
+        return <ServingTimeline {...layoutProps} />;
+      case 'serving-completed':
+        return <ServingCompleted {...layoutProps} />;
       case 'swipe':
       default:
-          return <OrderSwipe {...layoutProps} />;
-  }
+        return <OrderSwipe {...layoutProps} />;
+    }
   };
 
   const renderContent = () => {
