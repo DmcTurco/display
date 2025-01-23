@@ -176,6 +176,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             if (kitchen_cd) {
                 await getTodayOrders(kitchen_cd);
+                await getTodayCompletedOrders(kitchen_cd);
             }
 
         } catch (error) {
@@ -188,23 +189,27 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
 
     useEffect(() => {
+        let isMounted = true;
         let intervalId = null;
     
+        const fetchData = async () => {
+            if (!isMounted) return;
+            await Promise.all([
+                getTodayOrders(kitchenCode),
+                getTodayCompletedOrders(kitchenCode)
+            ]);
+        };
+    
         if (kitchenCode) {
-            getTodayOrders(kitchenCode);
-            getTodayCompletedOrders(kitchenCode);
-            intervalId = setInterval(() => {
-                getTodayCompletedOrders(kitchenCode);
-                getTodayOrders(kitchenCode);
-            }, 10000);
+            fetchData();
+            intervalId = setInterval(fetchData, 10000);
         }
     
         return () => {
-            if (intervalId) {
-                clearInterval(intervalId);
-            }
+            isMounted = false;
+            if (intervalId) clearInterval(intervalId);
         };
-    }, [kitchenCode, getTodayOrders,getTodayCompletedOrders]);
+    }, [kitchenCode, getTodayOrders, getTodayCompletedOrders]);
 
     return {
         orders,

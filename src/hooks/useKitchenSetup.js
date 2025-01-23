@@ -66,7 +66,7 @@ export function useKitchenSetup() {
             } : {};
 
             if (uid !== lastUID) {
-                console.log('UID diferente, limpiando configuración');
+                // console.log('UID diferente, limpiando configuración');
                 clearConfig();
                 await fetchConfig(uid);
             } else if (!storedConfig) {
@@ -77,11 +77,11 @@ export function useKitchenSetup() {
                 const newConfigData = await newConfigResponse.json();
 
                 if (newConfigData.status === 'ok' && newConfigData.data.type !== storedConfig.type) {
-                    console.log('Tipo diferente, actualizando config');
+                    // console.log('Tipo diferente, actualizando config');
                     clearConfig();
                     await fetchConfig(uid);
                 } else {
-                    console.log('Usando config almacenada');
+                    // console.log('Usando config almacenada');
                     setConfig(storedConfig);
                     setIsConfigured(true);
                 }

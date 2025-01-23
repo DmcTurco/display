@@ -12,7 +12,7 @@ import ServingCompleted from "../Order/ServingLayout/ServingCompletedLayout/Serv
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
   const API_URL = buildApiUrl();
-  const { orders, completedOrders, loading, error, getTodayOrders, updateKitchenStatus } = useOrders(config, API_URL);
+  const { orders, completedOrders, loading, error, getTodayOrders, getTodayCompletedOrders, updateKitchenStatus } = useOrders(config, API_URL);
   // const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
@@ -27,6 +27,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
         setIsOnline(true);
         // if (config?.cd) {
         getTodayOrders(config.cd);
+        getTodayCompletedOrders(config.cd);
         // }
       };
 
@@ -69,7 +70,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
     }
 
   }, [orders, config?.type]);
-
 
   const renderOrderLayout = () => {
     const layoutProps = {
@@ -136,7 +136,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       );
     }
 
-    if (!Array.isArray(orders) || orders.length === 0) {
+    if (!Array.isArray(orders) || orders.length === 0 && layoutType !== 'serving-completed') {
       return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-bounce">
