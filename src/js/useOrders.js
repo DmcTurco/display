@@ -61,6 +61,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 order_main_cd: order.order_main_cd,
                 order_count: order.order_count,
                 formatted_time: formatTime(order.record_date),
+                formatted_time_update: formatTime(order.update_date),
                 table_name: order.table_name || 'Sin mesa',
                 type: order.type || 1,
                 type_display: config.type || 1,
@@ -70,7 +71,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                     hasInProgressItem ? 1 : 0,
                     allServed ? 1 : 0
                 ),
-                elapsedTime: calculateElapsedTime(order.record_date),
+                elapsedTime: calculateElapsedTime(config.type == 2 ? order.update_date : order.record_date),
                 items: mappedItems,
                 record_date: order.record_date
             };
@@ -104,6 +105,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
 
             const processedNewData = processOrders(newData.data);
+            // console.log('processedNewData:', processedNewData);
             setOrders(processedNewData);
 
             setError(null);
@@ -191,7 +193,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     useEffect(() => {
         let isMounted = true;
         let intervalId = null;
-    
+
         const fetchData = async () => {
             if (!isMounted) return;
             await Promise.all([
@@ -199,12 +201,12 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 getTodayCompletedOrders(kitchenCode)
             ]);
         };
-    
+
         if (kitchenCode) {
             fetchData();
             intervalId = setInterval(fetchData, 10000);
         }
-    
+
         return () => {
             isMounted = false;
             if (intervalId) clearInterval(intervalId);

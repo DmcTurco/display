@@ -132,9 +132,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                             <tbody className="divide-y divide-gray-200">
                                 {orderItems.map((order, orderIndex) => (
                                     <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-4 align-top">{order.orderTime}</td>
-                                        <td className="pt-2 pb-0 px-4 align-top text-red-500 font-medium">{order.elapsedTime}</td>
-                                        <td className="pt-2 pb-0 px-4 align-top">{order.table}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[150px]">{order.orderTime}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top text-red-500 font-medium w-[150px]">{order.elapsedTime}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[100px]">{order.table}</td>
                                         <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
                                             <div className="divide-y divide-gray-100">
                                                 {order.items.map(item => (

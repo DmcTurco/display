@@ -3,12 +3,12 @@ import React, { useEffect, useState } from "react";
 import UrgentAlert from './UrgentAlert';
 
 const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
-  const [config, setConfig] = useState({});
+  const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {});
 
-  useEffect(() => {
-    const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-    setConfig(savedConfig);
-  }, []);
+  // useEffect(() => {
+  //   const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  //   setConfig(savedConfig);
+  // }, []);
 
   const getFontSizeClass = () => {
     switch (config.fontSize) {

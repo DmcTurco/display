@@ -9,6 +9,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
+    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
     // Usar el hook de swipe
     const {
@@ -104,7 +105,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                                             }}
                                         >
                                             <OrderCard
-                                                time={order.formatted_time}
+                                                time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
                                                 type={order.type}
                                                 type_display={order.type_display}
                                                 number={`${order.order_main_cd}-${order.order_count}`}

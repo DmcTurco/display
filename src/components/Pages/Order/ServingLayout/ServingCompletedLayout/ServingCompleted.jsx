@@ -12,7 +12,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         // Procesamos órdenes pero filtrando items listos para servir
         const orderItems = completedOrders.map(order => {
             return {
-                orderTime: order.formatted_time,
+                orderTime: order.formatted_time_update,
                 elapsedTime: `${order.elapsedTime}分`,
                 table: order.table_name || 'Sin Mesa',
                 // Filtramos items listos para servir
@@ -63,7 +63,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
     const getMinutes = (elapsedTime) => {
         return parseInt(elapsedTime.replace('分', ''));
     };
-  
+
     if (!orderItems?.length) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -83,13 +83,13 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
+                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200 w-[80px]">
                                         注文時間
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[100px] z-30 bg-gray-200">
+                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[80px] z-30 bg-gray-200 w-[80px]">
                                         経過時間
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[200px] z-30 bg-gray-200">
+                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[160px] z-30 bg-gray-200 w-[60px]">
                                         テーブル
                                     </th>
                                     <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
@@ -98,18 +98,18 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                     <th className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 border-b border-gray-200 w-[220px]">
+                                    <th className="py-3 px-4 bg-gray-50 border-b border-gray-200 w-[290px]">
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {orderItems.map((order, orderIndex) => (
                                     <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-4 align-top">{order.orderTime}</td>
-                                        <td className={`pt-2 pb-0 px-4 align-top font-medium ${getMinutes(order.elapsedTime) > 15 ? 'text-red-500' : 'text-gray-900'}`}>
+                                        <td className="pt-2 pb-0 px-2 align-top w-[150px]">{order.orderTime}</td>
+                                        <td className={`pt-2 pb-0 px-2 align-top font-medium w-[150px] ${getMinutes(order.elapsedTime) > 15 ? 'text-red-500' : 'text-gray-900'}`}>
                                             {order.elapsedTime}
                                         </td>
-                                        <td className="pt-2 pb-0 px-4 align-top">{order.table}</td>
+                                        <td className="pt-2 pb-0 px-2 align-top w-[100px]">{order.table}</td>
                                         <td colSpan="3" className="p-0">
                                             <div className="divide-y divide-gray-100">
                                                 {order.items.map(item => (
