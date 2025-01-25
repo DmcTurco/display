@@ -183,7 +183,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                             onClick={handleConfirm}
                             disabled={!selectedItemId}
                             className={`px-4 py-2 text-sm font-medium text-white rounded-md ${selectedItemId
-                                ? 'bg-green-500 hover:bg-green-600'
+                                ? 'bg-red-500 hover:bg-red-600'
                                 : 'bg-gray-400 cursor-not-allowed'
                                 }`}
                         >

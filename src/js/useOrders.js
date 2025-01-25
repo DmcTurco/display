@@ -152,10 +152,17 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
         }
     }, [API_URL]);
 
-    const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd) => {
+    const updateKitchenStatus = async (orderDetailId, newStatus, kitchen_cd, type = null) => {
         try {
-            // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-            // const type = config.type || 1;
+
+            let typeDisplay = config?.type || 1;
+
+            if (config.layoutType === 'serving-timeline' && type !== null) {
+                typeDisplay = type;
+            }
+
+            console.log('typeDisplay:', typeDisplay);
+            console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {
@@ -164,7 +171,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 body: JSON.stringify({
                     order_detail_cd: orderDetailId,
                     kitchen_status: newStatus,
-                    type: config?.type || 1
+                    type: typeDisplay
                 }),
             });
 

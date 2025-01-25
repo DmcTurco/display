@@ -52,13 +52,13 @@ const ConfigView = () => {
 
     // Layout options based on type
     const getLayoutOptions = () => {
-        if (config.type === "1") {
+        if (config.type == "1") {
             return [
                 { value: "swipe", label: "Orden de Pedido" },
                 { value: "table", label: "Orden por Menu" },
                 { value: "timeline", label: "Orden por Hora" }
             ];
-        } else if (config.type === "2") {
+        } else if (config.type == "2") {
             return [
                 { value: "swipe", label: "Vista de Servicio" },
                 { value: "serving-timeline", label: "Vista de Servicio por tabla" },

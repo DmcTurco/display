@@ -58,6 +58,7 @@ export function useKitchenSetup() {
         try {
             const lastUID = localStorage.getItem(LAST_UID_KEY);
             const storedConfig = getStoredConfig();
+            console.log('storedConfig:', storedConfig);
 
             // Guardar configuraciones personalizadas antes de cualquier operación
             const customSettings = storedConfig ? {
@@ -76,8 +77,10 @@ export function useKitchenSetup() {
                 const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
                 const newConfigData = await newConfigResponse.json();
 
-                if (newConfigData.status === 'ok' && newConfigData.data.type !== storedConfig.type) {
-                    // console.log('Tipo diferente, actualizando config');
+                if (newConfigData.status === 'ok' && (newConfigData.data.type !== storedConfig.type ||
+                    newConfigData.data.terminal_name !== storedConfig.terminal_name)
+                ) {
+                    // console.log('Cambio detectado en tipo o terminal_name, actualizando configuración');
                     clearConfig();
                     await fetchConfig(uid);
                 } else {
