@@ -58,8 +58,7 @@ export function useKitchenSetup() {
         try {
             const lastUID = localStorage.getItem(LAST_UID_KEY);
             const storedConfig = getStoredConfig();
-            console.log('storedConfig:', storedConfig);
-
+            
             // Guardar configuraciones personalizadas antes de cualquier operación
             const customSettings = storedConfig ? {
                 layoutType: storedConfig.layoutType,

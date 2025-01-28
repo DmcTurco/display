@@ -105,7 +105,6 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
 
             const processedNewData = processOrders(newData.data);
-            // console.log('processedNewData:', processedNewData);
             setOrders(processedNewData);
 
             setError(null);

@@ -35,6 +35,12 @@ const ConfigView = () => {
             fontSize: event.target.value
         });
     };
+    const handleCardQuantityChange = (event) => {
+        updateCustomSettings({
+            cardQuantity: event.target.value
+        });
+    };
+
 
     // const handleFontSizeChange = (event) => {
     //     const updatedConfig = {
@@ -95,6 +101,23 @@ const ConfigView = () => {
                     <div className="grid grid-cols-2">
                         <dt className="font-medium text-gray-600">Uid:</dt>
                         <dd>{config.uid}</dd>
+                    </div>
+
+                    {/* Selector de cantidad de cards */}
+                    <div className="grid grid-cols-2 items-center py-2">
+                        <span className="font-medium text-gray-700">
+                            表示数:
+                        </span>
+                        <select
+                            value={config.cardQuantity || '4'} // Valor por defecto: 4
+                            onChange={handleCardQuantityChange}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                            <option value="4">４枚</option>
+                            <option value="8">８枚</option>
+                            <option value="12">１２枚</option>
+                            <option value="16">１６枚</option>
+                        </select>
                     </div>
 
                     {/* Selector de tamaño de fuente */}
