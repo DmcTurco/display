@@ -104,7 +104,7 @@ const ConfigView = () => {
                     </div>
 
                     {/* Selector de cantidad de cards */}
-                    <div className="grid grid-cols-2 items-center py-2">
+                    {/* <div className="grid grid-cols-2 items-center py-2">
                         <span className="font-medium text-gray-700">
                             表示数:
                         </span>
@@ -118,7 +118,7 @@ const ConfigView = () => {
                             <option value="12">１２枚</option>
                             <option value="16">１６枚</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Selector de tamaño de fuente */}
                     <div className="grid grid-cols-2 items-center py-2">

@@ -77,7 +77,7 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
             )}
           </span>
         </div>
-        <span className={`${getQuantityFontSizeClass()}`}>#{number}</span>
+        <span className='text-xs sm:text-sm'>#{number}</span>
       </div>
     </div>
   );

@@ -39,9 +39,14 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     }
 
     const processOrders = (data) => {
-        const processedOrders = data.reduce((acc, order) => {
-            const uniqueId = `${order.order_main_cd}_${order.order_count}`;
-
+        // Agrupar las órdenes por mesa
+        const groupedOrders = data.reduce((acc, order) => {
+            const tableId = order.table_name || 'Sin Mesa'; // 'Sin Mesa' para órdenes no asignadas
+            if (!acc[tableId]) {
+                acc[tableId] = [];
+            }
+    
+            // Mapear los detalles de la orden
             const mappedItems = order.order_details.map(detail => ({
                 id: detail.cd,
                 name: detail.menu_name,
@@ -53,35 +58,36 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 serving_status: detail.serving_status,
                 modification: detail.modification,
             }));
-
-            const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
-            const allServed = mappedItems.every(item => item.serving_status === 1);
-
-            acc[uniqueId] = {
+    
+            // Insertar la orden en el grupo de la mesa correspondiente
+            acc[tableId].push({
                 order_main_cd: order.order_main_cd,
                 order_count: order.order_count,
                 formatted_time: formatTime(order.record_date),
                 formatted_time_update: formatTime(order.update_date),
-                table_name: order.table_name || 'Sin mesa',
+                table_name: order.table_name || 'Sin Mesa',
                 type: order.type || 1,
-                type_display: config.type || 1,
                 status: determineStatus(
                     order.record_date,
                     'no-iniciado',
-                    hasInProgressItem ? 1 : 0,
-                    allServed ? 1 : 0
+                    mappedItems.some(item => item.kitchen_status === 1) ? 1 : 0,
+                    mappedItems.every(item => item.serving_status === 1) ? 1 : 0
                 ),
                 elapsedTime: calculateElapsedTime(config.type == 2 ? order.update_date : order.record_date),
                 items: mappedItems,
-                record_date: order.record_date
-            };
-
+                record_date: order.record_date,
+            });
+    
             return acc;
         }, {});
-
-        return Object.values(processedOrders)
-            .sort((a, b) => new Date(a.record_date) - new Date(b.record_date));
+    
+        // Ordenar las mesas y las órdenes dentro de cada mesa por fecha de registro
+        return Object.entries(groupedOrders).map(([tableName, orders]) => ({
+            tableName,
+            orders: orders.sort((a, b) => new Date(a.record_date) - new Date(b.record_date)),
+        }));
     };
+    
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
@@ -105,6 +111,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
 
             const processedNewData = processOrders(newData.data);
+            console.log(processedNewData);
             setOrders(processedNewData);
 
             setError(null);

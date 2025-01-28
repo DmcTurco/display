@@ -4,13 +4,13 @@ import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 
 
-const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStatus }) => {
+const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenStatus }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-
+    console.log(orders)
     // Usar el hook de swipe
     const {
         containerRef,
@@ -60,7 +60,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
 
     return (
         <div className="flex flex-col h-full">
-            <div 
+            <div
                 ref={containerRef}
                 className="max-w-[1200px] mx-auto w-full px-4 h-full"
                 onTouchStart={onTouchStart}
@@ -85,9 +85,9 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                                 }}
                             >
                                 <div className="flex min-w-full gap-3">
-                                    {getPageOrders(index + 1).map(order => (
+                                    {getPageOrders(index + 1).map(tableGroup => (
                                         <div
-                                            key={`${order.order_main_cd}_${order.order_count}`}
+                                            key={tableGroup.tableName}
                                             className="flex-shrink-0 w-full 
                                             min-w-[100px] 
                                             max-w-[130px] 
@@ -104,19 +104,26 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                                                 minHeight: '300px'
                                             }}
                                         >
-                                            <OrderCard
-                                                time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
-                                                type={order.type}
-                                                type_display={order.type_display}
-                                                number={`${order.order_main_cd}-${order.order_count}`}
-                                                customer={order.table_name}
-                                                items={order.items}
-                                                status={order.status}
-                                                elapsedTime={order.elapsedTime}
-                                                expandedItemId={expandedItemId}
-                                                setExpandedItemId={setExpandedItemId}
-                                                updateKitchenStatus={updateKitchenStatus}
-                                            />
+                                            {tableGroup.orders.map(order => (
+                                                <div
+                                                    key={`${order.order_main_cd}_${order.order_count}`}
+                                                    className="w-full min-w-[100px] max-w-[300px] transition-all duration-300 ease-in-out"
+                                                >
+                                                    <OrderCard
+                                                        time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
+                                                        type={order.type}
+                                                        type_display={order.type_display}
+                                                        number={`${order.order_main_cd}-${order.order_count}`}
+                                                        customer={order.table_name}
+                                                        items={order.items}
+                                                        status={order.status}
+                                                        elapsedTime={order.elapsedTime}
+                                                        expandedItemId={expandedItemId}
+                                                        setExpandedItemId={setExpandedItemId}
+                                                        updateKitchenStatus={updateKitchenStatus}
+                                                    />
+                                                </div>
+                                            ))}
                                         </div>
                                     ))}
                                 </div>
