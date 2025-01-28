@@ -85,47 +85,88 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                                 }}
                             >
                                 <div className="flex min-w-full gap-3">
-                                    {getPageOrders(index + 1).map(tableGroup => (
-                                        <div
-                                            key={tableGroup.tableName}
-                                            className="flex-shrink-0 w-full 
-                                            min-w-[100px] 
-                                            max-w-[130px] 
-                                            sm:max-w-[160px] 
-                                            md:max-w-[200px] 
-                                            lg:max-w-[240px]
-                                            xl:max-w-[280px]
-                                            2xl:max-w-[300px]
-                                            transition-all 
-                                            duration-300 
-                                            ease-in-out"
-                                            style={{
-                                                width: `calc((100% - ${(ordersPerPage - 1) * 0.75}rem) / ${ordersPerPage})`,
-                                                minHeight: '300px'
-                                            }}
-                                        >
-                                            {tableGroup.orders.map(order => (
-                                                <div
-                                                    key={`${order.order_main_cd}_${order.order_count}`}
-                                                    className="w-full min-w-[100px] max-w-[300px] transition-all duration-300 ease-in-out"
-                                                >
-                                                    <OrderCard
-                                                        time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
-                                                        type={order.type}
-                                                        type_display={order.type_display}
-                                                        number={`${order.order_main_cd}-${order.order_count}`}
-                                                        customer={order.table_name}
-                                                        items={order.items}
-                                                        status={order.status}
-                                                        elapsedTime={order.elapsedTime}
-                                                        expandedItemId={expandedItemId}
-                                                        setExpandedItemId={setExpandedItemId}
-                                                        updateKitchenStatus={updateKitchenStatus}
-                                                    />
+                                    {getPageOrders(index + 1).map(tableGroup => {
+                                        // Encontrar el estado más urgente
+                                        const mostUrgentOrder = tableGroup.orders.reduce((prev, current) => {
+                                            if (current.status === 'urgente') return current;
+                                            if (current.status === 'en-progreso' && prev.status !== 'urgente') return current;
+                                            return prev;
+                                        }, tableGroup.orders[0]);
+                                        return (
+                                            <div
+                                                key={tableGroup.tableName}
+                                                className="flex-shrink-0 w-full"
+                                                style={{
+                                                    width: `calc((100% - ${(ordersPerPage - 1) * 0.75}rem) / ${ordersPerPage})`,
+                                                }}
+                                            >
+
+
+                                                <div className="bg-white rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col">
+                                                    <div className="p-4 border-b">
+                                                        <h2 className="text-lg font-bold">テーブル : {tableGroup.tableName}</h2>
+                                                        <div className="text-sm text-gray-500">
+                                                            注文数: {tableGroup.orders.length}
+                                                        </div>
+                                                    </div>
+                                                    <div className="flex-1 overflow-auto p-2">
+                                                        {tableGroup.orders.map(order => (
+                                                            <div
+                                                                key={`${order.order_main_cd}_${order.order_count}`}
+                                                                className={`mb-3 p-3 rounded-lg ${order.status === 'urgente'
+                                                                        ? 'bg-red-100'
+                                                                        : order.status === 'en-progreso'
+                                                                            ? 'bg-yellow-100'
+                                                                            : 'bg-gray-100'
+                                                                    }`}
+                                                            >
+                                                                <div className="flex justify-between items-center mb-2">
+                                                                    <span className="text-sm font-medium">
+                                                                        {order.formatted_time}
+                                                                    </span>
+                                                                    <span className="text-sm">
+                                                                        #{`${order.order_main_cd}-${order.order_count}`}
+                                                                    </span>
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    {order.items.map((item, idx) => (
+                                                                        <div
+                                                                            key={item.uid}
+                                                                            className="text-sm flex justify-between"
+                                                                        >
+                                                                            <span>{item.name}</span>
+                                                                            <span>×{item.quantity}</span>
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    ))}
+
+                                                {/* {tableGroup.orders.map(order => (
+                                                    <div
+                                                        key={`${order.order_main_cd}_${order.order_count}`}
+                                                        className="w-full min-w-[100px] max-w-[300px] transition-all duration-300 ease-in-out"
+                                                    >
+                                                        <OrderCard
+                                                            time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
+                                                            type={order.type}
+                                                            type_display={order.type_display}
+                                                            number={`${order.order_main_cd}-${order.order_count}`}
+                                                            customer={order.table_name}
+                                                            items={order.items}
+                                                            status={order.status}
+                                                            elapsedTime={order.elapsedTime}
+                                                            expandedItemId={expandedItemId}
+                                                            setExpandedItemId={setExpandedItemId}
+                                                            updateKitchenStatus={updateKitchenStatus}
+                                                        />
+                                                    </div>
+                                                ))} */}
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             </div>
                         ))}
