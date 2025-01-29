@@ -2,9 +2,27 @@ import React from 'react'
 import OrderHeader from '../../Base/OrderHeader';
 import OrderItems from '../../Base/OrderItem/OrderItems';
 import ActionButton from '../../Base/ActionButton';
+import { useSwipe } from '../../../../../hooks/useSwipe';
+import UrgentAlert from '../../Base/UrgentAlert';
+import { Timer } from 'lucide-react';
 
-function OrderCard({ time, type, type_display, number, customer, items, status, elapsedTime, expandedItemId, setExpandedItemId, updateKitchenStatus }) {
-  const getStatusColor = () => {
+function OrderCard({ orders = [], tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus }) {
+  const {
+    containerRef,
+    dragOffset,
+    onTouchStart,
+    onTouchEnd,
+    onMouseDown,
+    getTransform,
+    isDragging
+  } = useSwipe({
+    direction: 'vertical',
+    enabled: true,
+    currentPage: 1,
+    totalPages: 1,
+  });
+
+  const getStatusColor = (status, type_display) => {
     if (type_display == 2) {
       switch (status) {
         case 'listo-para-servir':
@@ -14,7 +32,7 @@ function OrderCard({ time, type, type_display, number, customer, items, status, 
         case 'en-cocina':
           return 'bg-yellow-100 border-l-4 border-yellow-500';
         default:
-          return 'bg-gray-200';
+          return 'bg-gray-300';
       }
     } else {
       switch (status) {
@@ -25,32 +43,75 @@ function OrderCard({ time, type, type_display, number, customer, items, status, 
         case 'listo':
           return 'bg-green-100 border-l-4 border-green-500';
         default:
-          return 'bg-gray-200';
+          return 'bg-gray-300';
       }
     }
   };
 
   return (
-    <div className={`rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col ${getStatusColor()}`}>
+    <div className="rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col bg-gray-200">
       <div className="p-2 sm:p-2">
         <OrderHeader
-          time={time}
           type={type}
-          number={number}
           customer={customer}
-          status={status}
-          elapsedTime={elapsedTime}
+          total_people={total_people}
         />
       </div>
-      <div className="p-2 sm:p-2 flex-1 overflow-hidden">
-        <div className="h-full overflow-auto scrollbar-container">
-          <OrderItems
-            items={items}
-            expandedItemId={expandedItemId}
-            setExpandedItemId={setExpandedItemId}
-            updateKitchenStatus={updateKitchenStatus}
-            type_display={type_display}
-          />
+
+      {/* Contenedor de órdenes con scroll */}
+      <div
+        ref={containerRef}
+        className="flex-1 overflow-auto scrollbar-container p-2"
+        onTouchStart={onTouchStart}
+        onTouchEnd={onTouchEnd}
+        onMouseDown={onMouseDown}
+      >
+        <div className="p-2 sm:p-2 flex-1 overflow-hidden">
+          <div
+            className="h-full overflow-auto scrollbar-container"
+            style={{
+              transform: getTransform(),
+              transition: 'transform 0.1s ease-out'
+            }}
+          >
+            {orders?.map(order => (
+              <div
+                key={`${order.order_main_cd}_${order.order_count}`}
+                className={`mb-3 p-3 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
+              >
+                {/* Header de cada orden */}
+                <div className="flex justify-between items-center mb-2">
+                  <span className="inline-flex items-center gap-4 text-sm font-medium">
+                    {order.formatted_time}
+                    {order.status === 'urgente' ? (
+                      <span className="ml-1 inline-flex items-center text-red-500">
+                        <UrgentAlert className="w-5 h-5" />
+                        <span>{order.elapsedTime}分</span>
+                      </span>
+                    ) : (
+                      <span className="ml-1 inline-flex items-center text-blue-500">
+                        <Timer className="w-5 h-5" />
+                        <span>{order.elapsedTime}分</span>
+                      </span>
+                    )}
+                  </span>
+
+                  <span className="text-sm">
+                    #{`${order.order_main_cd}-${order.order_count}`}
+                  </span>
+                </div>
+
+                {/* Usar OrderItems para los items de la orden */}
+                <OrderItems
+                  items={order.items}
+                  expandedItemId={expandedItemId}
+                  setExpandedItemId={setExpandedItemId}
+                  updateKitchenStatus={updateKitchenStatus}
+                  type_display={orders.type_display}
+                />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

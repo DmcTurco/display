@@ -41,11 +41,17 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     const processOrders = (data) => {
         // Agrupar las órdenes por mesa
         const groupedOrders = data.reduce((acc, order) => {
-            const tableId = order.table_name || 'Sin Mesa'; // 'Sin Mesa' para órdenes no asignadas
+            const tableId = order.table_name || 'Sin Mesa';
+
+            // Inicializamos la estructura de la mesa si no existe
             if (!acc[tableId]) {
-                acc[tableId] = [];
+                acc[tableId] = {
+                    orders: [],
+                    type: order.type || 1,// Guardamos el type de la primera orden de la mesa
+                    total_people: order.total_people  
+                };
             }
-    
+
             // Mapear los detalles de la orden
             const mappedItems = order.order_details.map(detail => ({
                 id: detail.cd,
@@ -58,15 +64,15 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 serving_status: detail.serving_status,
                 modification: detail.modification,
             }));
-    
+
             // Insertar la orden en el grupo de la mesa correspondiente
-            acc[tableId].push({
+            acc[tableId].orders.push({
                 order_main_cd: order.order_main_cd,
                 order_count: order.order_count,
                 formatted_time: formatTime(order.record_date),
                 formatted_time_update: formatTime(order.update_date),
                 table_name: order.table_name || 'Sin Mesa',
-                type: order.type || 1,
+                type_display: config.type || 1,
                 status: determineStatus(
                     order.record_date,
                     'no-iniciado',
@@ -77,17 +83,69 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 items: mappedItems,
                 record_date: order.record_date,
             });
-    
+
             return acc;
         }, {});
-    
-        // Ordenar las mesas y las órdenes dentro de cada mesa por fecha de registro
-        return Object.entries(groupedOrders).map(([tableName, orders]) => ({
+
+        // Primero creamos el array con los grupos de mesa
+        const tableGroups = Object.entries(groupedOrders).map(([tableName, tableData]) => ({
             tableName,
-            orders: orders.sort((a, b) => new Date(a.record_date) - new Date(b.record_date)),
+            type: tableData.type,
+            total_people: tableData.total_people,
+            orders: tableData.orders.sort((a, b) => new Date(a.record_date) - new Date(b.record_date))
         }));
+
+        // Luego ordenamos los grupos de mesa por el record_date de su primera orden
+        return tableGroups.sort((a, b) => {
+            const firstOrderA = a.orders[0]?.record_date;
+            const firstOrderB = b.orders[0]?.record_date;
+            return new Date(firstOrderA) - new Date(firstOrderB);
+        });
     };
-    
+    const processOrdersTable = (data) => {
+        const processedOrders = data.reduce((acc, order) => {
+            const uniqueId = `${order.order_main_cd}_${order.order_count}`;
+
+            const mappedItems = order.order_details.map(detail => ({
+                id: detail.cd,
+                name: detail.menu_name,
+                quantity: detail.quantity,
+                uid: detail.uid,
+                pid: detail.pid,
+                group_id: detail.group_id || null,
+                kitchen_status: detail.kitchen_status,
+                serving_status: detail.serving_status,
+                modification: detail.modification,
+            }));
+
+            const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
+            const allServed = mappedItems.every(item => item.serving_status === 1);
+
+            acc[uniqueId] = {
+                order_main_cd: order.order_main_cd,
+                order_count: order.order_count,
+                formatted_time: formatTime(order.record_date),
+                formatted_time_update: formatTime(order.update_date),
+                table_name: order.table_name || 'Sin mesa',
+                type: order.type || 1,
+                type_display: config.type || 1,
+                status: determineStatus(
+                    order.record_date,
+                    'no-iniciado',
+                    hasInProgressItem ? 1 : 0,
+                    allServed ? 1 : 0
+                ),
+                elapsedTime: calculateElapsedTime(config.type == 2 ? order.update_date : order.record_date),
+                items: mappedItems,
+                record_date: order.record_date
+            };
+
+            return acc;
+        }, {});
+
+        return Object.values(processedOrders)
+            .sort((a, b) => new Date(a.record_date) - new Date(b.record_date));
+    };
 
     const getTodayOrders = useCallback(async (kitchenCd) => {
         try {
@@ -110,8 +168,14 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 return;
             }
 
-            const processedNewData = processOrders(newData.data);
-            console.log(processedNewData);
+            let processedNewData;
+            const configLocal = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+            if (configLocal.layoutType === "swipe" && configLocal.type == "1") {
+                processedNewData = processOrders(newData.data);
+            } else {
+                processedNewData = processOrdersTable(newData.data);
+            }
+
             setOrders(processedNewData);
 
             setError(null);
@@ -145,7 +209,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 return;
             }
 
-            const processedNewData = processOrders(newData.data);
+            const processedNewData = processOrdersTable(newData.data);
             setCompletedOrders(processedNewData); // Usar el nuevo estado
             setError(null);
 

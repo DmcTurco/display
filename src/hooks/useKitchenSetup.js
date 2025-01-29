@@ -58,32 +58,33 @@ export function useKitchenSetup() {
         try {
             const lastUID = localStorage.getItem(LAST_UID_KEY);
             const storedConfig = getStoredConfig();
-            
-            // Guardar configuraciones personalizadas antes de cualquier operación
+
+            // Establecer valores predeterminados para customSettings
+            const defaultSettings = {
+                layoutType: "swipe",
+                fontSize: "normal"  // también podemos establecer un tamaño de fuente predeterminado
+            };
+
+            // Usar los valores almacenados o los predeterminados
             const customSettings = storedConfig ? {
-                layoutType: storedConfig.layoutType,
-                fontSize: storedConfig.fontSize
-            } : {};
+                layoutType: storedConfig.layoutType || defaultSettings.layoutType,
+                fontSize: storedConfig.fontSize || defaultSettings.fontSize
+            } : defaultSettings;
 
             if (uid !== lastUID) {
-                // console.log('UID diferente, limpiando configuración');
                 clearConfig();
                 await fetchConfig(uid);
             } else if (!storedConfig) {
                 await fetchConfig(uid);
             } else {
-                // Verificar si el tipo cambió
                 const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
                 const newConfigData = await newConfigResponse.json();
-
                 if (newConfigData.status === 'ok' && (newConfigData.data.type !== storedConfig.type ||
                     newConfigData.data.terminal_name !== storedConfig.terminal_name)
                 ) {
-                    // console.log('Cambio detectado en tipo o terminal_name, actualizando configuración');
                     clearConfig();
                     await fetchConfig(uid);
                 } else {
-                    // console.log('Usando config almacenada');
                     setConfig(storedConfig);
                     setIsConfigured(true);
                 }
@@ -94,12 +95,11 @@ export function useKitchenSetup() {
             if (currentConfig) {
                 const mergedConfig = {
                     ...currentConfig,
-                    ...customSettings
+                    ...customSettings  // Esto asegurará que siempre tengamos los valores predeterminados
                 };
                 localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(mergedConfig));
                 setConfig(mergedConfig);
             }
-
         } catch (err) {
             setError(err.message);
         } finally {

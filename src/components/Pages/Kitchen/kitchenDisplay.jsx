@@ -13,13 +13,12 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   const [expandedItemId, setExpandedItemId] = useState(null);
   const API_URL = buildApiUrl();
   const { orders, completedOrders, loading, error, getTodayOrders, getTodayCompletedOrders, updateKitchenStatus } = useOrders(config, API_URL);
-  // const { config, initializeConfig } = useKitchenSetup();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [localConfig, setConfig] = useState(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {});
+  const localConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
   const layoutType = (localConfig?.layoutType || 'swipe');
-  
+
   // Manejar conexión y obtener órdenes
   useEffect(() => {
     if (config) {  // Solo si hay config
@@ -27,8 +26,10 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
         setIsOnline(true);
         // if (config?.cd) {
         getTodayOrders(config.cd);
-        getTodayCompletedOrders(config.cd);
-        // }
+        if (layoutType == 'serving-completed') {
+          getTodayCompletedOrders(config.cd);
+        }
+
       };
 
       const handleOffline = () => setIsOnline(false);
@@ -50,26 +51,66 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   }, [config, isOnline]);
 
   // Actualizar contadores
-  useEffect(() => {
+  if (layoutType == 'swipe') {
+    useEffect(() => {
+      if (orders && config?.type != 2) {
+        const counts = orders.reduce((acc, tableGroup) => {
+          // Contar órdenes por estado en cada grupo
+          const tableCounts = tableGroup.orders.reduce((tableAcc, order) => {
+            switch (order.status) {
+              case 'no-iniciado':
+                tableAcc.pending++;
+                break;
+              case 'en-progreso':
+                tableAcc.inProgress++;
+                break;
+              case 'urgente':
+                tableAcc.urgent++;
+                break;
+            }
+            return tableAcc;
+          }, { pending: 0, inProgress: 0, urgent: 0 });
 
-    if (orders && config?.type != 2) {
+          // Sumar los contadores de la mesa actual a los acumulados
+          return {
+            pending: acc.pending + tableCounts.pending,
+            inProgress: acc.inProgress + tableCounts.inProgress,
+            urgent: acc.urgent + tableCounts.urgent
+          };
+        }, { pending: 0, inProgress: 0, urgent: 0 });
 
-      const pendingOrders = orders.filter(order => order.status == 'no-iniciado').length;
-      const inProgressOrders = orders.filter(order => order.status === 'en-progreso').length;
-      const urgentOrders = orders.filter(order => order.status === 'urgente').length;
+        // Actualizar los estados
+        setPendingCount(counts.pending);
+        setInProgressCount(counts.inProgress);
+        setUrgentCount(counts.urgent);
+      } else if (config?.type === 'serving') {
+        setPendingCount(0);
+        setInProgressCount(0);
+        setUrgentCount(0);
+      }
+    }, [orders, config?.type]);
+  } else {
+    useEffect(() => {
 
-      setPendingCount(pendingOrders);
-      setInProgressCount(inProgressOrders);
-      setUrgentCount(urgentOrders);
+      if (orders && config?.type != 2) {
 
-    } else if (config?.type === 'serving') {
-      // Si es serving, establecer contadores en 0
-      setPendingCount(0);
-      setInProgressCount(0);
-      setUrgentCount(0);
-    }
+        const pendingOrders = orders.filter(order => order.status == 'no-iniciado').length;
+        const inProgressOrders = orders.filter(order => order.status === 'en-progreso').length;
+        const urgentOrders = orders.filter(order => order.status === 'urgente').length;
 
-  }, [orders, config?.type]);
+        setPendingCount(pendingOrders);
+        setInProgressCount(inProgressOrders);
+        setUrgentCount(urgentOrders);
+
+      } else if (config?.type === 'serving') {
+        // Si es serving, establecer contadores en 0
+        setPendingCount(0);
+        setInProgressCount(0);
+        setUrgentCount(0);
+      }
+
+    }, [orders, config?.type]);
+  }
 
   const renderOrderLayout = () => {
     const layoutProps = {

@@ -27,16 +27,6 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
   // Filtrar items si config.type == 2 y serving_status == 0
   const filteredItems = config.type == 2 ? items.filter(item => item.serving_status !== 1) : items;
 
-  // const groupedByTable = filteredItems.reduce((acc, item) => {
-  //   const tableId = item.table || 'sin Mesa';
-  //   if(!acc[tableId]){
-  //     acc[tableId] = [];
-  //   }
-
-  //   acc[tableId].push(item);
-  //   return acc;
-  // },{});
-
   // Organizamos los items en una estructura jerárquica
   const organizedItems = filteredItems.reduce((acc, item) => {
     if (!item.pid) {
@@ -72,17 +62,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
 
   return (
     <>
-      <div
-        ref={containerRef}
-        className="space-y-2 sm:space-y-3 md:space-y-2 w-full max-w-2xl mx-auto px-1 sm:px-1 max-h-[calc(100vh-260px)] overflow-y-auto"
-        onTouchStart={onTouchStart}
-        onTouchEnd={onTouchEnd}
-        onMouseDown={onMouseDown}
-        style={{
-          transform: getTransform(),
-          transition: 'transform 0.1s ease-out'
-        }}
-      >
+      <div className="space-y-2">
         {Object.values(organizedItems).map((item) => {
           const hasAdditionals = item.additionalItems.length > 0;
           const allAdditionalsComplete = hasAdditionals && areAllAdditionalsComplete(item.additionalItems);

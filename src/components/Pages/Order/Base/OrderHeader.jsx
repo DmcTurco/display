@@ -2,8 +2,8 @@ import { ShoppingBag, Timer, Truck, Users } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import UrgentAlert from './UrgentAlert';
 
-const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
-  const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {});
+const OrderHeader = ({ time, type, total_people, customer }) => {
+  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
   const getFontSizeClass = () => {
     switch (config.fontSize) {
@@ -54,13 +54,13 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
         {/* Cantidad de personas - lado derecho */}
         <div className="flex items-center gap-2">
           <h2 className={`${getFontSizeClass()} font-bold text-gray-800`}>
-            １２人
+            {total_people}人
           </h2>
         </div>
       </div>
 
       {/* Información en una sola fila */}
-      <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 px-1">
+      {/* <div className="flex items-center justify-between text-xs sm:text-sm text-gray-500 px-1">
         <div className="flex items-center">
           <span className={`${getQuantityFontSizeClass()} inline-flex items-center gap-4`}>
             {time}
@@ -78,7 +78,7 @@ const OrderHeader = ({ time, type, number, customer, status, elapsedTime }) => {
           </span>
         </div>
         <span className='text-xs sm:text-sm'>#{number}</span>
-      </div>
+      </div> */}
     </div>
   );
 };
