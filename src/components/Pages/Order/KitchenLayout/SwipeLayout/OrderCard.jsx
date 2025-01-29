@@ -86,12 +86,12 @@ function OrderCard({ orders = [], tableName, total_people, type, customer, expan
                     {order.status === 'urgente' ? (
                       <span className="ml-1 inline-flex items-center text-red-500">
                         <UrgentAlert className="w-5 h-5" />
-                        <span>{order.elapsedTime}分</span>
+                        <span>{order.elapsedTime}分経過 </span>
                       </span>
                     ) : (
-                      <span className="ml-1 inline-flex items-center text-blue-500">
+                      <span className="ml-1 inline-flex items-center text-blue-700">
                         <Timer className="w-5 h-5" />
-                        <span>{order.elapsedTime}分</span>
+                        <span>{order.elapsedTime}分経過 </span>
                       </span>
                     )}
                   </span>

@@ -54,7 +54,7 @@ const OrderHeader = ({ time, type, total_people, customer }) => {
         {/* Cantidad de personas - lado derecho */}
         <div className="flex items-center gap-2">
           <h2 className={`${getFontSizeClass()} font-bold text-gray-800`}>
-            {total_people}人
+            {total_people}名
           </h2>
         </div>
       </div>
