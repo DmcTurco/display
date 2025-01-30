@@ -9,7 +9,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
-    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
     // Usar el hook de swipe
     const {
@@ -134,13 +134,14 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     </div>
                 </div>
 
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
+                <div className="
                     bg-black/60 text-white px-3 py-1 rounded-full text-sm 
-                    backdrop-blur-sm select-none">
+                    backdrop-blur-sm select-none" style={{ right: 150, position : 'fixed' , top: 40 }} >
                     {currentPage} / {totalPages}
                 </div>
             </div>
         </div >
+
     );
 };
 

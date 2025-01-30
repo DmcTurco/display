@@ -59,18 +59,6 @@ export function useKitchenSetup() {
             const lastUID = localStorage.getItem(LAST_UID_KEY);
             const storedConfig = getStoredConfig();
 
-            // Establecer valores predeterminados para customSettings
-            const defaultSettings = {
-                layoutType: "swipe",
-                fontSize: "normal"  // también podemos establecer un tamaño de fuente predeterminado
-            };
-
-            // Usar los valores almacenados o los predeterminados
-            const customSettings = storedConfig ? {
-                layoutType: storedConfig.layoutType || defaultSettings.layoutType,
-                fontSize: storedConfig.fontSize || defaultSettings.fontSize
-            } : defaultSettings;
-
             if (uid !== lastUID) {
                 clearConfig();
                 await fetchConfig(uid);
@@ -83,15 +71,31 @@ export function useKitchenSetup() {
                     newConfigData.data.terminal_name !== storedConfig.terminal_name)
                 ) {
                     clearConfig();
+                    if(newConfigData.data.type !== storedConfig.type){
+                        storedConfig.layoutType = null;
+                    }
                     await fetchConfig(uid);
                 } else {
                     setConfig(storedConfig);
                     setIsConfigured(true);
                 }
             }
-
             // Restaurar configuraciones personalizadas después de cualquier actualización
             const currentConfig = getStoredConfig();
+
+            // Establecer valores predeterminados para customSettings
+            const defaultSettings = {
+                layoutType: currentConfig.type == 2 ? 'serving-timeline' : 'swipe',
+                fontSize: "normal"  // también podemos establecer un tamaño de fuente predeterminado
+            };
+
+            // Usar los valores almacenados o los predeterminados
+            const customSettings = storedConfig ? {
+                layoutType: storedConfig.layoutType || defaultSettings.layoutType,
+                fontSize: storedConfig.fontSize || defaultSettings.fontSize
+            } : defaultSettings;
+
+
             if (currentConfig) {
                 const mergedConfig = {
                     ...currentConfig,

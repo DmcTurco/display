@@ -98,7 +98,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         onClick={() => setShowConfirmDialog(true)}
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
-                        更新 ({getSelectedItemsCount()} pendientes)
+                        更新 ({getSelectedItemsCount()}イヤリング)
                     </button>
                 </div>
             )}
@@ -109,22 +109,22 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         注文時間
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[100px] z-30 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         経過時間
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[200px] z-30 bg-gray-200">
+                                    <th className="w-[100px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         テーブル
                                     </th>
                                     <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
                                         メニュー
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
                                         全体合計
                                     </th>
                                 </tr>
@@ -132,16 +132,16 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                             <tbody className="divide-y divide-gray-200">
                                 {orderItems.map((order, orderIndex) => (
                                     <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[150px]">{order.orderTime}</td>
-                                        <td className="pt-2 pb-0 px-4 align-top text-red-500 font-medium w-[150px]">{order.elapsedTime}</td>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[100px]">{order.table}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.orderTime}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top text-red-500 font-medium w-[100px] text-center">{order.elapsedTime}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.table}</td>
                                         <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
                                             <div className="divide-y divide-gray-100">
                                                 {order.items.map(item => (
                                                     <div
                                                         key={item.id}
                                                         onClick={() => toggleRowSelection(item.id)}
-                                                        className={`flex items-center px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
+                                                        className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
                                                             ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
                                                             : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
                                                             }`}
@@ -152,14 +152,14 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                         </div>
 
                                                         {/* Cantidad del item */}
-                                                        <div className="flex-1 flex justify-center">
+                                                        <div className="w-[200px] flex justify-end ">
                                                             <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-blue-500 rounded-full">
                                                                 {item.quantity}
                                                             </span>
                                                         </div>
 
                                                         {/* Total del item */}
-                                                        <div className="flex-1 flex justify-center">
+                                                        <div className="w-[200px] flex justify-end px-4">
                                                             <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-green-500 rounded-full">
                                                                 {itemTotals[item.name].total}
                                                             </span>

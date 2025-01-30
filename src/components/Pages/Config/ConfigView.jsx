@@ -60,15 +60,15 @@ const ConfigView = () => {
     const getLayoutOptions = () => {
         if (config.type == "1") {
             return [
-                { value: "swipe", label: "Orden de Pedido" },
-                { value: "table", label: "Orden por Menu" },
-                { value: "timeline", label: "Orden por Hora" }
+                { value: "swipe", label: "テーブル表示" },
+                { value: "table", label: "メニュー一覧表示" },
+                { value: "timeline", label: "オーダー順表示" }
             ];
         } else if (config.type == "2") {
             return [
-                { value: "swipe", label: "Vista de Servicio" },
-                { value: "serving-timeline", label: "Vista de Servicio por tabla" },
-                { value: "serving-completed", label: "Vista de Servicio completados" },
+                // { value: "swipe", label: "Vista de Servicio" },
+                { value: "serving-timeline", label: "配膳待ち一覧表示" },
+                { value: "serving-completed", label: "配膳済み一覧表示" },
                 // { value: "grid", label: "Vista por Mesa" }
             ];
         }
