@@ -1,4 +1,4 @@
-import React, {  useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import _ from 'lodash';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../../ui/alert-dialog';
 
@@ -187,7 +187,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         onClick={() => setShowConfirmDialog(true)}  // Cambiar aquí
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
                     >
-                        更新 ({getSelectedPendingCount()} pendientes)
+                        更新 ({getSelectedPendingCount()}イヤリング)
                     </button>
                 </div>
             )}
@@ -197,18 +197,20 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 min-w-[200px] sticky left-0 z-30 bg-gray-200">
+                                    <th className="w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
                                         メニュー項目
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 min-w-[100px] sticky left-[200px] z-30 bg-gray-200">
+                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 bg-gray-200">
                                         合計
                                     </th>
                                     {uniqueTables.map(table => (
                                         <th key={table}
-                                            className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 min-w-[100px]">
+                                            className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
                                             {table}
                                         </th>
                                     ))}
+                                    {/* Columna fantasma que se expande */}
+                                    <th className="w-full bg-gray-50 border-b border-gray-200"></th>
                                 </tr>
                             </thead>
 
@@ -221,12 +223,12 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')} 
                                                 hover:bg-gray-100 transition-colors`}
                                             onClick={() => hasPendingItems && toggleRowSelection(item)}>
-                                            <td className={`py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : 'bg-white'}`}>
+                                            <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10
+                                                ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 {item}
                                             </td>
-                                            <td className={`py-3 px-4 text-center border-b border-gray-200 sticky left-[200px] z-10 
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : 'bg-white'}`}>
+                                            <td className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200 sticky left-[300px] z-10
+                                                ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-green-500 rounded-full">
                                                     {orderMatrix[item].totals}
                                                 </span>
@@ -236,12 +238,12 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
                                                 return (
                                                     <td key={`${item}-${table}`}
-                                                        className={`py-3 px-4 text-center border-b border-gray-200 
+                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200
                                                             ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''} 
                                                             ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            toggleCellSelection(item, table, pendingQuantity);
+                                                            pendingQuantity > 0 && toggleCellSelection(item, table, pendingQuantity);
                                                         }}>
                                                         {quantity > 0 && (
                                                             <div className="flex flex-col items-center gap-1">
@@ -264,6 +266,8 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                     </td>
                                                 );
                                             })}
+                                            {/* Celda fantasma que se expande */}
+                                            <td className={`border-b border-gray-200 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}></td>
                                         </tr>
                                     );
                                 })}

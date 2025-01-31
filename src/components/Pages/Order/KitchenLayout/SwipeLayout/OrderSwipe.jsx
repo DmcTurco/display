@@ -4,12 +4,12 @@ import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 
 
-const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenStatus }) => {
+const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenStatus }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const ordersPerPage = 4;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
-    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    // const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
     // Usar el hook de swipe
     const {
@@ -59,8 +59,8 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
     };
 
     return (
-        <div className="flex flex-col h-full">
-            <div 
+        <div className="flex flex-col h-full overflow-hidden">
+            <div
                 ref={containerRef}
                 className="max-w-[1200px] mx-auto w-full px-4 h-full"
                 onTouchStart={onTouchStart}
@@ -79,45 +79,45 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                         {Array.from({ length: totalPages }).map((_, index) => (
                             <div
                                 key={index}
-                                className="flex min-w-full gap-4"
+                                className="flex min-w-full"
                                 style={{
                                     width: `${100 / totalPages}%`
                                 }}
                             >
                                 <div className="flex min-w-full gap-3">
-                                    {getPageOrders(index + 1).map(order => (
+                                    {getPageOrders(index + 1).map(tableGroup => (
                                         <div
-                                            key={`${order.order_main_cd}_${order.order_count}`}
+                                            key={`table-${tableGroup.tableName}`}
                                             className="flex-shrink-0 w-full 
-                                            min-w-[100px] 
-                                            max-w-[130px] 
-                                            sm:max-w-[160px] 
-                                            md:max-w-[200px] 
-                                            lg:max-w-[240px]
-                                            xl:max-w-[280px]
-                                            2xl:max-w-[300px]
-                                            transition-all 
-                                            duration-300 
-                                            ease-in-out"
+                                                min-w-[100px] 
+                                                max-w-[130px] 
+                                                sm:max-w-[160px] 
+                                                md:max-w-[200px] 
+                                                lg:max-w-[240px]
+                                                xl:max-w-[280px]
+                                                2xl:max-w-[300px]
+                                                transition-all 
+                                                duration-300 
+                                                ease-in-out"
                                             style={{
                                                 width: `calc((100% - ${(ordersPerPage - 1) * 0.75}rem) / ${ordersPerPage})`,
                                                 minHeight: '300px'
                                             }}
                                         >
+
                                             <OrderCard
-                                                time={config.type == 2 ? order.formatted_time_update : order.formatted_time}
-                                                type={order.type}
-                                                type_display={order.type_display}
-                                                number={`${order.order_main_cd}-${order.order_count}`}
-                                                customer={order.table_name}
-                                                items={order.items}
-                                                status={order.status}
-                                                elapsedTime={order.elapsedTime}
+                                                orders={tableGroup.orders}
+                                                type={tableGroup.type}
+                                                total_people={tableGroup.total_people}
+                                                tableName={tableGroup.tableName}
                                                 expandedItemId={expandedItemId}
                                                 setExpandedItemId={setExpandedItemId}
                                                 updateKitchenStatus={updateKitchenStatus}
+                                                customer={tableGroup.tableName}
                                             />
                                         </div>
+
+
                                     ))}
                                 </div>
                             </div>
@@ -134,13 +134,14 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId,updateKitchenSta
                     </div>
                 </div>
 
-                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 
+                <div className="
                     bg-black/60 text-white px-3 py-1 rounded-full text-sm 
-                    backdrop-blur-sm select-none">
+                    backdrop-blur-sm select-none" style={{ right: 150, position : 'fixed' , top: 40 }} >
                     {currentPage} / {totalPages}
                 </div>
             </div>
-        </div>
+        </div >
+
     );
 };
 

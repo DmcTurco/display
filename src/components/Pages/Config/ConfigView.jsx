@@ -60,15 +60,15 @@ const ConfigView = () => {
     const getLayoutOptions = () => {
         if (config.type == "1") {
             return [
-                { value: "swipe", label: "Orden de Pedido" },
-                { value: "table", label: "Orden por Menu" },
-                { value: "timeline", label: "Orden por Hora" }
+                { value: "swipe", label: "テーブル表示" },
+                { value: "table", label: "メニュー一覧表示" },
+                { value: "timeline", label: "オーダー順表示" }
             ];
         } else if (config.type == "2") {
             return [
-                { value: "swipe", label: "Vista de Servicio" },
-                { value: "serving-timeline", label: "Vista de Servicio por tabla" },
-                { value: "serving-completed", label: "Vista de Servicio completados" },
+                // { value: "swipe", label: "Vista de Servicio" },
+                { value: "serving-timeline", label: "配膳待ち一覧表示" },
+                { value: "serving-completed", label: "配膳済み一覧表示" },
                 // { value: "grid", label: "Vista por Mesa" }
             ];
         }
@@ -104,7 +104,7 @@ const ConfigView = () => {
                     </div>
 
                     {/* Selector de cantidad de cards */}
-                    <div className="grid grid-cols-2 items-center py-2">
+                    {/* <div className="grid grid-cols-2 items-center py-2">
                         <span className="font-medium text-gray-700">
                             表示数:
                         </span>
@@ -118,7 +118,7 @@ const ConfigView = () => {
                             <option value="12">１２枚</option>
                             <option value="16">１６枚</option>
                         </select>
-                    </div>
+                    </div> */}
 
                     {/* Selector de tamaño de fuente */}
                     <div className="grid grid-cols-2 items-center py-2">
