@@ -60,8 +60,20 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         return selectedItem ? selectedItem.quantity : 0;
     };
 
+    // Función para extraer minutos del formato "X分"
     const getMinutes = (elapsedTime) => {
-        return parseInt(elapsedTime.replace('分', ''));
+        if (!elapsedTime) return 0;
+        // Asegurarnos de que elapsedTime es string y eliminar '分'
+        return parseInt(elapsedTime.toString().replace('分', '')) || 0;
+    };
+
+    // Función para determinar el estilo basado en el tiempo
+    const getTimeStyle = (elapsedTime, configTime) => {
+        const minutes = getMinutes(elapsedTime);
+        const threshold = parseInt(configTime || 0);
+
+        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
+            }`;
     };
 
     if (!orderItems?.length) {
@@ -83,33 +95,33 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200 w-[80px]">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         注文時間
                                     </th>
-                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[80px] z-30 bg-gray-200 w-[80px]">
+                                    <th className="w-[100px] py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         経過時間
                                     </th>
-                                    <th className="py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-[160px] z-30 bg-gray-200 w-[60px]">
+                                    <th className="w-[100px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         テーブル
                                     </th>
                                     <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
                                         メニュー
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 border-b border-gray-200 w-[290px]">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-50 border-b border-gray-200">
                                     </th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {orderItems.map((order, orderIndex) => (
                                     <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-2 align-top w-[150px]">{order.orderTime}</td>
-                                        <td className={`pt-2 pb-0 px-2 align-top font-medium w-[150px] ${getMinutes(order.elapsedTime) > 15 ? 'text-red-500' : 'text-gray-900'}`}>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.orderTime}</td>
+                                        <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
                                             {order.elapsedTime}
                                         </td>
-                                        <td className="pt-2 pb-0 px-2 align-top w-[100px]">{order.table}</td>
+                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.table}</td>
                                         <td colSpan="3" className="p-0">
                                             <div className="divide-y divide-gray-100">
                                                 {order.items.map(item => (
@@ -127,14 +139,14 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                         </div>
 
                                                         {/* Cantidad del item */}
-                                                        <div className="flex-1 flex justify-center">
+                                                        <div className="w-[100px] flex justify-end">
                                                             <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-blue-500 rounded-full">
                                                                 {item.quantity}
                                                             </span>
                                                         </div>
 
                                                         {/* Botón de acción - solo visible cuando la fila está seleccionada */}
-                                                        <div className="flex-1 flex justify-center">
+                                                        <div className="w-[200px] flex justify-center px-4">
                                                             {selectedItemId === item.id && (
                                                                 <button
                                                                     onClick={(e) => {
@@ -143,7 +155,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                                     }}
                                                                     className="px-4 py-2 text-sm font-medium text-white bg-red-500 rounded hover:bg-red-600 transition-colors"
                                                                 >
-                                                                    配膳する
+                                                                    戻す
                                                                 </button>
                                                             )}
                                                         </div>
@@ -165,7 +177,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                     <h3 className="text-lg font-medium mb-2">配膳取消確認</h3>
                     {selectedItemId ? (
                         <p className="text-gray-500 mb-4">
-                            選択した料理 ({getSelectedItemsCount()} 件) の配膳を取り消しますか？
+                            選択した料理の配膳を取り消しますか？
                         </p>
                     ) : (
                         <p className="text-gray-500 mb-4">

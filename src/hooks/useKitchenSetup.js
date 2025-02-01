@@ -68,7 +68,8 @@ export function useKitchenSetup() {
                 const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
                 const newConfigData = await newConfigResponse.json();
                 if (newConfigData.status === 'ok' && (newConfigData.data.type !== storedConfig.type ||
-                    newConfigData.data.terminal_name !== storedConfig.terminal_name)
+                    newConfigData.data.terminal_name !== storedConfig.terminal_name
+                    || newConfigData.data.elapsed_time !== storedConfig.elapsed_time)
                 ) {
                     clearConfig();
                     if(newConfigData.data.type !== storedConfig.type){
@@ -99,6 +100,7 @@ export function useKitchenSetup() {
             if (currentConfig) {
                 const mergedConfig = {
                     ...currentConfig,
+                    elapsed_time: currentConfig.elapsed_time,
                     ...customSettings  // Esto asegurará que siempre tengamos los valores predeterminados
                 };
                 localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(mergedConfig));

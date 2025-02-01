@@ -90,6 +90,21 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         return count;
     };
 
+    // Función para extraer minutos del formato "X分"
+    const getMinutes = (elapsedTime) => {
+        if (!elapsedTime) return 0;
+        // Asegurarnos de que elapsedTime es string y eliminar '分'
+        return parseInt(elapsedTime.toString().replace('分', '')) || 0;
+    };
+
+    // Función para determinar el estilo basado en el tiempo
+    const getTimeStyle = (elapsedTime, configTime) => {
+        const minutes = getMinutes(elapsedTime);
+        const threshold = parseInt(configTime || 0);
+
+        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
+            }`;
+    };
     return (
         <div className="flex flex-col h-full">
             {selectedRows.size > 0 && (
@@ -133,7 +148,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                 {orderItems.map((order, orderIndex) => (
                                     <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
                                         <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.orderTime}</td>
-                                        <td className="pt-2 pb-0 px-4 align-top text-red-500 font-medium w-[100px] text-center">{order.elapsedTime}</td>
+                                        <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
+                                            {order.elapsedTime}
+                                        </td>
                                         <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center">{order.table}</td>
                                         <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
                                             <div className="divide-y divide-gray-100">
@@ -152,7 +169,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                         </div>
 
                                                         {/* Cantidad del item */}
-                                                        <div className="w-[200px] flex justify-end ">
+                                                        <div className="w-[200px] flex justify-end">
                                                             <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-blue-500 rounded-full">
                                                                 {item.quantity}
                                                             </span>

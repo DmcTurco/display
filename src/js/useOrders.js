@@ -25,6 +25,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     const determineStatus = (recordDate, currentStatus, kitchenStatus = 0, servingStatus = 0) => {
         const elapsedMinutes = calculateElapsedTime(recordDate);
         const type = config.type || 1;
+        const elapsed_time = parseInt(config.elapsed_time || 15, 10);  // Convertir a entero
 
         if (type === 2) { // Serving
             if (servingStatus === 1) return 'servido';
@@ -32,7 +33,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             return 'en-cocina';
         } else { // Kitchen
             if (kitchenStatus === 1) return 'en-progreso';
-            if (currentStatus === 'no-iniciado' && elapsedMinutes > 15) return 'urgente';
+            if (currentStatus === 'no-iniciado' && elapsedMinutes >= elapsed_time) return 'urgente';
             return currentStatus;
         }
 
@@ -48,7 +49,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 acc[tableId] = {
                     orders: [],
                     type: order.type || 1,// Guardamos el type de la primera orden de la mesa
-                    total_people: order.total_people  
+                    total_people: order.total_people
                 };
             }
 

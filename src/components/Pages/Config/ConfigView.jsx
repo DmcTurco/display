@@ -90,6 +90,12 @@ const ConfigView = () => {
                         <dt className="font-medium text-gray-600">ターミナル:</dt>
                         <dd>{config.terminal_name}</dd>
                     </div>
+
+                    <div className="grid grid-cols-2">
+                        <dt className="font-medium text-gray-600">調理待ち超過までの時間:</dt>
+                        <dd>{config.elapsed_time}</dd>
+                    </div>
+
                     <div className="grid grid-cols-2">
                         <dt className="font-medium text-gray-600">タイプ:</dt>
                         <dd>{typeLabels[config.type] || config.type}</dd>
