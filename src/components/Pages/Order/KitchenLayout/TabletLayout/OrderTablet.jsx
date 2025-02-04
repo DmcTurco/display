@@ -185,7 +185,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                 <div className="sticky top-0 z-40 mb-2">
                     <button
                         onClick={() => setShowConfirmDialog(true)}  // Cambiar aquí
-                        className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                        className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
                         更新 ({getSelectedPendingCount()}イヤリング)
                     </button>
@@ -221,15 +221,15 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                         <tr key={item}
                                             className={`${hasPendingItems ? 'cursor-pointer' : 'cursor-not-allowed'} 
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')} 
-                                                hover:bg-gray-100 transition-colors`}
+                                                hover:bg-gray-100 transition-colors text-3xl`}
                                             onClick={() => hasPendingItems && toggleRowSelection(item)}>
-                                            <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10
+                                            <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 {item}
                                             </td>
                                             <td className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200 sticky left-[300px] z-10
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-green-500 rounded-full">
+                                                <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-green-500 rounded-full ">
                                                     {orderMatrix[item].totals}
                                                 </span>
                                             </td>
@@ -238,7 +238,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
                                                 return (
                                                     <td key={`${item}-${table}`}
-                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200
+                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center text-3xl border-b border-gray-200
                                                             ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''} 
                                                             ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
@@ -247,7 +247,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                         }}>
                                                         {quantity > 0 && (
                                                             <div className="flex flex-col items-center gap-1">
-                                                                <span className={`inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white rounded-full
+                                                                <span className={`inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white rounded-full 
                                                                     ${pendingQuantity > 0 ? 'bg-blue-500' : 'bg-gray-400'}`}>
                                                                     {quantity}
                                                                 </span>

@@ -96,7 +96,7 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
     const minutes = getMinutes(elapsedTime);
     const threshold = parseInt(configTime || 0);
 
-    return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
+    return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
       }`;
   };
 
@@ -127,7 +127,7 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
                   <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                     経過時間
                   </th>
-                  <th className="w-[100px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                  <th className="w-[200px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                     テーブル
                   </th>
                   <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
@@ -141,11 +141,11 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
               <tbody className="divide-y divide-gray-200">
                 {orderItems.map((order, orderIndex) => (
                   <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                    <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center"> {order.orderTime} </td>
+                    <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl"> {order.orderTime} </td>
                     <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
                       {order.elapsedTime}
                     </td>
-                    <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center"> {order.table} </td>
+                    <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl"> {order.table} </td>
                     <td colSpan="3" className="p-0">
                       <div className="divide-y divide-gray-100">
                         {order.items.map((item) => (
@@ -159,12 +159,12 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
                           >
                             {/* Nombre del item */}
                             <div className="flex-1">
-                              <span className="text-sm">{item.name}</span>
+                              <span className="text-3xl ">{item.name}</span>
                             </div>
 
                             {/* Cantidad del item */}
                             <div className="w-[200px] flex justify-end ">
-                              <span className="inline-flex items-center justify-center w-8 h-8 text-sm font-medium text-white bg-blue-500 rounded-full">
+                              <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-blue-500 rounded-full">
                                 {item.quantity}
                               </span>
                             </div>

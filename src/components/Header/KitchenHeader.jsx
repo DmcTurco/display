@@ -32,8 +32,15 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
     window.location.reload();
   };
 
+  const color = configlocal.layoutType === 'serving-completed' ? 'red' : 'blue';
+
   return (
-    <header className="bg-gradient-to-t from-blue-500 to-blue-800 shadow-md rounded-lg p-4 flex justify-between items-center mb-4">
+    <header
+      className={`${configlocal.layoutType === 'serving-completed'
+          ? 'bg-gradient-to-t from-red-500 to-red-800'
+          : 'bg-gradient-to-t from-blue-500 to-blue-800'
+        } shadow-md rounded-lg p-4 flex justify-between items-center mb-4`}
+    >
       <div className="flex items-center gap-2">
         <h1 className="text-3xl font-extrabold text-slate-100 tracking-tight">
           {headerTitle}
