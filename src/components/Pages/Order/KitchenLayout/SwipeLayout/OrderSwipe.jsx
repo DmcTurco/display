@@ -4,7 +4,8 @@ import OrderCard from './OrderCard';
 
 const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenStatus }) => {
     const [currentPage, setCurrentPage] = useState(1);
-    const ordersPerPage = 4;
+    const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    const ordersPerPage = config.cardQuantity;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
 

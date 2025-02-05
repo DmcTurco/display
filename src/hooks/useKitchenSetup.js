@@ -87,13 +87,15 @@ export function useKitchenSetup() {
             // Establecer valores predeterminados para customSettings
             const defaultSettings = {
                 layoutType: currentConfig.type == 2 ? 'serving-timeline' : 'swipe',
-                fontSize: "normal"  // también podemos establecer un tamaño de fuente predeterminado
+                fontSize: "normal",  // también podemos establecer un tamaño de fuente predeterminado
+                cardQuantity: 4
             };
 
             // Usar los valores almacenados o los predeterminados
             const customSettings = storedConfig ? {
                 layoutType: storedConfig.layoutType || defaultSettings.layoutType,
-                fontSize: storedConfig.fontSize || defaultSettings.fontSize
+                fontSize: storedConfig.fontSize || defaultSettings.fontSize,
+                cardQuantity: storedConfig.cardQuantity || defaultSettings.cardQuantity
             } : defaultSettings;
 
 

@@ -110,7 +110,7 @@ const ConfigView = () => {
                     </div>
 
                     {/* Selector de cantidad de cards */}
-                    {/* <div className="grid grid-cols-2 items-center py-2">
+                    <div className="grid grid-cols-2 items-center py-2">
                         <span className="font-medium text-gray-700">
                             表示数:
                         </span>
@@ -119,12 +119,14 @@ const ConfigView = () => {
                             onChange={handleCardQuantityChange}
                             className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
                         >
-                            <option value="4">４枚</option>
+                            <option value="4">4枚</option>
+                            <option value="6">6枚</option>
                             <option value="8">８枚</option>
-                            <option value="12">１２枚</option>
-                            <option value="16">１６枚</option>
+                            <option value="10">10枚</option>
+                            <option value="12">12枚</option>
+                            <option value="16">16枚</option>
                         </select>
-                    </div> */}
+                    </div>
 
                     {/* Selector de tamaño de fuente */}
                     <div className="grid grid-cols-2 items-center py-2">
