@@ -143,7 +143,7 @@ export const useSwipe = ({
     };
 
     const getTransform = () => {
-        const baseTransform = -((currentPage - 1) * 100);
+        const baseTransform = -((currentPage - 1) * 100 / totalPages);
         const dragPercent = (dragOffset / window.innerWidth) * 100;
         const transformProperty = direction === 'horizontal' ? 'translateX' : 'translateY';
         return `${transformProperty}(calc(${baseTransform}% - ${dragPercent}px))`;
