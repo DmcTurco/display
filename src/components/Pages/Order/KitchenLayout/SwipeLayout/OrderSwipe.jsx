@@ -51,7 +51,6 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         const indexOfLastOrder = page * ordersPerPage;
         const indexOfFirstOrder = indexOfLastOrder - ordersPerPage;
         const pageOrders = orders.slice(indexOfFirstOrder, indexOfLastOrder);
-        console.log(`Page ${page}:`, pageOrders);
         return pageOrders;
     };
 
