@@ -7,16 +7,41 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-
+    // console.log('completedOrders: ',completedOrders);
     const { orderItems } = useMemo(() => {
-        // Procesamos órdenes pero filtrando items listos para servir
         const orderItems = completedOrders.map(order => {
+            // Encontrar items que tienen pid
+            const itemsWithPid = order.items?.filter(item => item.pid) || [];
+
+            // Obtener los uids únicos de los padres
+            const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+
+            // Primero encontrar padres que tienen al menos un hijo completado
+            const activeParentUids = parentUids.filter(parentUid => {
+                const children = order.items?.filter(item =>
+                    item.pid === parentUid &&
+                    item.kitchen_status === 1 &&
+                    item.serving_status === 1
+                );
+                return children.length > 0; // Solo incluir padres con hijos completados
+            });
+
+            // Filtrar items completados y procesarlos
+            const processedItems = order.items?.filter(item =>
+                // Incluir el item si:
+                (activeParentUids.includes(item.uid)) || // Es un padre con hijos completados
+                (item.kitchen_status === 1 && item.serving_status === 1) // Es un item completado (sea hijo o item normal)
+            ).map(item => ({
+                ...item,
+                isParent: parentUids.includes(item.uid),
+                isChild: Boolean(item.pid)
+            })) || [];
+
             return {
                 orderTime: order.formatted_time_update,
                 elapsedTime: `${order.elapsedTime}分`,
                 table: order.table_name || 'Sin Mesa',
-                // Filtramos items listos para servir
-                items: order.items?.filter(item => item.kitchen_status === 1 && item.serving_status == 1) || [],
+                items: processedItems,
                 originalOrder: order
             };
         }).filter(order => order.items.length > 0);
@@ -37,16 +62,55 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         setShowConfirmDialog(false);
     };
 
-    const handleUpdate = () => {
-        if (!kitchen_cd) {
-            console.error('No se encontró kitchen_cd en la configuración');
-            return;
+    const handleUpdate = async () => {
+        if (!kitchen_cd || !selectedItemId) return;
+
+        try {
+            // Encuentra el ítem seleccionado
+            const selectedItem = orderItems
+                .flatMap(order => order.items)
+                .find(item => item.id === selectedItemId);
+
+            if (!selectedItem) return;
+
+            // Si el ítem es un hijo
+            if (selectedItem.isChild) {
+                const parentItem = orderItems
+                    .flatMap(order => order.items)
+                    .find(item => item.uid === selectedItem.pid);
+
+                if (parentItem) {
+                    // Encuentra todos los hermanos
+                    const siblings = orderItems
+                        .flatMap(order => order.items)
+                        .filter(item => item.pid === selectedItem.pid);
+
+                    // Verifica si quedarán otros hermanos servidos después de actualizar este
+                    const willHaveServedSiblings = siblings
+                        .filter(sibling => sibling.id !== selectedItemId)
+                        .some(sibling => sibling.serving_status === 1);
+
+                    // Si no quedarán hermanos servidos, actualiza también al padre
+                    if (!willHaveServedSiblings) {
+                        await Promise.all([
+                            updateKitchenStatus(selectedItemId, 0, kitchen_cd),
+                            updateKitchenStatus(parentItem.id, 0, kitchen_cd)
+                        ]);
+                    } else {
+                        // Si aún quedan hermanos servidos, solo actualiza el hijo
+                        await updateKitchenStatus(selectedItemId, 0, kitchen_cd);
+                    }
+                }
+            } else {
+                // Si no es un hijo, actualiza normalmente
+                await updateKitchenStatus(selectedItemId, 0, kitchen_cd);
+            }
+
+            setSelectedItemId(null);
+            setShowConfirmDialog(false);
+        } catch (error) {
+            console.error('Error al actualizar el estado:', error);
         }
-        if (selectedItemId) {
-            updateKitchenStatus(selectedItemId, 0, kitchen_cd);
-        }
-        setSelectedItemId(null);
-        setShowConfirmDialog(false);
     };
 
 
@@ -60,18 +124,9 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         return selectedItem ? selectedItem.quantity : 0;
     };
 
-    // Función para extraer minutos del formato "X分"
-    const getMinutes = (elapsedTime) => {
-        if (!elapsedTime) return 0;
-        // Asegurarnos de que elapsedTime es string y eliminar '分'
-        return parseInt(elapsedTime.toString().replace('分', '')) || 0;
-    };
-
-    // Función para determinar el estilo basado en el tiempo
     const getTimeStyle = (elapsedTime, configTime) => {
-        const minutes = getMinutes(elapsedTime);
+        const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
         const threshold = parseInt(configTime || 0);
-
         return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
             }`;
     };
@@ -96,7 +151,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
                                     <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
-                                        注文時間
+                                        配膳時間
                                     </th>
                                     <th className="w-[100px] py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         経過時間
@@ -128,26 +183,34 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                     <div
                                                         key={item.id}
                                                         onClick={() => toggleRowSelection(item.id)}
-                                                        className={`flex items-center px-4 py-2 cursor-pointer ${selectedItemId === item.id
-                                                            ? 'bg-yellow-200'
-                                                            : 'hover:bg-gray-50'
+                                                        className={`flex items-center px-4 py-2 ${item.isParent
+                                                            ? 'bg-gray-50 cursor-default'
+                                                            : `cursor-pointer ${selectedItemId === item.id
+                                                              ? "bg-yellow-200"
+                                                              : "hover:bg-gray-50"
+                                                            }`
                                                             }`}
                                                     >
                                                         {/* Nombre del item */}
-                                                        <div className="flex-1">
+                                                        <div className={`flex-1 flex items-center ${item.isChild ? 'pl-8' : ''}`}>
+                                                            {item.isChild && (
+                                                                <div className="w-2 h-px bg-gray-300"></div>
+                                                            )}
                                                             <span className="text-3xl">{item.name}</span>
                                                         </div>
 
                                                         {/* Cantidad del item */}
                                                         <div className="w-[100px] flex justify-end">
-                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-blue-500 rounded-full">
-                                                                {item.quantity}
-                                                            </span>
+                                                            {!item.isParent && (
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-blue-500 rounded-full">
+                                                                    {item.quantity}
+                                                                </span>
+                                                            )}
                                                         </div>
 
                                                         {/* Botón de acción - solo visible cuando la fila está seleccionada */}
                                                         <div className="w-[200px] flex justify-center px-4">
-                                                            {selectedItemId === item.id && (
+                                                            {!item.isParent && selectedItemId === item.id && (
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation(); // Evita que se deseleccione la fila
