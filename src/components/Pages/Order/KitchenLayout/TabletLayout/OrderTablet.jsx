@@ -1,6 +1,63 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import _ from 'lodash';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../../ui/alert-dialog';
+
+const ScrollingText = ({ text }) => {
+    const needsScroll = text.length > 20;
+
+    if (!needsScroll) {
+        return <div className="text-3xl">{text}</div>;
+    }
+
+    return (
+        <div className="relative w-full overflow-hidden">
+            <div className="marquee-container whitespace-nowrap">
+                <span className="animate-scroll inline-block">
+                    {text}
+                    <span className="mx-4">•</span>
+                    {text}
+                    <span className="mx-4">•</span>
+                    {text}
+                </span>
+            </div>
+
+            <style>
+                {`
+            .marquee-container {
+              width: 100%;
+              overflow: hidden;
+            }
+  
+            .animate-scroll {
+              display: inline-block;
+              animation: scroll 30s linear infinite;
+              animation-delay: 1s;
+            }
+  
+            @keyframes scroll {
+              0% {
+                transform: translateX(0%);
+              }
+              100% {
+                transform: translateX(-66.66%);
+              }
+            }
+  
+            .animate-scroll:hover {
+              animation-play-state: paused;
+            }
+  
+            @media (prefers-reduced-motion: reduce) {
+              .animate-scroll {
+                animation: none;
+                transform: translateX(0);
+              }
+            }
+          `}
+            </style>
+        </div>
+    );
+};
 
 const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
@@ -119,7 +176,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
             });
         }
     };
-    
+
     const handleConfirm = () => {
         handleUpdate();
         setShowConfirmDialog(false);
@@ -197,15 +254,15 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
+                                    <th className="w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
                                         メニュー項目
                                     </th>
-                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 bg-gray-200">
+                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 bg-gray-200">
                                         合計
                                     </th>
                                     {uniqueTables.map(table => (
                                         <th key={table}
-                                            className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200">
+                                            className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200">
                                             {table}
                                         </th>
                                     ))}
@@ -225,11 +282,11 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                             onClick={() => hasPendingItems && toggleRowSelection(item)}>
                                             <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                {item}
+                                                <ScrollingText text={item} />
                                             </td>
                                             <td className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200 sticky left-[300px] z-10
                                                 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-green-500 rounded-full ">
+                                                <span className="inline-flex items-center justify-center text-5xl font-medium text-red-500">
                                                     {orderMatrix[item].totals}
                                                 </span>
                                             </td>
@@ -238,7 +295,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
                                                 return (
                                                     <td key={`${item}-${table}`}
-                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center text-3xl border-b border-gray-200
+                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center  border-b border-gray-200
                                                             ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''} 
                                                             ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
@@ -247,11 +304,11 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                         }}>
                                                         {quantity > 0 && (
                                                             <div className="flex flex-col items-center gap-1">
-                                                                <span className={`inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white rounded-full 
-                                                                    ${pendingQuantity > 0 ? 'bg-blue-500' : 'bg-gray-400'}`}>
+                                                                <span className={`inline-flex items-center justify-center text-5xl font-medium text-black-500 
+                                                                    ${pendingQuantity > 0 ? '' : 'bg-gray-400'}`}>
                                                                     {quantity}
                                                                 </span>
-                                                                {pendingQuantity < quantity && pendingQuantity > 0 && (
+                                                                {/* {pendingQuantity < quantity && pendingQuantity > 0 && (
                                                                     <span className="text-xs text-orange-500 font-medium">
                                                                         ({pendingQuantity} pend.)
                                                                     </span>
@@ -260,7 +317,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                                     <span className="text-xs text-green-500 font-medium">
                                                                         (Completado)
                                                                     </span>
-                                                                )}
+                                                                )} */}
                                                             </div>
                                                         )}
                                                     </td>

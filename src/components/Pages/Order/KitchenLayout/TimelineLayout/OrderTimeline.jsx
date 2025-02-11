@@ -68,8 +68,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
     }, [orders]);
 
-    console.log(orderItems);
-
     // const { orderItems, itemTotals } = useMemo(() => {
 
 
@@ -273,7 +271,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                         {/* Cantidad del item */}
                                                         <div className="w-[200px] flex justify-end">
                                                             {!item.isParent && (
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-blue-500 rounded-full">
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500 ">
                                                                     {item.quantity}
                                                                 </span>
                                                             )}
@@ -282,7 +280,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                         {/* Total del item */}
                                                         <div className="w-[200px] flex justify-end px-4">
                                                             {!item.isParent && (
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-3xl font-medium text-white bg-green-500 rounded-full">
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
                                                                     {itemTotals[item.name].total}
                                                                 </span>
                                                             )}

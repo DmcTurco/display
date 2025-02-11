@@ -65,7 +65,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
                 ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
               `}
             >
-              <div className="flex gap-1">
+              <div className="flex gap-4">
                 <span className={`font-medium ${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap`}>
                   {additionalItem.quantity}
                 </span>

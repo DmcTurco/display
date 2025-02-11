@@ -69,8 +69,9 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
     >
       {/* Item principal */}
       <div className="flex items-start justify-between">
-        <div className="flex sm:gap-2 gap-1">
-          <span className={`font-medium ${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap`}>
+        <div className="flex  gap-4">
+          {/* <span className={`font-medium ${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap`}> */}
+          <span className='text-4xl text-gray-700 whitespace-nowrap font-medium'>
             {item.quantity}
           </span>
           {item.modification && item.modification !== "　" && (
@@ -78,7 +79,8 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
               {item.modification}
             </span>
           )}
-          <span className={`flex-1 ${getFontSizeClass()} break-words`}>{item.name}</span>
+          {/* <span className={`flex-1 ${getFontSizeClass()} break-words`}>{item.name}</span> */}
+          <span className='text-3xl flex-1 break-words'>{item.name}</span>
         </div>
         {isServing ? (isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />) : ((isCompleted || allAdditionalsComplete) && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />)
         }
