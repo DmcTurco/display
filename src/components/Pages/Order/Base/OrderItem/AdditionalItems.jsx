@@ -24,19 +24,11 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
     if (now - (lastTapsRef.current[itemId] || 0) < DOUBLE_TAP_DELAY) {
       // Doble toque detectado
       clearTimeout(tapTimeoutsRef.current[itemId]);
-      if (isServing) {
-        onItemClick(additionalItem, true, true, false, true);
-      } else {
-        onItemClick(additionalItem, true, true);
-      }
+      onItemClick(additionalItem, true, true, false, isServing);
     } else {
       // Toque simple
       tapTimeoutsRef.current[itemId] = setTimeout(() => {
-        if (isServing) {
-          onItemClick(additionalItem, true, false, false, true);
-        } else {
-          onItemClick(additionalItem, true, false);
-        }
+        onItemClick(additionalItem, true, false, false, isServing);
       }, 150);
     }
     lastTapsRef.current[itemId] = now;
@@ -52,10 +44,11 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
 
         return (
           <div key={additionalItem.uid} className="relative">
+            {/* Contenedor principal del ítem adicional */}
             <div
               onClick={(e) => handleItemClick(additionalItem, e)}
               className={`
-                flex items-start justify-between gap-1 text-xs text-gray-600
+                flex items-start justify-between gap-1 text-gray-600
                 transition-all duration-300 p-1 rounded
                 ${isServing
                   ? (isAdditionalCompleted ? "bg-blue-200" : "bg-white hover:bg-gray-200")
@@ -65,45 +58,49 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
                 ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
               `}
             >
-              <div className="flex gap-4">
-                <span className={`font-medium ${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap`}>
+              {/* Detalles del ítem */}
+              <div className="flex items-center gap-4">
+                <span className="font-medium text-3xl text-gray-700 whitespace-nowrap">
                   {additionalItem.quantity}
                 </span>
                 {additionalItem.modification && additionalItem.modification !== "　" && (
-                  <span className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center`}>
+                  <span
+                    className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center`}
+                  >
                     {additionalItem.modification}
                   </span>
                 )}
-                <span className={`flex-1 ${getFontSizeClass()}`}>{additionalItem.name}</span>
+                <span className="flex-1 text-2xl text-gray-700">{additionalItem.name}</span>
               </div>
+
+              {/* Ícono de completado */}
               {isAdditionalCompleted && (
-                <CheckCircle2 className={`h-3 w-3 ${isServing ? "text-blue-500" : "text-green-500"}`} />
+                <CheckCircle2
+                  className={`h-3 w-3 ${isServing ? "text-blue-500" : "text-green-500"}`}
+                />
               )}
             </div>
+
+            {/* Botones de acción cuando el ítem está expandido */}
             {isItemExpanded && (
               <div className="bg-gray-50 rounded-b-lg p-2 shadow-sm border-x border-b animate-slideDown">
                 <div className="flex gap-2 w-full sm:w-auto">
+                  {/* Botón Cancelar */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (isServing) {
-                        onItemClick(additionalItem, true, false, true, true);
-                      } else {
-                        onItemClick(additionalItem, true, false, true);
-                      }
+                      onItemClick(additionalItem, true, false, true, isServing);
                     }}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2 py-1 text-xs bg-white rounded border hover:bg-gray-50"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2 py-1 text-3xl bg-white rounded border hover:bg-gray-50"
                   >
-                    <X className="h-4 w-10" />
+                    <X className="h-4 w-4" />
                   </button>
+
+                  {/* Botón Confirmar */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (isServing) {
-                        onItemClick(additionalItem, true, true, false, true);
-                      } else {
-                        onItemClick(additionalItem, true, true);
-                      }
+                      onItemClick(additionalItem, true, true, false, isServing);
                     }}
                     className={`flex-1 sm:flex-none flex items-center justify-center gap-1 px-2 py-1 text-xs ${isServing ? "bg-blue-500 hover:bg-blue-600" : "bg-green-500 hover:bg-green-600"
                       } text-white rounded`}

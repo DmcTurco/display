@@ -244,7 +244,8 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         onClick={() => setShowConfirmDialog(true)}  // Cambiar aquí
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
-                        更新 ({getSelectedPendingCount()}イヤリング)
+                        {/* 更新 ({getSelectedPendingCount()}イヤリング) */}
+                        【調理済みにする】 
                     </button>
                 </div>
             )}

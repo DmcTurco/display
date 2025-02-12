@@ -5,30 +5,26 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [selectedRows, setSelectedRows] = useState(new Set());
 
-
+    // Procesamiento inicial de las órdenes
     const { orderItems, itemTotals } = useMemo(() => {
-        //procesamos las ordenes con la logica padre hijo
         const orderItems = orders.map((order) => {
-            //Encontrar items que tiene pid
             const itemsWithPid = order.items?.filter(item => item.pid) || [];
-            //obtener los uids unicos de los padres
             const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
 
-
-            // Primero identificar padres que tienen al menos un hijo sin cocinar
+            // Identificar padres activos (con hijos sin cocinar)
             const activeParentUids = parentUids.filter(parentUid => {
                 const children = order.items?.filter(item =>
-                    item.pid === parentUid &&
-                    item.kitchen_status !== 1
+                    item.pid === parentUid && item.kitchen_status !== 1
                 );
-                return children.length > 0; // El padre se muestra solo si tiene hijos sin cocinar
+                return children.length > 0;
             });
 
-            // Procesamos los items
+            // Filtrar ítems relevantes
             const processedItems = order.items?.filter(item =>
                 (activeParentUids.includes(item.uid)) || // Es un padre con hijos sin cocinar
-                (!item.pid && item.kitchen_status !== 1) || // Es un item normal no cocinado
+                (!item.pid && item.kitchen_status !== 1) || // Es un ítem normal no cocinado
                 (item.pid && item.kitchen_status !== 1) // Es un hijo no cocinado
             ).map(item => ({
                 ...item,
@@ -42,89 +38,88 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 table: order.table_name || 'Sin Mesa',
                 items: processedItems,
                 originalOrder: order
-            }
+            };
         }).filter(order => order.items.length > 0);
 
-        //calcular los totales
+        // Calcular totales
         const itemTotals = {};
         orderItems.forEach(order => {
             order.items.forEach(item => {
                 if (!itemTotals[item.name]) {
-                    itemTotals[item.name] = {
-                        total: 0,
-                        occurrences: 0
-                    };
-                };
-
+                    itemTotals[item.name] = { total: 0, occurrences: 0 };
+                }
                 itemTotals[item.name].total += item.quantity;
                 itemTotals[item.name].occurrences += 1;
-
             });
         });
 
         return {
-            orderItems: _.sortBy(orderItems, (item) => new Date(item.originalOrder.record_date)), itemTotals
+            orderItems: _.sortBy(orderItems, (item) => new Date(item.originalOrder.record_date)),
+            itemTotals
         };
-
     }, [orders]);
 
-    // const { orderItems, itemTotals } = useMemo(() => {
 
-
-    //     // Primero procesamos las órdenes como antes
-    //     const orderItems = orders.map(order => {
-    //         return {
-    //             orderTime: order.formatted_time,
-    //             elapsedTime: `${order.elapsedTime}分`,
-    //             table: order.table_name || 'Sin Mesa',
-    //             items: order.items?.filter(item => item.kitchen_status !== 1) || [],
-    //             originalOrder: order
-    //         };
-    //     }).filter(order => order.items.length > 0);
-
-    //     // Ahora calculamos los totales por cada item
-    //     const itemTotals = {};
-    //     orderItems.forEach(order => {
-    //         order.items.forEach(item => {
-    //             if (!itemTotals[item.name]) {
-    //                 itemTotals[item.name] = {
-    //                     total: 0,
-    //                     occurrences: 0
-    //                 };
-    //             }
-    //             itemTotals[item.name].total += item.quantity;
-    //             itemTotals[item.name].occurrences += 1;
-    //         });
-    //     });
-
-    //     return {
-    //         orderItems: _.sortBy(orderItems, item => new Date(item.originalOrder.record_date)),
-    //         itemTotals
-    //     };
-    // }, [orders]);
-
-    const [selectedRows, setSelectedRows] = useState(new Set());
+    // Función para encontrar todos los hijos de un padre
+    const getAllChildren = (parentId, items) => {
+        if (!Array.isArray(items)) {
+            console.warn('Items no es un array:', items);
+            return [];
+        }
+        return items.filter(item => item.pid === parentId);
+    };
 
     // Modificar toggleRowSelection para no permitir selección de padres
-    const toggleRowSelection = (item) => {
-        if (item.isParent) return; // No permitir selección de padres
+    // const toggleRowSelection = (item) => {
+    //     if (item.isParent) return; // No permitir selección de padres
 
+    //     setSelectedRows(prev => {
+    //         const newSet = new Set(prev);
+    //         if (newSet.has(item.id)) {
+    //             newSet.delete(item.id);
+    //         } else {
+    //             newSet.add(item.id);
+    //         }
+    //         return newSet;
+    //     });
+    // };
+
+    // Modificar toggleRowSelection para manejar la selección de padres e hijos
+    const toggleRowSelection = (item, allItems) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(item.id)) {
-                newSet.delete(item.id);
+
+            if (item.isParent) {
+                const children = getAllChildren(item.uid, allItems);
+
+                if (newSet.has(item.id)) {
+                    newSet.delete(item.id);
+                    children.forEach(child => newSet.delete(child.id));
+                } else {
+                    newSet.add(item.id);
+                    children.forEach(child => newSet.add(child.id));
+                }
             } else {
-                newSet.add(item.id);
+                if (newSet.has(item.id)) {
+                    newSet.delete(item.id);
+                } else {
+                    newSet.add(item.id);
+                }
             }
+
             return newSet;
         });
     };
+
+
+
+
     const handleConfirm = () => {
         handleUpdate();
         setShowConfirmDialog(false);
     };
 
-    // Modificar la función de actualización
+    // Actualizar estado de los ítems seleccionados
     const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
@@ -135,37 +130,30 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             for (const order of orderItems) {
                 for (const item of order.items) {
                     if (selectedRows.has(item.id)) {
-                        if (item.isChild) {
-                            // Es un hijo, verificar si todos los hermanos estarán listos
-                            const siblings = orderItems
-                                .flatMap(o => o.items)
-                                .filter(i => i.pid === item.pid);
-
-                            const allSiblingsWillBeReady = siblings
-                                .every(sibling =>
-                                    sibling.kitchen_status === 1 || // Ya está listo
-                                    selectedRows.has(sibling.id)    // O será actualizado
-                                );
+                        if (item.isParent) {
+                            const children = getAllChildren(item.uid, order.items);
+                            await Promise.all([
+                                updateKitchenStatus(item.id, 1, kitchen_cd),
+                                ...children.map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
+                            ]);
+                        } else if (item.isChild) {
+                            const siblings = getAllChildren(item.pid, order.items);
+                            const allSiblingsWillBeReady = siblings.every(sibling =>
+                                sibling.kitchen_status === 1 || selectedRows.has(sibling.id)
+                            );
 
                             if (allSiblingsWillBeReady) {
-                                // Encontrar al padre
-                                const parent = orderItems
-                                    .flatMap(o => o.items)
-                                    .find(i => i.uid === item.pid);
-
+                                const parent = order.items.find(i => i.uid === item.pid);
                                 if (parent) {
-                                    // Actualizar padre e hijo
                                     await Promise.all([
                                         updateKitchenStatus(item.id, 1, kitchen_cd),
                                         updateKitchenStatus(parent.id, 1, kitchen_cd)
                                     ]);
                                 }
                             } else {
-                                // Solo actualizar el hijo
                                 await updateKitchenStatus(item.id, 1, kitchen_cd);
                             }
-                        } else if (!item.isParent) {
-                            // Es un item normal
+                        } else {
                             await updateKitchenStatus(item.id, 1, kitchen_cd);
                         }
                     }
@@ -179,7 +167,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         }
     };
 
-    // Modificar la función de conteo
+
+
+    // Contar ítems seleccionados
     const getSelectedItemsCount = () => {
         let count = 0;
         orderItems.forEach(order => {
@@ -190,13 +180,13 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
         });
         return count;
-    };
+    }
 
+    // Estilo para el tiempo transcurrido
     const getTimeStyle = (elapsedTime, configTime) => {
         const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
         const threshold = parseInt(configTime || 0);
-        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
-            }`;
+        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'}`;
     };
 
     return (
@@ -207,7 +197,8 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         onClick={() => setShowConfirmDialog(true)}
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
-                        更新 ({getSelectedItemsCount()}イヤリング)
+                        {/* 更新 ({getSelectedItemsCount()}イヤリング) */}
+                        【調理済みにする】 
                     </button>
                 </div>
             )}
@@ -248,42 +239,52 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                         <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl">{order.table}</td>
                                         <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
                                             <div className="divide-y divide-gray-100">
-                                                {order.items.map(item => (
+                                                {order.items.map((item, itemIndex) => (
                                                     <div
-                                                        key={item.id}
-                                                        onClick={() => toggleRowSelection(item)}
-                                                        className={`flex items-left px-4 py-2 ${item.isParent
-                                                            ? 'bg-gray-50 cursor-default'
-                                                            : `cursor-pointer ${selectedRows.has(item.id)
-                                                                ? 'bg-yellow-200 hover:bg-yellow-200'
-                                                                : 'hover:bg-gray-50'
-                                                            }`
+                                                        key={itemIndex}
+                                                        onClick={() => toggleRowSelection(item, order.items)} 
+                                                        className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
+                                                            ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
+                                                            : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
                                                             }`}
+                                                    // className={`flex items-left px-4 py-2 ${item.isParent
+                                                    //     ? 'bg-gray-50 cursor-default'
+                                                    //     : `cursor-pointer ${selectedRows.has(item.id)
+                                                    //         ? 'bg-yellow-200 hover:bg-yellow-200'
+                                                    //         : 'hover:bg-gray-50'
+                                                    //     }`
+                                                    //     }`}
                                                     >
                                                         {/* Nombre del item */}
-                                                        <div className={`flex-1 flex items-center ${item.isChild ? 'pl-8' : ''}`}>
+                                                        <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
                                                             {item.isChild && (
                                                                 <div className="w-2 h-px bg-gray-300 mr-3"></div>
                                                             )}
                                                             <span className="text-3xl">{item.name}</span>
                                                         </div>
+                                                        {/* <div className="flex-1 flex items-center pl-8">
+                                                            {item.isChild && (
+                                                                <div className="w-2 h-px bg-gray-300 mr-3"></div>
+                                                            )}
+                                                            <span className="text-3xl">{item.name}</span>
+                                                        </div> */}
 
                                                         {/* Cantidad del item */}
                                                         <div className="w-[200px] flex justify-end">
-                                                            {!item.isParent && (
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500 ">
-                                                                    {item.quantity}
-                                                                </span>
-                                                            )}
+                                                            {/* {!item.isParent && ( */}
+                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500 ">
+                                                                {item.quantity}
+                                                            </span>
+                                                            {/* )} */}
                                                         </div>
 
                                                         {/* Total del item */}
                                                         <div className="w-[200px] flex justify-end px-4">
-                                                            {!item.isParent && (
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
-                                                                    {itemTotals[item.name].total}
-                                                                </span>
-                                                            )}
+                                                            {/* {!item.isParent && ( */}
+                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
+                                                                {itemTotals[item.name].total}
+                                                            </span>
+                                                            {/* )} */}
                                                         </div>
                                                     </div>
                                                 ))}

@@ -79,7 +79,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
                 isExpanded={isExpanded}
                 type_display={type_display}
               />
-              {isExpanded && !hasAdditionals && (
+              {isExpanded && (
                 <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
                   <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div className="flex gap-2 w-full sm:w-auto">

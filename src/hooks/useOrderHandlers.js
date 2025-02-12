@@ -19,6 +19,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     };
   }, []); // Se ejecuta solo al desmontar
 
+  // Verificar si todos los hijos están completos
   const areAllAdditionalsComplete = (additionalItems) => {
     if (isServing) {
       return additionalItems.every((item) => item.serving_status === 1);
@@ -26,46 +27,76 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     return additionalItems.every((item) => item.kitchen_status === 1);
   };
 
+  // Actualizar un ítem y todos sus hijos
+  const updateParentAndChildren = async (parentId, status) => {
+    try {
+      const parent = organizedItems[parentId];
+      if (!parent) return;
+      
+      // Actualizar el padre
+      const updates = [updateKitchenStatus(parent.id, status, kitchen_cd)];
 
-  const handleConfirm = async (item, isAdditional) => {
+      // Actualizar todos los hijos que no estén completos
+      parent.additionalItems.forEach((child) => {
+        if (
+          (isServing && child.serving_status !== status) ||
+          (!isServing && child.kitchen_status !== status)
+        ) {
+          updates.push(updateKitchenStatus(child.id, status, kitchen_cd));
+        }
+      });
+
+      // Ejecutar todas las actualizaciones simultáneamente
+      await Promise.all(updates);
+    } catch (error) {
+      console.error('Error al actualizar el padre y sus hijos:', error);
+    }
+  };
+
+  // Confirmar un ítem (padre o adicional)
+  const handleConfirm = async (item, isAdditional = false) => {
     try {
       if (isServing) {
         // Lógica para serving
         if (isAdditional && item.pid) {
           const parent = organizedItems[item.pid];
           const otherServed = parent.additionalItems
-            .filter(siblingItem => siblingItem.id !== item.id)
-            .every(siblingItem => siblingItem.serving_status === 1);
+            .filter((siblingItem) => siblingItem.id !== item.id)
+            .every((siblingItem) => siblingItem.serving_status === 1);
 
           if (otherServed) {
             await Promise.all([
               updateKitchenStatus(item.id, 1, kitchen_cd), // Actualiza serving_status
-              updateKitchenStatus(parent.id, 1, kitchen_cd)
+              updateKitchenStatus(parent.id, 1, kitchen_cd),
             ]);
           } else {
             await updateKitchenStatus(item.id, 1, kitchen_cd);
           }
         } else {
-          await updateKitchenStatus(item.id, 1, kitchen_cd);
+          // await updateKitchenStatus(item.id, 1, kitchen_cd);
+          // Si es un padre, actualizarlo junto con todos sus hijos
+          await updateParentAndChildren(item.uid, 1);
         }
       } else {
         // Lógica original para kitchen
         if (isAdditional && item.pid) {
           const parent = organizedItems[item.pid];
           const otherComplete = parent.additionalItems
-            .filter(siblingItem => siblingItem.id !== item.id)
-            .every(siblingItem => siblingItem.kitchen_status === 1);
+            .filter((siblingItem) => siblingItem.id !== item.id)
+            .every((siblingItem) => siblingItem.kitchen_status === 1);
 
           if (otherComplete) {
             await Promise.all([
               updateKitchenStatus(item.id, 1, kitchen_cd),
-              updateKitchenStatus(parent.id, 1, kitchen_cd)
+              updateKitchenStatus(parent.id, 1, kitchen_cd),
             ]);
           } else {
             await updateKitchenStatus(item.id, 1, kitchen_cd);
           }
         } else {
-          await updateKitchenStatus(item.id, 1, kitchen_cd);
+          // await updateKitchenStatus(item.id, 1, kitchen_cd);
+          // Si es un padre, actualizarlo junto con todos sus hijos
+          await updateParentAndChildren(item.uid, 1);
         }
       }
       setExpandedItemId(null);
@@ -74,35 +105,16 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     }
   };
 
+  // Cancelar la expansión
   const handleCancel = () => {
     setExpandedItemId(null);
   };
 
-  const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false, isServing = false) => {
-
-    // No procesar si es un item principal con hijos
-
-    if (isServing) {
-      // En serving, solo verificamos que el ítem esté listo en cocina
-      if (!item.kitchen_status === 1 || item.serving_status === 1) {
-        return;
-      }
-    } else {
-      // En kitchen, mantenemos la lógica original
-      if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
-        return;
-      }
-      // Si el item ya está completado, no hacer nada
-      if (item.kitchen_status === 1) {
-        return;
-      }
-
-    }
-
-
+  // Manejar clics en los ítems
+  const handleItemClick = (item, isAdditional = false, isDoubleTap = false, isCancel = false) => {
     // Manejar cancelación
     if (isCancel) {
-      setExpandedItemId(null);
+      handleCancel();
       return;
     }
 
@@ -112,35 +124,34 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
       return;
     }
 
-    if (!isAdditional) {
-
-      //para items principales
-      const now = Date.now();
-      if (now - lastTapRef.current < 300) {
-        //Double toque detectado
-        clearTimeout(tapTimeoutRef.current);
-        handleConfirm(item, false)
-      } else {
-        //toque simple
-        tapTimeoutRef.current = setTimeout(() => {
-          if (expandedItemId && expandedItemId !== item.uid) {
-            setExpandedItemId(item.uid); // Cambia al nuevo item
-          } else {
-            setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
-          }
-        }, 150);
-      }
-      lastTapRef.current = now;
-
-    } else {
-      //Para items adicionales
-      if (expandedItemId && expandedItemId !== item.uid) {
-        setExpandedItemId(item.uid);// Cambia al nuevo item
-      } else {
-        setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
-      }
+    // Para ítems principales con hijos: expandir/colapsar
+    if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
+      setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
+      return;
     }
 
+    // Si el ítem ya está completado, no hacer nada
+    if (item.kitchen_status === 1 || (isServing && item.serving_status === 1)) {
+      return;
+    }
+
+    // Manejar toques simples
+    const now = Date.now();
+    if (now - lastTapRef.current < 300) {
+      // Doble toque detectado
+      clearTimeout(tapTimeoutRef.current);
+      handleConfirm(item, isAdditional);
+    } else {
+      // Toque simple
+      tapTimeoutRef.current = setTimeout(() => {
+        if (expandedItemId && expandedItemId !== item.uid) {
+          setExpandedItemId(item.uid); // Cambia al nuevo ítem
+        } else {
+          setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
+        }
+      }, 150);
+    }
+    lastTapRef.current = now;
   };
 
 
