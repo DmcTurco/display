@@ -127,7 +127,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     <div 
                         className="fixed z-50 bg-black/60 text-white px-3 py-1 rounded-full text-sm 
                             backdrop-blur-sm select-none"
-                        style={{ right: 150, top: 40 }}
+                        style={{ right: 120, top: 40 }}
                     >
                         {currentPage} / {totalPages}
                     </div>

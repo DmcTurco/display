@@ -8,6 +8,7 @@ import OrderTablet from "../Order/KitchenLayout/TabletLayout/OrderTablet";
 import OrderTimeline from "../Order/KitchenLayout/TimelineLayout/OrderTimeline";
 import ServingTimeline from "../Order/ServingLayout/ServingTimelineLayout/ServiceTimeline";
 import ServingCompleted from "../Order/ServingLayout/ServingCompletedLayout/ServingCompleted";
+import OrderServing from "../Order/KitchenLayout/viewServingLayout/OrderServing";
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
@@ -128,6 +129,8 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
         return <OrderTablet {...layoutProps} />;
       case 'timeline':
         return <OrderTimeline {...layoutProps} />;
+      case 'kitchenServing':
+        return <OrderServing {...layoutProps} />;
       // Nuevos casos para Serving
       case 'serving-timeline':
         return <ServingTimeline {...layoutProps} />;
@@ -177,7 +180,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       );
     }
 
-    if (!Array.isArray(orders) || orders.length === 0 && layoutType !== 'serving-completed') {
+    if (!Array.isArray(orders) || orders.length === 0 && layoutType !== 'serving-completed' && layoutType !== 'kitchenServing') {
       return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-bounce">

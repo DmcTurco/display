@@ -272,7 +272,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                         {/* Cantidad del item */}
                                                         <div className="w-[200px] flex justify-end">
                                                             {/* {!item.isParent && ( */}
-                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500 ">
+                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
                                                                 {item.quantity}
                                                             </span>
                                                             {/* )} */}

@@ -199,7 +199,15 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             setLoading(true);
             setKitchenCode(kitchenCd);
 
-            const response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}`);
+            let response; // Declara la variable primero
+            // console.log(config);
+            if (config.layoutType === 'kitchenServing') {
+                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}`);
+            } else {
+                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}`);
+            }
+            // console.log(response);
+
             if (!response.ok) throw new Error('Error al obtener los pedidos completados');
 
             const newData = await response.json();
@@ -232,8 +240,8 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 typeDisplay = type;
             }
 
-            console.log('typeDisplay:', typeDisplay);
-            console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
+            // console.log('typeDisplay:', typeDisplay);
+            // console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {

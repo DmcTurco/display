@@ -1,12 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
-
+// Calcular el número máximo de tarjetas basado en el ancho de la pantalla
+const getMaxCards = () => {
+    const screenWidth = window.innerWidth;
+    const maxCards = Math.floor(screenWidth / 220);
+    return maxCards;
+};
 const ConfigView = () => {
     const navigate = useNavigate();
-    // const [config, setConfig] = useState(JSON.parse(localStorage.getItem('kitchenConfig')) || {});
     const { updateCustomSettings } = useKitchenSetup();
-
+    const [maxAllowedCards, setMaxAllowedCards] = useState(getMaxCards());
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     // const handleLayoutChange = (event) => {
     //     const updatedConfig = {
@@ -62,7 +66,7 @@ const ConfigView = () => {
             return [
                 { value: "swipe", label: "テーブル表示" },
                 { value: "table", label: "メニュー一覧表示" },
-                { value: "timeline", label: "オーダー順表示" }
+                { value: "timeline", label: "オーダー順表示" },
             ];
         } else if (config.type == "2") {
             return [
@@ -74,6 +78,34 @@ const ConfigView = () => {
         }
         return [];
     };
+
+
+    // Actualizar maxAllowedCards cuando cambie el tamaño de la ventana
+    useEffect(() => {
+        const handleResize = () => {
+            setMaxAllowedCards(getMaxCards());
+        };
+
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
+    let cardOptions = [];
+    for (var i = 4; i <= maxAllowedCards; i++) {
+        cardOptions.push(
+            { value: i, label: i + '枚' }
+        )
+    }
+
+    // Opciones de tarjetas filtradas según el ancho de la pantalla
+    // const cardOptions = [
+    //     { value: "4", label: "4枚" },
+    //     { value: "6", label: "6枚" },
+    //     { value: "8", label: "8枚" },
+    //     { value: "10", label: "10枚" },
+    //     { value: "12", label: "12枚" },
+    //     { value: "16", label: "16枚" }
+    // ].filter(option => parseInt(option.value) <= maxAllowedCards);
+
 
     return (
         <div className="p-4">
@@ -110,23 +142,24 @@ const ConfigView = () => {
                     </div>
 
                     {/* Selector de cantidad de cards */}
-                    <div className="grid grid-cols-2 items-center py-2">
-                        <span className="font-medium text-gray-700">
-                            表示数:
-                        </span>
-                        <select
-                            value={config.cardQuantity || '4'} // Valor por defecto: 4
-                            onChange={handleCardQuantityChange}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
-                        >
-                            <option value="4">4枚</option>
-                            <option value="6">6枚</option>
-                            <option value="8">８枚</option>
-                            <option value="10">10枚</option>
-                            <option value="12">12枚</option>
-                            <option value="16">16枚</option>
-                        </select>
-                    </div>
+                    {config.layoutType === 'swipe' && (
+                        <div className="grid grid-cols-2 items-center py-2">
+                            <span className="font-medium text-gray-700">
+                                表示数:
+                            </span>
+                            <select
+                                value={config.cardQuantity || '4'}
+                                onChange={handleCardQuantityChange}
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                            >
+                                {cardOptions.map(option => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Selector de tamaño de fuente */}
                     <div className="grid grid-cols-2 items-center py-2">
