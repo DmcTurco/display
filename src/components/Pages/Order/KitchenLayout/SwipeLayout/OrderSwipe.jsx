@@ -94,6 +94,82 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         });
     };
 
+
+    const { orderItems } = useMemo(() => {
+        // Procesar cada grupo de mesa
+        const processedGroups = orders.map((tableGroup) => {
+            // Procesar cada orden dentro del grupo
+            const processedOrders = tableGroup.orders.map(order => {
+                // Encontrar items que son hijos
+                const itemsWithPid = order.items?.filter(item => item.pid) || [];
+                // Obtener IDs únicos de padres
+                const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+    
+                // Identificar padres activos (con hijos sin cocinar)
+                const activeParentUids = parentUids.filter(parentUid => {
+                    const children = order.items?.filter(item =>
+                        item.pid === parentUid && item.kitchen_status !== 1
+                    );
+                    return children.length > 0;
+                });
+    
+                // Filtrar ítems relevantes
+                const processedItems = order.items?.filter(item =>
+                    (activeParentUids.includes(item.uid)) || // Es un padre con hijos sin cocinar
+                    (!item.pid && item.kitchen_status !== 1) || // Es un ítem normal no cocinado
+                    (item.pid && item.kitchen_status !== 1) // Es un hijo no cocinado
+                ).map(item => ({
+                    ...item,
+                    isParent: parentUids.includes(item.uid),
+                    isChild: Boolean(item.pid)
+                })) || [];
+    
+                return {
+                    orderTime: order.formatted_time,
+                    elapsedTime: `${order.elapsedTime}分`,
+                    table: order.table_name || 'Sin Mesa',
+                    items: processedItems,
+                    originalOrder: order
+                };
+            }).filter(order => order.items.length > 0); // Filtrar órdenes sin items
+    
+            // Retornar el grupo procesado solo si tiene órdenes con items
+            return {
+                tableName: tableGroup.tableName,
+                type: tableGroup.type,
+                total_people: tableGroup.total_people,
+                orders: processedOrders
+            };
+        }).filter(group => group.orders.length > 0); // Filtrar grupos sin órdenes
+    
+        // Ordenar por fecha
+        const flattenedOrders = processedGroups.flatMap(group => 
+            group.orders.map(order => ({
+                ...order,
+                tableGroup: {
+                    tableName: group.tableName,
+                    type: group.type,
+                    total_people: group.total_people
+                }
+            }))
+        );
+    
+        return {
+            orderItems: _.sortBy(
+                flattenedOrders,
+                order => new Date(order.originalOrder.record_date)
+            )
+        };
+    }, [orders]);
+
+    const getAllChildren = (parentId, items) => {
+        if (!Array.isArray(items)) {
+          console.warn('Items no es un array:', items);
+          return [];
+        }
+        return items.filter(item => item.pid === parentId);
+      };
+
     const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
@@ -101,58 +177,35 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         }
 
         try {
-            for (const tableGroup of orders) {
-                for (const order of tableGroup.orders) {
-                    // Array para almacenar todos los items a actualizar
-                    const itemsToUpdate = [];
+            for (const order of orderItems) {
+                for (const item of order.items) {
+                    if(selectedItems.has(item.id)){
+                        if(item.isParent){
+                            const children = getAllChildren(item.uid, order.items)
+                            await Promise.all([
+                                updateKitchenStatus(item.id, 1, kitchen_cd),
+                                ...children.map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
+                              ]);
+                        }else if( item.isChild){
+                            const siblings = getAllChildren(item.pid, order.items);
+                            const allSiblingsWillBeReady = siblings.every(sibling =>
+                                sibling.kitchen_status === 1 || selectedItems.has(sibling.id)
+                            );
 
-                    for (const item of order.items) {
-                        // Si el item actual está seleccionado
-                        if (selectedItems.has(item.id)) {
-                            // Caso 1: Es un item padre con hijos
-                            if (item.additionalItems?.length > 0) {
-                                // Agregar el padre
-                                itemsToUpdate.push({
-                                    id: item.id,
-                                    kitchen_cd: kitchen_cd
-                                });
-                                // Agregar todos sus hijos
-                                item.additionalItems.forEach(childItem => {
-                                    itemsToUpdate.push({
-                                        id: childItem.id,
-                                        kitchen_cd: kitchen_cd
-                                    });
-                                });
-                            }
-                            // Caso 2: Es un item individual o un hijo
-                            else {
-                                itemsToUpdate.push({
-                                    id: item.id,
-                                    kitchen_cd: kitchen_cd
-                                });
-                            }
-                        }
-                        // Caso 3: Si el item es padre pero no está seleccionado, revisar si alguno de sus hijos está seleccionado
-                        else if (item.additionalItems?.length > 0) {
-                            item.additionalItems.forEach(childItem => {
-                                if (selectedItems.has(childItem.id)) {
-                                    itemsToUpdate.push({
-                                        id: childItem.id,
-                                        kitchen_cd: kitchen_cd
-                                    });
+                            if (allSiblingsWillBeReady) {
+                                const parent = order.items.find(i => i.uid === item.pid);
+                                if (parent) {
+                                    await Promise.all([
+                                        updateKitchenStatus(item.id, 1, kitchen_cd),
+                                        updateKitchenStatus(parent.id, 1, kitchen_cd)
+                                    ]);
                                 }
-                            });
+                            } else {
+                                await updateKitchenStatus(item.id, 1, kitchen_cd);
+                            }
+                        }else{
+                            await updateKitchenStatus(item.id, 1, kitchen_cd);
                         }
-                    }
-
-                    // Realizar todas las actualizaciones en paralelo
-                    if (itemsToUpdate.length > 0) {
-                        console.log('Items a actualizar:', itemsToUpdate.map(item => item.id));
-                        await Promise.all(
-                            itemsToUpdate.map(item =>
-                                updateKitchenStatus(item.id, 1, item.kitchen_cd)
-                            )
-                        );
                     }
                 }
             }

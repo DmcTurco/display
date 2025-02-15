@@ -8,8 +8,10 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
   const tapTimeoutsRef = useRef({});
   const isServing = type_display == 2;
 
-  const handleToggleSelection = (additionalItem) => {
-    onToggleSelection(additionalItem);
+  const handleClick = (additionalItem,isAdditionalCompleted) => {
+    if (!isServing && !isAdditionalCompleted) {
+      onToggleSelection(additionalItem);
+    }
   };
 
   return (
@@ -18,25 +20,29 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
         const isAdditionalCompleted = isServing
           ? additionalItem.serving_status === 1
           : additionalItem.kitchen_status === 1;
+
         const isItemExpanded = expandedItemId === additionalItem.uid;
         const isSelected = selectedItems.has(additionalItem.id);
+
+        const itemClasses = `
+          flex items-start justify-between gap-1 text-gray-600
+          transition-all duration-300 p-1 rounded
+          ${isSelected ? "bg-yellow-200" : ""}
+          ${isAdditionalCompleted ? "" : "cursor-pointer"}
+          ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
+        `;
+    
 
         return (
           <div key={additionalItem.uid} className="relative">
             {/* Contenedor principal del ítem adicional */}
             <div
               onClick={(e) => {
-                e.stopPropagation();
-                handleToggleSelection(additionalItem); // Manejar selección
+                e.stopPropagation(); 
+                if (!isAdditionalCompleted) handleClick(additionalItem, isAdditionalCompleted);
+                
               }}
-              className={`
-                flex items-start justify-between gap-1 text-gray-600
-                transition-all duration-300 p-1 rounded
-                ${isSelected ? "bg-yellow-200" : ""}
-
-                ${isAdditionalCompleted ? "" : "cursor-pointer"}
-                ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
-              `}
+              className={itemClasses}
             >
               {/* Detalles del ítem */}
               <div className="flex items-center gap-4">
