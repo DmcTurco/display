@@ -76,8 +76,8 @@ const MainLayout = ({ content }) => {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100">
-      <div className="p-4">
+    <div className="flex flex-col h-screen bg-gray-50">
+      <div className="p-2">
         <KitchenHeader
           pendingCount={pendingCount}
           inProgressCount={inProgressCount}
@@ -87,7 +87,7 @@ const MainLayout = ({ content }) => {
         />
       </div>
 
-      <div className="flex-1 overflow-hidden px-4">
+      <div className="flex-1 overflow-hidden ">
         {isConfigPage ? <ConfigView config={config} /> : <KitchenDisplay setPendingCount={setPendingCount} setInProgressCount={setInProgressCount} setUrgentCount={setUrgentCount} config={config} />}
 
       </div>

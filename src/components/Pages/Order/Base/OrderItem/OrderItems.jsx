@@ -4,7 +4,7 @@ import MainItem from './MainItem';
 import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 
-const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenStatus, type_display }) => {
+const OrderItems = ({ items,allorders, expandedItemId, setExpandedItemId, updateKitchenStatus, type_display, selectedItems, onToggleSelection }) => {
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   // Usar el hook de swipe para scroll vertical
   const {
@@ -21,7 +21,7 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
     currentPage: 1,
     totalPages: 1,
   });
-
+  // console.log(selectedItems);
   if (!items) return null;
 
   // Filtrar items si config.type == 2 y serving_status == 0
@@ -72,43 +72,17 @@ const OrderItems = ({ items, expandedItemId, setExpandedItemId, updateKitchenSta
             <div key={item.uid} className="relative w-full">
               <MainItem
                 item={item}
+                allorders={allorders}
                 onItemClick={handleItemClickWithDragCheck}
                 allAdditionalsComplete={allAdditionalsComplete}
                 hasAdditionals={hasAdditionals}
                 expandedItemId={expandedItemId}
-                isExpanded={isExpanded}
+                isExpanded={() => { }}
                 type_display={type_display}
+                selectedItems={selectedItems}
+                onToggleSelection={onToggleSelection}
               />
-              {isExpanded && (
-                <div className="bg-gray-50 rounded-b-lg p-2 sm:p-3 shadow-sm border-x border-b animate-slideDown">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                    <div className="flex gap-2 w-full sm:w-auto">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isDragging) {
-                            handleCancel();
-                          }
-                        }}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-white rounded border hover:bg-gray-50">
-                        <X className="h-4 w-10" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (!isDragging) {
-                            handleConfirm(item);
-                          }
-                        }}
-                        className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-3 py-1.5 text-sm bg-green-500 text-white rounded hover:bg-green-600"
-                      >
-                        <ChefHat className="h-4 w-4" />
-                        <span>完了</span>
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
+
             </div>
           );
         })}

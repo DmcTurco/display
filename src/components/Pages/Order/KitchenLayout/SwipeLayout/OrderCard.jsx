@@ -6,7 +6,7 @@ import { useSwipe } from '../../../../../hooks/useSwipe';
 import UrgentAlert from '../../Base/UrgentAlert';
 import { Timer } from 'lucide-react';
 
-function OrderCard({ orders = [], tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus }) {
+function OrderCard({ orders = [],allorders, tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus, selectedItems, onToggleSelection }) {
   const {
     containerRef,
     dragOffset,
@@ -21,7 +21,7 @@ function OrderCard({ orders = [], tableName, total_people, type, customer, expan
     currentPage: 1,
     totalPages: 1,
   });
-
+  // console.log(selectedItems);
   const getStatusColor = (status, type_display) => {
     if (type_display == 2) {
       switch (status) {
@@ -47,7 +47,7 @@ function OrderCard({ orders = [], tableName, total_people, type, customer, expan
       }
     }
   };
-
+  // console.log(selectedItems);
   return (
     <div className="rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col bg-gray-200">
       <div className="p-2 sm:p-2">
@@ -104,10 +104,13 @@ function OrderCard({ orders = [], tableName, total_people, type, customer, expan
                 {/* Usar OrderItems para los items de la orden */}
                 <OrderItems
                   items={order.items}
+                  allorders={allorders}
                   expandedItemId={expandedItemId}
                   setExpandedItemId={setExpandedItemId}
                   updateKitchenStatus={updateKitchenStatus}
-                  type_display={orders.type_display}
+                  type_display={order.type_display}  // Aquí está el error
+                  selectedItems={selectedItems}
+                  onToggleSelection={onToggleSelection}
                 />
               </div>
             ))}

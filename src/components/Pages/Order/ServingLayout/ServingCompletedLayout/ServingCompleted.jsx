@@ -183,7 +183,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                     <button onClick={() => setShowConfirmDialog(true)}
                         className='w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-3xl'
                     >
-                        配膳する
+                        戻す 
                     </button>
                 </div>
 

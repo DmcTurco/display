@@ -1,6 +1,5 @@
 import React, { useMemo, useState } from 'react'
 import _, { filter } from 'lodash';
-import { ClipboardList } from 'lucide-react';
 import { FaClipboardList } from 'react-icons/fa';
 
 const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
@@ -8,7 +7,6 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   const kitchen_cd = config.cd;
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  // const [showCancelDialog, setShowConfirmDialog] = useState(false);
 
   const { orderItems } = useMemo(() => {
     const orderItems = completedOrders.map((order) => {
@@ -104,47 +102,37 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
       console.error('No se encontro kitchen_cd en la configuracion');
       return;
     }
-
+  
     try {
-
       for (const completedOrders of orderItems) {
         for (const item of completedOrders.items) {
           if (selectedRows.has(item.id)) {
             if (item.isParent) {
-              //Si es padre, actualizar tanto al padre comoa todos sus hijos
-
+              // Si es padre, actualizar tanto al padre como a todos sus hijos
               const children = getAllChildren(item.uid, completedOrders.items);
               await Promise.all([
                 updateKitchenStatus(item.id, 0, kitchen_cd, 1),
                 ...children.map(child => updateKitchenStatus(child.id, 0, kitchen_cd, 1))
               ]);
             } else if (item.isChild) {
-              //si es hijo, verificar hermanos y actualizar al padre si es necesario
-
-              const siblings = getAllChildren(item.pid, completedOrders.items);
-              const allSiblingsWillBeCanceled = siblings.every(sibling =>
-                sibling.kitchen_status === 0 || selectedRows.has(sibling.id)
-              );
-
-              if (allSiblingsWillBeCanceled) {
-                const parent = completedOrders.items.find(i => i.uid === item.pid);
-                if (parent) {
-                  await Promise.all([
-                    updateKitchenStatus(item.id, 0, kitchen_cd, 1),
-                    updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
-                  ]);
-                }
+              // Si es hijo, siempre actualizar al padre también
+              const parent = completedOrders.items.find(i => i.uid === item.pid);
+              if (parent) {
+                await Promise.all([
+                  updateKitchenStatus(item.id, 0, kitchen_cd, 1),
+                  updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
+                ]);
               } else {
                 await updateKitchenStatus(item.id, 0, kitchen_cd, 1);
               }
             } else {
-              //si no es ni padre ni hijo, actualizar normalmente
+              // Si no es ni padre ni hijo, actualizar normalmente
               await updateKitchenStatus(item.id, 0, kitchen_cd, 1);
             }
           }
         }
       }
-
+  
       setSelectedRows(new Set());
       setShowConfirmDialog(false);
     } catch (error) {

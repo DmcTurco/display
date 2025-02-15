@@ -195,7 +195,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   };
 
   return (
-    <div className="bg-gray-100 flex flex-col h-full">
+    <div className="bg-gray-50 flex flex-col h-full">
       <div className="flex-1 overflow-hidden">{renderContent()}</div>
     </div>
   );

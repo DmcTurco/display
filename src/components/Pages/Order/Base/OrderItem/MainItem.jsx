@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import AdditionalItems from './AdditionalItems';
 import { use } from 'react';
+import _ from "lodash";
 
-const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display }) => {
+const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display, selectedItems, onToggleSelection }) => {
   const isCompleted = item.kitchen_status === 1;
   const isServed = item.serving_status === 1;
   const [isTouching, setIsTouching] = useState(false);
   const isServing = type_display == 2;
   const [config, setConfig] = useState({});
+  // const isSelected = selectedItems?.has(item.uid);
 
   useEffect(() => {
     const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
@@ -39,27 +41,39 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
 
   // Para serving, el item está disponible si está completado en cocina pero no servido
   const isClickable = isServing ? (isCompleted && !isServed) : !isCompleted;
+  const isSelected = selectedItems.has(item.id);
+
+  const getBackgroundColor = () => {
+
+    if (isSelected) return "bg-yellow-200";
+    if (!isServing) {
+
+      return isCompleted ? "bg-green-200" : "bg-white";
+    }
+    return isServed ? "bg-blue-200" : "bg-white";
+  };
+
+  const handleClick = () => {
+    if (!isServing && !isCompleted) {
+      onToggleSelection(item);
+    }
+  };
+
+
 
 
   return (
     <div
-      onClick={() => {
-        if (isClickable) {
-          onItemClick(item, false, false, false, isServing);
-        }
-      }}
+      onClick={handleClick}
       onTouchStart={() => setIsTouching(true)}
       onTouchEnd={() => setIsTouching(false)}
       onTouchCancel={() => setIsTouching(false)}
       className={`
-        rounded-lg p-3 shadow-sm
+        rounded-lg p-2 shadow-sm
         transition-all duration-300
-        ${isServing
-          ? (isServed ? "bg-blue-200" : "bg-white")
-          : (isCompleted ? "bg-green-200" : "bg-white")
-        }
-        ${isClickable ? "hover:bg-gray-200 active:bg-gray-200 cursor-pointer" : ""}
-        ${isExpanded ? "rounded-b-none border-b border-gray-200" : ""}
+        ${getBackgroundColor()}
+        ${isClickable ? "cursor-pointer" : ""}
+        ${isExpanded ? "border-b border-gray-200" : ""}
         ${isTouching ? "bg-white" : ""}
       `}
     >
@@ -96,6 +110,9 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
             type_display={type_display}
             getFontSizeClass={getFontSizeClass}
             getQuantityFontSizeClass={getQuantityFontSizeClass}
+            selectedItems={selectedItems}
+            onToggleSelection={onToggleSelection}
+
           />
         </div>
       )}

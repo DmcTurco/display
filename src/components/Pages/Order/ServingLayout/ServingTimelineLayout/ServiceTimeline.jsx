@@ -89,60 +89,6 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
     });
   };
 
-  // const handleConfirm = async () => {
-  //   if (!kitchen_cd || !selectedItemId) return;
-
-  //   try {
-  //     // Encuentra el ítem seleccionado
-  //     const selectedItem = orderItems
-  //       .flatMap((order) => order.items)
-  //       .find((item) => item.id === selectedItemId);
-
-  //     if (!selectedItem) return;
-
-  //     // Si el ítem es un hijo, verifica si es el último por servir
-  //     if (selectedItem.isChild && selectedItem.pid) {
-  //       // Encuentra el padre
-  //       const parentItem = orderItems
-  //         .flatMap((order) => order.items)
-  //         .find((item) => item.uid === selectedItem.pid);
-
-  //       if (parentItem) {
-  //         // Encuentra todos los hermanos (otros ítems con el mismo pid)
-  //         const siblings = orderItems
-  //           .flatMap((order) => order.items)
-  //           .filter((item) => item.pid === selectedItem.pid);
-
-  //         // Verifica si todos los hermanos (excepto el actual) ya están servidos
-  //         const allSiblingsServed = siblings
-  //           .filter(sibling => sibling.id !== selectedItemId)
-  //           .every(sibling => sibling.serving_status === 1);
-
-  //         // Si este es el último ítem por servir, actualiza también al padre
-  //         if (allSiblingsServed) {
-  //           await Promise.all([
-  //             updateKitchenStatus(selectedItemId, 1, kitchen_cd, 2),
-  //             updateKitchenStatus(parentItem.id, 1, kitchen_cd, 2)
-  //           ]);
-  //         } else {
-  //           // Si no es el último, solo actualiza el ítem actual
-  //           await updateKitchenStatus(selectedItemId, 1, kitchen_cd, 2);
-  //         }
-  //       }
-  //     } else {
-  //       // Si no es un hijo, actualiza normalmente
-  //       await updateKitchenStatus(selectedItemId, 1, kitchen_cd, 2);
-  //     }
-
-  //     // Limpia el estado y cierra el diálogo
-  //     setSelectedItemId(null);
-  //     setShowConfirmDialog(false);
-  //   } catch (error) {
-  //     console.error('Error al actualizar el estado:', error);
-  //     // Aquí podrías agregar manejo de errores (mostrar un mensaje al usuario, etc.)
-  //   }
-  // };
-
 
   // Actualizar estado de los ítems seleccionados
 
@@ -225,19 +171,12 @@ const ServingTimeline = ({ orders, updateKitchenStatus }) => {
             } else if (item.isChild) {
               //si es hijo, verificar hermanos y actualizar al padre si es necesario
 
-              const siblings = getAllChildren(item.pid, order.items);
-              const allSiblingsWillBeCanceled = siblings.every(sibling =>
-                sibling.kitchen_status === 0 || selectedRows.has(sibling.id)
-              );
-
-              if (allSiblingsWillBeCanceled) {
-                const parent = order.items.find(i => i.uid === item.pid);
-                if (parent) {
-                  await Promise.all([
-                    updateKitchenStatus(item.id, 0, kitchen_cd, 1),
-                    updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
-                  ]);
-                }
+              const parent = order.items.find(i => i.uid === item.pid);
+              if (parent) {
+                await Promise.all([
+                  updateKitchenStatus(item.id, 0, kitchen_cd, 1),
+                  updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
+                ]);
               } else {
                 await updateKitchenStatus(item.id, 0, kitchen_cd, 1);
               }
