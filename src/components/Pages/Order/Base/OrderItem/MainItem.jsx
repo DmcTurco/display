@@ -60,8 +60,6 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   };
 
 
-
-
   return (
     <div
       onClick={handleClick}
