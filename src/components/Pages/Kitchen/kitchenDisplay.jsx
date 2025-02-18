@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { FaClipboardList, FaSpinner, FaWifi, FaServer } from "react-icons/fa";
+import { FaClipboardList, FaSpinner, FaWifi, FaServer, FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 import { buildApiUrl } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
 import OrderSwipe from "../Order/KitchenLayout/SwipeLayout/OrderSwipe";
@@ -13,7 +13,7 @@ import OrderServing from "../Order/KitchenLayout/viewServingLayout/OrderServing"
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
   const API_URL = buildApiUrl();
-  const { orders, completedOrders, loading, error, getTodayOrders, getTodayCompletedOrders, updateKitchenStatus } = useOrders(config, API_URL);
+  const { orders, completedOrders, loading, error, getTodayOrders, getTodayCompletedOrders, updateKitchenStatus, enableSound, isSoundEnabled } = useOrders(config, API_URL);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
   const localConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
@@ -195,8 +195,24 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   };
 
   return (
-    <div className="bg-gray-50 flex flex-col h-full">
-      <div className="flex-1 overflow-hidden">{renderContent()}</div>
+    <div className="bg-gray-50 flex flex-col h-full relative">
+      <div className="flex-1 overflow-hidden">
+        {renderContent()}
+      </div>
+
+      {/* Botón de sonido */}
+      <button
+        onClick={enableSound}
+        className={`fixed bottom-4 right-4 z-50 p-3 rounded-full shadow-lg transition-all duration-300 ${isSoundEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'
+          }`}
+        title={isSoundEnabled ? '通知音オン' : '通知音オフ'}
+      >
+        {isSoundEnabled ? (
+          <FaVolumeUp className="text-white text-xl" />
+        ) : (
+          <FaVolumeMute className="text-white text-xl" />
+        )}
+      </button>
     </div>
   );
 };

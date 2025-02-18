@@ -6,6 +6,7 @@ import path from 'path'
 export default defineConfig({
   plugins: [react()],
   base: '/kitchen_display/tablet/',
+  assetsInclude: ['**/*.mp3'],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

@@ -45,7 +45,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
                 </span>
                 {additionalItem.modification && additionalItem.modification !== "　" && (
                   <span
-                    className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center`}
+                    className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-red-600 self-center`}
                   >
                     {additionalItem.modification}
                   </span>

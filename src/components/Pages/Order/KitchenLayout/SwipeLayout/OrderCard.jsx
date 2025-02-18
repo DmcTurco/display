@@ -5,8 +5,9 @@ import ActionButton from '../../Base/ActionButton';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 import UrgentAlert from '../../Base/UrgentAlert';
 import { Timer } from 'lucide-react';
+import '../../../../../assets/styles/scrollingText.css';
 
-function OrderCard({ orders = [],allorders, tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus, selectedItems, onToggleSelection }) {
+function OrderCard({ orders = [], allorders, tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus, selectedItems, onToggleSelection }) {
   const {
     containerRef,
     dragOffset,
@@ -21,7 +22,32 @@ function OrderCard({ orders = [],allorders, tableName, total_people, type, custo
     currentPage: 1,
     totalPages: 1,
   });
-  // console.log(selectedItems);
+
+  // Función para verificar si todos los items de una mesa están seleccionados
+  const areAllTableItemsSelected = () => {
+    return orders.every(order =>
+      order.items.every(item => {
+        const isMainItemSelected = selectedItems.has(item.id);
+        const areChildrenSelected = item.additionalItems ?
+          item.additionalItems.every(child => selectedItems.has(child.id)) :
+          true;
+        return isMainItemSelected && areChildrenSelected;
+      })
+    );
+  };
+
+  // Función para verificar si todos los items de una orden están seleccionados
+  const areAllOrderItemsSelected = (order) => {
+    return order.items.every(item => {
+      const isMainItemSelected = selectedItems.has(item.id);
+      const areChildrenSelected = item.additionalItems ?
+        item.additionalItems.every(child => selectedItems.has(child.id)) :
+        true;
+      return isMainItemSelected && areChildrenSelected;
+    });
+  };
+
+
   const getStatusColor = (status, type_display) => {
     if (type_display == 2) {
       switch (status) {
@@ -47,14 +73,20 @@ function OrderCard({ orders = [],allorders, tableName, total_people, type, custo
       }
     }
   };
-  // console.log(selectedItems);
+
   return (
     <div className="rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col bg-gray-200">
-      <div className="p-2 sm:p-2">
+      <div
+        className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
+        onClick={() => onToggleSelection(null, 'table', { orders }, null)}
+        role="button"
+        aria-pressed={areAllTableItemsSelected()}
+      >
         <OrderHeader
           type={type}
           customer={customer}
           total_people={total_people}
+          isSelected={areAllTableItemsSelected()}
         />
       </div>
 
@@ -79,8 +111,11 @@ function OrderCard({ orders = [],allorders, tableName, total_people, type, custo
                 key={`${order.order_main_cd}_${order.order_count}`}
                 className={`mb-3 p-3 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
               >
-                {/* Header de cada orden */}
-                <div className="flex justify-between items-center mb-2">
+                {/* Header de cada orden clickeable */}
+                <div 
+                  className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
+                  onClick={() => onToggleSelection(null, 'order', null, order)}
+                >
                   <span className="inline-flex items-center gap-4 text-sm font-medium">
                     {order.formatted_time}
                     {order.status === 'urgente' ? (
@@ -111,53 +146,13 @@ function OrderCard({ orders = [],allorders, tableName, total_people, type, custo
                   type_display={order.type_display}  // Aquí está el error
                   selectedItems={selectedItems}
                   onToggleSelection={onToggleSelection}
+                  isOrderSelected={areAllOrderItemsSelected(order)}
                 />
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      <style>{`
-        .scrollbar-container {
-          scrollbar-width: thin;
-          scrollbar-color: #9CA3AF #F3F4F6;
-          -webkit-overflow-scrolling: touch;
-        }
-
-        .scrollbar-container::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
-        }
-
-        .scrollbar-container::-webkit-scrollbar-track {
-          background: #F3F4F6;
-          border-radius: 4px;
-        }
-
-        .scrollbar-container::-webkit-scrollbar-thumb {
-          background-color: #9CA3AF;
-          border-radius: 4px;
-          border: 2px solid #F3F4F6;
-        }
-
-        .scrollbar-container::-webkit-scrollbar-thumb:hover {
-          background-color: #6B7280;
-        }
-
-        /* Estilos específicos para dispositivos táctiles */
-        @media (hover: none) and (pointer: coarse) {
-          .scrollbar-container::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
-          }
-          
-          .scrollbar-container::-webkit-scrollbar-thumb {
-            background-color: rgba(156, 163, 175, 0.8);
-            border: none;
-          }
-        }
-      `}</style>
     </div>
   );
 }

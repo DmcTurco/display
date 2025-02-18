@@ -84,11 +84,11 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
             {item.quantity}
           </span>
           {item.modification && item.modification !== "　" && (
-            <span className={`${getFontSizeClass()} bg-gray-100 px-1 py-0.5 rounded text-gray-600 self-center`}>
+            <span className={`${getFontSizeClass()} bg-gray-100  rounded text-red-600 `}>
               {item.modification}
             </span>
           )}
-          <span className={`text-3xl text-center flex-1 break-words`}>{item.name}</span>
+          <span className={`text-3xl text-left flex-1 break-words`}>{item.name}</span>
         </div>
         {isServing ? (
           isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />

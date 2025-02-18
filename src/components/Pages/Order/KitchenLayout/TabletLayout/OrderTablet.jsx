@@ -1,9 +1,13 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import _ from 'lodash';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../../ui/alert-dialog';
+import '../../../../../assets/styles/marquee.css';
+import '../../../../../assets/styles/scrollingText.css';
+
 
 const ScrollingText = ({ text }) => {
-    const needsScroll = text.length > 20;
+    const width = getTextWidth(text, "30px");
+    const needsScroll = width > 300;
 
     if (!needsScroll) {
         return <div className="text-3xl">{text}</div>;
@@ -14,50 +18,28 @@ const ScrollingText = ({ text }) => {
             <div className="marquee-container whitespace-nowrap">
                 <span className="animate-scroll inline-block">
                     {text}
-                    <span className="mx-4">•</span>
+                    <span className="mx-2"></span>
                     {text}
-                    <span className="mx-4">•</span>
+                    <span className="mx-2"></span>
                     {text}
                 </span>
             </div>
-
-            <style>
-                {`
-            .marquee-container {
-              width: 100%;
-              overflow: hidden;
-            }
-  
-            .animate-scroll {
-              display: inline-block;
-              animation: scroll 30s linear infinite;
-              animation-delay: 1s;
-            }
-  
-            @keyframes scroll {
-              0% {
-                transform: translateX(0%);
-              }
-              100% {
-                transform: translateX(-66.66%);
-              }
-            }
-  
-            .animate-scroll:hover {
-              animation-play-state: paused;
-            }
-  
-            @media (prefers-reduced-motion: reduce) {
-              .animate-scroll {
-                animation: none;
-                transform: translateX(0);
-              }
-            }
-          `}
-            </style>
         </div>
     );
 };
+
+const getTextWidth = (text) => {
+    const span = document.createElement("span");
+    span.style.visibility = "hidden";
+    span.style.position = "absolute";
+    span.style.whiteSpace = "nowrap";
+    span.style.fontSize = "30px";
+    span.textContent = text;
+    document.body.appendChild(span);
+    const width = span.offsetWidth;
+    document.body.removeChild(span);
+    return width;
+}
 
 const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
@@ -245,7 +227,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
                         {/* 更新 ({getSelectedPendingCount()}イヤリング) */}
-                        【調理済みにする】 
+                        【調理済みにする】
                     </button>
                 </div>
             )}
@@ -277,8 +259,8 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                     const hasPendingItems = Object.values(orderMatrix[item].pendingByTable).some(count => count > 0);
                                     return (
                                         <tr key={item}
-                                            className={`${hasPendingItems ? 'cursor-pointer' : 'cursor-not-allowed'} 
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')} 
+                                            className={`${hasPendingItems ? 'cursor-pointer' : 'cursor-not-allowed'}
+                                                ${isRowSelected(item) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
                                                 hover:bg-gray-100 transition-colors text-3xl`}
                                             onClick={() => hasPendingItems && toggleRowSelection(item)}>
                                             <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
@@ -297,7 +279,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 return (
                                                     <td key={`${item}-${table}`}
                                                         className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center  border-b border-gray-200
-                                                            ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''} 
+                                                            ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''}
                                                             ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -305,7 +287,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                         }}>
                                                         {quantity > 0 && (
                                                             <div className="flex flex-col items-center gap-1">
-                                                                <span className={`inline-flex items-center justify-center text-5xl font-medium text-black-500 
+                                                                <span className={`inline-flex items-center justify-center text-5xl font-medium text-black-500
                                                                     ${pendingQuantity > 0 ? '' : 'bg-gray-400'}`}>
                                                                     {quantity}
                                                                 </span>
@@ -354,53 +336,6 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                 </AlertDialogContent>
             </AlertDialog>
 
-            <style>{`
-                /* Estilos generales para scrollbars */
-                .overflow-auto {
-                    scrollbar-width: thin;
-                    scrollbar-color: #9CA3AF #F3F4F6;
-                    -webkit-overflow-scrolling: touch;
-                }
-
-                /* Estilos para Chrome, Edge, y Safari */
-                .overflow-auto::-webkit-scrollbar {
-                    width: 12px;
-                    height: 12px;
-                    display: block;
-                }
-
-                .overflow-auto::-webkit-scrollbar-track {
-                    background: #F3F4F6;
-                    border-radius: 6px;
-                }
-
-                .overflow-auto::-webkit-scrollbar-thumb {
-                    background-color: #9CA3AF;
-                    border-radius: 6px;
-                    border: 3px solid #F3F4F6;
-                }
-
-                .overflow-auto::-webkit-scrollbar-thumb:hover {
-                    background-color: #6B7280;
-                }
-
-                .overflow-auto::-webkit-scrollbar-corner {
-                    background: #F3F4F6;
-                }
-
-                /* Asegura que el scroll sea visible en dispositivos táctiles */
-                @media (hover: none) and (pointer: coarse) {
-                    .overflow-auto::-webkit-scrollbar {
-                        width: 6px;
-                        height: 6px;
-                    }
-                    
-                    .overflow-auto::-webkit-scrollbar-thumb {
-                        background-color: rgba(156, 163, 175, 0.7);
-                        border: 1px solid #F3F4F6;
-                    }
-                }
-            `}</style>
         </div>
     );
 };

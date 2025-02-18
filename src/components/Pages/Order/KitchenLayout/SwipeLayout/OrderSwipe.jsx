@@ -60,36 +60,96 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         return pageOrders;
     };
 
-    const handleToggleSelection = (item) => {
-        console.log('Item seleccionado:', item);
+    const handleToggleSelection = (item, type = 'item', tableGroup = null, order = null) => {
+        console.log('Item Seleccionado', item, 'Tipo: ', type);
+
         setSelectedItems(prev => {
             const newSet = new Set(prev);
 
-            // Verificar si el item tiene additionalItems (es un padre)
-            if (item.additionalItems && item.additionalItems.length > 0) {
-                if (newSet.has(item.id)) {
-                    // Si ya está seleccionado, eliminar padre e hijos
-                    newSet.delete(item.id);
-                    item.additionalItems.forEach(childItem => {
-                        newSet.delete(childItem.id);
+            switch (type) {
+                case 'table':
+                    // Seleccionar/deseleccionar todos los items de la mesa
+                    const allTableItemsSelected = tableGroup.orders.every(order =>
+                        order.items.every(item =>
+                            newSet.has(item.id) &&
+                            (!item.additionalItems || item.additionalItems.every(child => newSet.has(child.id)))
+                        )
+                    );
+
+                    tableGroup.orders.forEach(order => {
+                        order.items.forEach(item => {
+                            if (allTableItemsSelected) {
+                                // Deseleccionar items
+                                newSet.delete(item.id);
+                                if (item.additionalItems) {
+                                    item.additionalItems.forEach(child => newSet.delete(child.id));
+                                }
+                            } else {
+                                // Seleccionar items
+                                newSet.add(item.id);
+                                if (item.additionalItems) {
+                                    item.additionalItems.forEach(child => newSet.add(child.id));
+                                }
+                            }
+                        });
                     });
-                } else {
-                    // Si no está seleccionado, agregar padre e hijos
-                    newSet.add(item.id);
-                    item.additionalItems.forEach(childItem => {
-                        newSet.add(childItem.id);
+                    break;
+
+                case 'order':
+
+                    // Seleccionar/deseleccionar todos los items de la orden
+                    const allOrderItemsSelected = order.items.every(item =>
+                        newSet.has(item.id) &&
+                        (!item.additionalItems || item.additionalItems.every(child => newSet.has(child.id)))
+                    );
+
+                    order.items.forEach(item => {
+                        if (allOrderItemsSelected) {
+                            // Deseleccionar items
+                            newSet.delete(item.id);
+                            if (item.additionalItems) {
+                                item.additionalItems.forEach(child => newSet.delete(child.id));
+                            }
+                        } else {
+                            // Seleccionar items
+                            newSet.add(item.id);
+                            if (item.additionalItems) {
+                                item.additionalItems.forEach(child => newSet.add(child.id));
+                            }
+                        }
                     });
-                }
-            } else {
-                // Si es un item hijo o individual
-                if (newSet.has(item.id)) {
-                    newSet.delete(item.id);
-                } else {
-                    newSet.add(item.id);
-                }
+                    break;
+                    
+                case 'item':
+                    // Lógica existente para items individuales
+                    if (item.additionalItems && item.additionalItems.length > 0) {
+                        if (newSet.has(item.id)) {
+                            // Si ya está seleccionado, eliminar padre e hijos
+                            newSet.delete(item.id);
+                            item.additionalItems.forEach(childItem => {
+                                newSet.delete(childItem.id);
+                            });
+                        } else {
+                            // Si no está seleccionado, agregar padre e hijos
+                            newSet.add(item.id);
+                            item.additionalItems.forEach(childItem => {
+                                newSet.add(childItem.id);
+                            });
+                        }
+                    } else {
+                        // Si es un item hijo o individual
+                        if (newSet.has(item.id)) {
+                            newSet.delete(item.id);
+                        } else {
+                            newSet.add(item.id);
+                        }
+                    }
+
+                    break;
+
             }
 
-            console.log('Items seleccionados:', Array.from(newSet));
+            // console.log('Items seleccionados:', Array.from(newSet));
             return newSet;
         });
     };
@@ -174,7 +234,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                         onClick={() => setShowConfirmDialog(true)}
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xl"
                     >
-                        戻す ({selectedItems.size}点)
+                        {/* 戻す ({selectedItems.size}点) */}
                         【調理済みにする】
                     </button>
                 </div>

@@ -1,0 +1,30 @@
+.marquee-container {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .animate-scroll {
+    display: inline-block;
+    animation: scroll 30s linear infinite;
+    animation-delay: 1s;
+  }
+
+  @keyframes scroll {
+    0% {
+      transform: translateX(0%);
+    }
+    100% {
+      transform: translateX(-66.66%);
+    }
+  }
+
+  .animate-scroll:hover {
+    animation-play-state: paused;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .animate-scroll {
+      animation: none;
+      transform: translateX(0);
+    }
+  }
