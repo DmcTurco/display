@@ -1,46 +1,45 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import _ from 'lodash';
 
-export const useSound = (soundUrl) => {
-    const [isSoundEnabled, setIsSoundEnabled] = useState(() =>
-        localStorage.getItem('soundEnabled') === 'true'
-    );
+export function useSound(soundUrl, initialVolume = 0.5) {
+    const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
+        const savedState = localStorage.getItem('soundEnabled');
+        return savedState === 'true';
+    });
+
     const notificationSound = useRef(null);
+    const lastPlayedTime = useRef(0);
+    const DEBOUNCE_DELAY = 2000;
 
+    // Recrear el audio cuando cambie la URL
     useEffect(() => {
-        localStorage.setItem('soundEnabled', isSoundEnabled);
-    }, [isSoundEnabled]);
+        if (!soundUrl) return;
 
-    useEffect(() => {
-        try {
-            const audio = new Audio(soundUrl);
-            audio.volume = 0.5;
-            audio.preload = 'auto';
-            audio.muted = false;
+        const audio = new Audio(soundUrl);
+        audio.volume = initialVolume;
+        audio.preload = 'auto';
+        
+        notificationSound.current = audio;
 
-            audio.addEventListener('loadeddata', () => {
-                notificationSound.current = audio;
-            });
-
-            audio.load();
-
-            return () => {
-                if (notificationSound.current) {
-                    notificationSound.current.pause();
-                    notificationSound.current = null;
-                }
-            };
-        } catch (error) {
-            console.error('Error al inicializar el audio:', error);
-        }
-    }, [soundUrl]);
+        return () => {
+            if (notificationSound.current) {
+                notificationSound.current.pause();
+                notificationSound.current = null;
+            }
+        };
+    }, [soundUrl, initialVolume]);
 
     const playSound = useCallback(() => {
         if (!isSoundEnabled || !notificationSound.current) return;
 
-        try {
+        const now = Date.now();
+        if (now - lastPlayedTime.current >= DEBOUNCE_DELAY) {
+            lastPlayedTime.current = now;
+            
             notificationSound.current.currentTime = 0;
+            notificationSound.current.volume = initialVolume;
+            
             const playPromise = notificationSound.current.play();
-
             if (playPromise !== undefined) {
                 playPromise.catch(error => {
                     if (error.name === 'NotAllowedError') {
@@ -49,47 +48,32 @@ export const useSound = (soundUrl) => {
                     }
                 });
             }
-        } catch (error) {
-            console.error('Error al reproducir sonido:', error);
         }
-    }, [isSoundEnabled]);
+    }, [isSoundEnabled, initialVolume]);
 
     const toggleSound = useCallback(() => {
         if (!notificationSound.current) return;
 
-        if (isSoundEnabled) {
-            setIsSoundEnabled(false);
-            localStorage.setItem('soundEnabled', 'false');
-            return;
-        }
+        const newState = !isSoundEnabled;
+        setIsSoundEnabled(newState);
+        localStorage.setItem('soundEnabled', newState.toString());
 
-        try {
-            notificationSound.current.volume = 0.5;
-            notificationSound.current.muted = false;
-            const playPromise = notificationSound.current.play();
-
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        notificationSound.current.pause();
-                        notificationSound.current.currentTime = 0;
-                        setIsSoundEnabled(true);
-                        localStorage.setItem('soundEnabled', 'true');
-                    })
-                    .catch(() => {
-                        setIsSoundEnabled(false);
-                        localStorage.setItem('soundEnabled', 'false');
-                    });
-            }
-        } catch (error) {
-            setIsSoundEnabled(false);
-            localStorage.setItem('soundEnabled', 'false');
+        if (newState) {
+            // Reproducir un sonido de prueba
+            notificationSound.current.currentTime = 0;
+            notificationSound.current.volume = initialVolume;
+            notificationSound.current.play()
+                .catch(error => {
+                    console.error('Error al reproducir el sonido:', error);
+                    setIsSoundEnabled(false);
+                    localStorage.setItem('soundEnabled', 'false');
+                });
         }
-    }, [isSoundEnabled]);
+    }, [isSoundEnabled, initialVolume]);
 
     return {
-        playSound,
+        isSoundEnabled,
         toggleSound,
-        isSoundEnabled
+        playSound
     };
-};
+}

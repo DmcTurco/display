@@ -20,22 +20,22 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   const getFontSizeClass = () => {
     switch (config.fontSize) {
       case 'small':
-        return 'text-xs sm:text-sm';
+        return 'text-1xl';
       case 'large':
-        return 'text-base sm:text-lg';
+        return 'text-3xl';
       default: // normal
-        return 'text-sm sm:text-base';
+        return 'text-2xl';
     }
   };
 
   const getQuantityFontSizeClass = () => {
     switch (config.fontSize) {
       case 'small':
-        return 'text-xs sm:text-sm';
+        return 'text-2xl';
       case 'large':
-        return 'text-base sm:text-lg';
+        return 'text-4xl';
       default: // normal
-        return 'text-sm sm:text-base';
+        return 'text-3xl';
     }
   };
 
@@ -78,7 +78,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
       {/* Item principal */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
-          <span className={`text-4xl text-gray-700 whitespace-nowrap font-medium`}>
+          <span className={`${getQuantityFontSizeClass()} text-gray-700 whitespace-nowrap font-medium`}>
             {item.quantity}
           </span>
           {item.modification && item.modification !== "　" && (
@@ -86,7 +86,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
               {item.modification}
             </span>
           )}
-          <span className={`text-3xl text-left flex-1 break-words`}>{item.name}</span>
+          <span className={`${getFontSizeClass()} text-left flex-1 break-words`}>{item.name}</span>
         </div>
         {isServing ? (
           isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />

@@ -12,6 +12,14 @@ const ConfigView = () => {
     const { updateCustomSettings } = useKitchenSetup();
     const [maxAllowedCards, setMaxAllowedCards] = useState(getMaxCards());
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+
+    const handleSoundChange = (event) => {
+        updateCustomSettings({
+            sound: event.target.value
+        });
+    };
+
+
     // const handleLayoutChange = (event) => {
     //     const updatedConfig = {
     //         ...config,
@@ -194,6 +202,24 @@ const ConfigView = () => {
                             ))}
                         </select>
                     </div>
+
+                    {/* Agregar el selector de sonido */}
+                    <div className="grid grid-cols-2 items-center py-2">
+                        <span className="font-medium text-gray-700">
+                            通知音:
+                        </span>
+                        <select
+                            value={config.sound || 'sound2'}
+                            onChange={handleSoundChange}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                            <option value="sound1">音声 1</option>
+                            <option value="sound2">音声 2</option>
+                            <option value="sound3">音声 3</option>
+                            <option value="sound4">音声 4</option>
+                        </select>
+                    </div>
+
                 </dl>
             </div>
 

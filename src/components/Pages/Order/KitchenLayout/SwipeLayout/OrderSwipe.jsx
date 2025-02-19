@@ -61,7 +61,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
     };
 
     const handleToggleSelection = (item, type = 'item', tableGroup = null, order = null) => {
-        console.log('Item Seleccionado', item, 'Tipo: ', type);
+        // console.log('Item Seleccionado', item, 'Tipo: ', type);
 
         setSelectedItems(prev => {
             const newSet = new Set(prev);

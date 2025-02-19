@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import _ from 'lodash';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../../../../ui/alert-dialog';
-import '../../../../../assets/styles/marquee.css';
-import '../../../../../assets/styles/scrollingText.css';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import '@/assets/styles/marquee.css';
+import '@/assets/styles/scrollingText.css';
 
 
 const ScrollingText = ({ text }) => {
@@ -104,6 +104,43 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
 
     const [selectedCells, setSelectedCells] = useState(new Set());
     const [selectedRows, setSelectedRows] = useState(new Set());
+    const [selectedColumns, setSelectedColumns] = useState(new Set());
+
+    const toggleColumnSelection = (table) => {
+        setSelectedColumns(prev => {
+            const newSet = new Set(prev);
+            if (newSet.has(table)) {
+                // Deseleccionar la columna
+                newSet.delete(table);
+                // Limpiar las celdas de esta columna
+                setSelectedCells(prevCells => {
+                    const newCells = new Set(prevCells);
+                    Array.from(prevCells).forEach(cellKey => {
+                        if (cellKey.endsWith(`-${table}`)) {
+                            newCells.delete(cellKey);
+                        }
+                    });
+                    return newCells;
+                });
+            } else {
+                // Seleccionar la columna
+                newSet.add(table);
+                // Seleccionar todas las celdas con items pendientes en esta columna
+                uniqueItems.forEach(item => {
+                    const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
+                    if (pendingQuantity > 0) {
+                        setSelectedCells(prevCells => {
+                            const newCells = new Set(prevCells);
+                            newCells.add(`${item}-${table}`);
+                            return newCells;
+                        });
+                    }
+                });
+            }
+            return newSet;
+        });
+    };
+
 
     const toggleRowSelection = (item) => {
         // Solo permitir selección si hay items pendientes
@@ -152,6 +189,22 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                 if (newSet.has(cellKey)) {
                     newSet.delete(cellKey);
                 } else {
+                    // Limpiar selección de fila si existe
+                    if (selectedRows.has(item)) {
+                        setSelectedRows(prev => {
+                            const newRows = new Set(prev);
+                            newRows.delete(item);
+                            return newRows;
+                        });
+                    }
+                    // Limpiar selección de columna si existe
+                    if (selectedColumns.has(table)) {
+                        setSelectedColumns(prev => {
+                            const newCols = new Set(prev);
+                            newCols.delete(table);
+                            return newCols;
+                        });
+                    }
                     newSet.add(cellKey);
                 }
                 return newSet;
@@ -217,6 +270,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
 
     const isCellSelected = (item, table) => selectedCells.has(`${item}-${table}`);
     const isRowSelected = (item) => selectedRows.has(item);
+    const isColumnSelected = (table) => selectedColumns.has(table);
 
     return (
         <div className="flex flex-col h-full">
@@ -245,7 +299,12 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                     </th>
                                     {uniqueTables.map(table => (
                                         <th key={table}
-                                            className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200">
+                                            onClick={() => toggleColumnSelection(table)}
+                                            className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 
+                                                bg-gray-50 text-center font-bold text-3xl text-gray-800 
+                                                border-b border-gray-200 cursor-pointer  
+                                                transition-colors
+                                                ${isColumnSelected(table) ? 'bg-yellow-200' : ''}`}>
                                             {table}
                                         </th>
                                     ))}

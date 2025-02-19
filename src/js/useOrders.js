@@ -1,5 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import notificationSoundUrl from '../assets/sound1.mp3';
+import { useSound } from '@/hooks/useSound';
+import sound1 from '/assets/sound1.mp3';
+import sound2 from '/assets/sound2.mp3';
+import sound3 from '/assets/sound3.mp3';
+import sound4 from '/assets/sound4.mp3';
+
+const soundMap = {
+    'sound1': sound1,
+    'sound2': sound2,
+    'sound3': sound3,
+    'sound4': sound4
+};
 
 export function useOrders(config, API_URL) {  // Recibimos config y API_URL como parámetros
     const [orders, setOrders] = useState([]);
@@ -7,142 +18,19 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [kitchenCode, setKitchenCode] = useState(null);
-    const [isSoundEnabled, setIsSoundEnabled] = useState(() => {
-        // Recuperar el estado del sonido del localStorage
-        const savedState = localStorage.getItem('soundEnabled');
-        return savedState === 'true';
-    });
-
-    // Guardar el estado del sonido en localStorage cuando cambie
-    useEffect(() => {
-        localStorage.setItem('soundEnabled', isSoundEnabled);
-    }, [isSoundEnabled]);
-
     const previousOrdersCount = useRef(0);
-    const notificationSound = useRef(null);
+    const isFirstLoad = useRef(true);
 
-    // Importar el sonido correctamente
-    useEffect(() => {
-        try {
-            const audio = new Audio(notificationSoundUrl);
-            audio.volume = 0.5;
+    const configLocal = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    const selectedSound = configLocal?.sound || 'sound2';
+    const soundUrl = soundMap[selectedSound];
+    
+    const { isSoundEnabled, toggleSound, playSound } = useSound(
+        soundUrl || soundMap['sound2'], 
+        0.5
+    );
 
-            // Configuración adicional del audio
-            audio.preload = 'auto';
-            audio.muted = false;  // Asegurarse que no esté muteado
-
-            console.log('Inicializando audio con URL:', notificationSoundUrl);
-
-            // Evento para verificar cuando el audio está listo
-            audio.addEventListener('loadeddata', () => {
-                console.log('Audio cargado completamente');
-                notificationSound.current = audio;
-            });
-
-            // Manejar errores de carga
-            audio.addEventListener('error', (e) => {
-                console.error('Error cargando el audio:', e.target.error);
-            });
-
-            audio.load();
-        } catch (error) {
-            console.error('Error al inicializar el audio:', error);
-        }
-
-        return () => {
-            if (notificationSound.current) {
-                notificationSound.current.pause();
-                notificationSound.current = null;
-            }
-        };
-    }, []);
-
-
-    const enableSound = useCallback(() => {
-        if (!notificationSound.current) {
-            console.log('Audio no inicializado');
-            return;
-        }
-
-        const currentlyEnabled = isSoundEnabled;
-        console.log('Cambiando estado del sonido:', { de: currentlyEnabled, a: !currentlyEnabled });
-
-        if (currentlyEnabled) {
-            // Si está habilitado, solo lo deshabilitamos
-            setIsSoundEnabled(false);
-            localStorage.setItem('soundEnabled', 'false');
-            console.log('Sonido deshabilitado');
-            return;
-        }
-
-        try {
-            // Si está deshabilitado, intentamos habilitarlo
-            notificationSound.current.volume = 0.5;
-            notificationSound.current.muted = false;
-            
-            const playPromise = notificationSound.current.play();
-            
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        notificationSound.current.pause();
-                        notificationSound.current.currentTime = 0;
-                        setIsSoundEnabled(true);
-                        localStorage.setItem('soundEnabled', 'true');
-                        console.log('Sonido habilitado correctamente');
-                    })
-                    .catch(error => {
-                        console.error('Error al habilitar:', error);
-                        setIsSoundEnabled(false);
-                        localStorage.setItem('soundEnabled', 'false');
-                    });
-            }
-        } catch (error) {
-            console.error('Error en enableSound:', error);
-            setIsSoundEnabled(false);
-            localStorage.setItem('soundEnabled', 'false');
-        }
-    }, [isSoundEnabled]);
-
-    const playNotificationSound = useCallback(() => {
-        if (!isSoundEnabled || !notificationSound.current) {
-            console.log('Estado del sonido:', {
-                isSoundEnabled,
-                hasSound: !!notificationSound.current,
-                audioState: notificationSound.current?.readyState
-            });
-            return;
-        }
-
-        try {
-            console.log('Reproduciendo sonido, estado:', {
-                enabled: isSoundEnabled,
-                volume: notificationSound.current.volume,
-                muted: notificationSound.current.muted
-            });
-
-            notificationSound.current.currentTime = 0;
-            const playPromise = notificationSound.current.play();
-            
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        console.log('Reproducción exitosa');
-                    })
-                    .catch(error => {
-                        console.error('Error en reproducción:', error);
-                        // Solo desactivar si es un error de permisos
-                        if (error.name === 'NotAllowedError') {
-                            setIsSoundEnabled(false);
-                            localStorage.setItem('soundEnabled', 'false');
-                        }
-                    });
-            }
-        } catch (error) {
-            console.error('Error en playNotificationSound:', error);
-        }
-    }, [isSoundEnabled]);
-
+    
 
     const checkNewOrders = useCallback((newOrders) => {
         if (!newOrders) return;
@@ -158,15 +46,18 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
         }
 
-        console.log(`Órdenes previas: ${previousOrdersCount.current}, Órdenes actuales: ${currentOrdersCount}`);
+        if (!isFirstLoad.current &&
+            currentOrdersCount > previousOrdersCount.current &&
+            previousOrdersCount.current !== 0) {
+            playSound();
+        }
 
-        if (currentOrdersCount > previousOrdersCount.current && previousOrdersCount.current !== 0) {
-            playNotificationSound();
+        if (isFirstLoad.current) {
+            isFirstLoad.current = false;
         }
 
         previousOrdersCount.current = currentOrdersCount;
-    }, [playNotificationSound]);
-
+    }, [playSound]);
 
 
     const formatTime = (dateString) => {
@@ -470,7 +361,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
         getTodayOrders,
         getTodayCompletedOrders,
         updateKitchenStatus,
-        enableSound,
+        enableSound: toggleSound,
         isSoundEnabled
     };
 }
