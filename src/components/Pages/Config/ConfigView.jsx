@@ -1,6 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useKitchenSetup } from '../../../hooks/useKitchenSetup';
+import { FaPlay } from 'react-icons/fa';
+import sound1 from '/assets/sound1.mp3';
+import sound2 from '/assets/sound2.mp3';
+import sound3 from '/assets/sound3.mp3';
+import sound4 from '/assets/sound4.mp3';
+
+const soundPaths = {
+    sound1,
+    sound2,
+    sound3,
+    sound4
+};
 // Calcular el número máximo de tarjetas basado en el ancho de la pantalla
 const getMaxCards = () => {
     const screenWidth = window.innerWidth;
@@ -19,7 +31,10 @@ const ConfigView = () => {
         });
     };
 
-
+    const playSound = (soundType) => {
+        const audio = new Audio(soundPaths[soundType]);
+        audio.play();
+    };
     // const handleLayoutChange = (event) => {
     //     const updatedConfig = {
     //         ...config,
@@ -87,8 +102,6 @@ const ConfigView = () => {
         return [];
     };
 
-
-    // Actualizar maxAllowedCards cuando cambie el tamaño de la ventana
     useEffect(() => {
         const handleResize = () => {
             setMaxAllowedCards(getMaxCards());
@@ -104,21 +117,10 @@ const ConfigView = () => {
         )
     }
 
-    // Opciones de tarjetas filtradas según el ancho de la pantalla
-    // const cardOptions = [
-    //     { value: "4", label: "4枚" },
-    //     { value: "6", label: "6枚" },
-    //     { value: "8", label: "8枚" },
-    //     { value: "10", label: "10枚" },
-    //     { value: "12", label: "12枚" },
-    //     { value: "16", label: "16枚" }
-    // ].filter(option => parseInt(option.value) <= maxAllowedCards);
-
 
     return (
         <div className="p-4">
             {/* <h2 className="text-2xl font-bold mb-6">Configuración de Cocina</h2> */}
-
             <div className="bg-white rounded-lg shadow-md p-6">
                 <dl className="grid gap-4">
                     {/* Configuración existente */}
@@ -208,16 +210,25 @@ const ConfigView = () => {
                         <span className="font-medium text-gray-700">
                             通知音:
                         </span>
-                        <select
-                            value={config.sound || 'sound2'}
-                            onChange={handleSoundChange}
-                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
-                        >
-                            <option value="sound1">音声 1</option>
-                            <option value="sound2">音声 2</option>
-                            <option value="sound3">音声 3</option>
-                            <option value="sound4">音声 4</option>
-                        </select>
+                        <div className="flex items-center gap-2">
+                            <select
+                                value={config.sound || 'sound2'}
+                                onChange={handleSoundChange}
+                                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                            >
+                                <option value="sound1">音声 1</option>
+                                <option value="sound2">音声 2</option>
+                                <option value="sound3">音声 3</option>
+                                <option value="sound4">音声 4</option>
+                            </select>
+                            <button
+                                onClick={() => playSound(config.sound || 'sound2')}
+                                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                title="音声を再生"
+                            >
+                                <FaPlay className="text-lg" />
+                            </button>
+                        </div>
                     </div>
 
                 </dl>

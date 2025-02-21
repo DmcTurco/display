@@ -69,21 +69,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         return items.filter(item => item.pid === parentId);
     };
 
-    // Modificar toggleRowSelection para no permitir selección de padres
-    // const toggleRowSelection = (item) => {
-    //     if (item.isParent) return; // No permitir selección de padres
-
-    //     setSelectedRows(prev => {
-    //         const newSet = new Set(prev);
-    //         if (newSet.has(item.id)) {
-    //             newSet.delete(item.id);
-    //         } else {
-    //             newSet.add(item.id);
-    //         }
-    //         return newSet;
-    //     });
-    // };
-
     // Modificar toggleRowSelection para manejar la selección de padres e hijos
     const toggleRowSelection = (item, allItems) => {
         setSelectedRows(prev => {
@@ -111,8 +96,33 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         });
     };
 
+    const toggleTableSelection = (order) => {
+        setSelectedRows(prev => {
+            const newSet = new Set(prev);
+            const allItemsSelected = order.items.every(item =>
+                newSet.has(item.id)
+            );
 
-
+            order.items.forEach(item => {
+                if (allItemsSelected) {
+                    newSet.delete(item.id);
+                    // Si el ítem es padre, también deseleccionamos sus hijos
+                    if (item.isParent) {
+                        const children = getAllChildren(item.uid, order.items);
+                        children.forEach(child => newSet.delete(child.id));
+                    }
+                } else {
+                    newSet.add(item.id);
+                    // Si el ítem es padre, también seleccionamos sus hijos
+                    if (item.isParent) {
+                        const children = getAllChildren(item.uid, order.items);
+                        children.forEach(child => newSet.add(child.id));
+                    }
+                }
+            });
+            return newSet;
+        });
+    };
 
     const handleConfirm = () => {
         handleUpdate();
@@ -167,8 +177,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         }
     };
 
-
-
     // Contar ítems seleccionados
     const getSelectedItemsCount = () => {
         let count = 0;
@@ -198,7 +206,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
                         {/* 更新 ({getSelectedItemsCount()}イヤリング) */}
-                        【調理済みにする】 
+                        【調理済みにする】
                     </button>
                 </div>
             )}
@@ -230,68 +238,81 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {orderItems.map((order, orderIndex) => (
-                                    <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">{order.orderTime}</td>
-                                        <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
-                                            {order.elapsedTime}
-                                        </td>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl">{order.table}</td>
-                                        <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
-                                            <div className="divide-y divide-gray-100">
-                                                {order.items.map((item, itemIndex) => (
-                                                    <div
-                                                        key={itemIndex}
-                                                        onClick={() => toggleRowSelection(item, order.items)} 
-                                                        className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
-                                                            ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
-                                                            : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
-                                                            }`}
-                                                    // className={`flex items-left px-4 py-2 ${item.isParent
-                                                    //     ? 'bg-gray-50 cursor-default'
-                                                    //     : `cursor-pointer ${selectedRows.has(item.id)
-                                                    //         ? 'bg-yellow-200 hover:bg-yellow-200'
-                                                    //         : 'hover:bg-gray-50'
-                                                    //     }`
-                                                    //     }`}
-                                                    >
-                                                        {/* Nombre del item */}
-                                                        <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
-                                                            {item.isChild && (
-                                                                <div className="w-2 h-px bg-gray-300 mr-3"></div>
-                                                            )}
-                                                            <span className="text-3xl">{item.name}</span>
-                                                        </div>
-                                                        {/* <div className="flex-1 flex items-center pl-8">
+                                {orderItems.map((order, orderIndex) => {
+                                    const isTableSelected = order.items.every(item => selectedRows.has(item.id));
+                                    return (
+                                        <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
+                                            <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">{order.orderTime}</td>
+                                            <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
+                                                {order.elapsedTime}
+                                            </td>
+
+                                            <td
+                                                className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected
+                                                    ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
+                                                    : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
+                                                    }`}
+                                                onClick={() => toggleTableSelection(order)}
+
+                                            >
+                                                {order.table}
+                                            </td>
+                                            <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
+                                                <div className="divide-y divide-gray-100">
+                                                    {order.items.map((item, itemIndex) => (
+                                                        <div
+                                                            key={itemIndex}
+                                                            onClick={() => toggleRowSelection(item, order.items)}
+                                                            className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
+                                                                ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
+                                                                : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
+                                                                }`}
+                                                        // className={`flex items-left px-4 py-2 ${item.isParent
+                                                        //     ? 'bg-gray-50 cursor-default'
+                                                        //     : `cursor-pointer ${selectedRows.has(item.id)
+                                                        //         ? 'bg-yellow-200 hover:bg-yellow-200'
+                                                        //         : 'hover:bg-gray-50'
+                                                        //     }`
+                                                        //     }`}
+                                                        >
+                                                            {/* Nombre del item */}
+                                                            <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
+                                                                {item.isChild && (
+                                                                    <div className="w-2 h-px bg-gray-300 mr-3"></div>
+                                                                )}
+                                                                <span className="text-3xl">{item.name}</span>
+                                                            </div>
+                                                            {/* <div className="flex-1 flex items-center pl-8">
                                                             {item.isChild && (
                                                                 <div className="w-2 h-px bg-gray-300 mr-3"></div>
                                                             )}
                                                             <span className="text-3xl">{item.name}</span>
                                                         </div> */}
 
-                                                        {/* Cantidad del item */}
-                                                        <div className="w-[200px] flex justify-end">
-                                                            {/* {!item.isParent && ( */}
-                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
-                                                                {item.quantity}
-                                                            </span>
-                                                            {/* )} */}
-                                                        </div>
+                                                            {/* Cantidad del item */}
+                                                            <div className="w-[200px] flex justify-end">
+                                                                {/* {!item.isParent && ( */}
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
+                                                                    {item.quantity}
+                                                                </span>
+                                                                {/* )} */}
+                                                            </div>
 
-                                                        {/* Total del item */}
-                                                        <div className="w-[200px] flex justify-end px-4">
-                                                            {/* {!item.isParent && ( */}
-                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
-                                                                {itemTotals[item.name].total}
-                                                            </span>
-                                                            {/* )} */}
+                                                            {/* Total del item */}
+                                                            <div className="w-[200px] flex justify-end px-4">
+                                                                {/* {!item.isParent && ( */}
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
+                                                                    {itemTotals[item.name].total}
+                                                                </span>
+                                                                {/* )} */}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>

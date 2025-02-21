@@ -10,51 +10,53 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
 
   const { orderItems } = useMemo(() => {
     const orderItems = completedOrders.map((order) => {
-      // Encontrar items que tienen pid
-      const itemsWithPid = order.items?.filter(item => item.pid) || [];
+        // Encontrar items que tienen pid
+        const itemsWithPid = order.items?.filter(item => item.pid) || [];
+        const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
 
-      // Obtener los uids únicos de los padres
-      const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+        // Encontrar padres que tienen al menos un hijo cocinado (kitchen_status = 1)
+        const activeParentUids = parentUids.filter(parentUid => {
+            const children = order.items?.filter(item =>
+                item.pid === parentUid &&
+                item.kitchen_status === 1  // Solo verificamos kitchen_status
+            );
+            return children.length > 0;
+        });
 
+        // Procesar todos los items
+        const processedItems = order.items?.filter(item => {
+            if (activeParentUids.includes(item.uid)) {
+                // Es un padre con hijos cocinados
+                return true;
+            }
+            if (item.pid) {
+                // Es un hijo, solo verificamos kitchen_status
+                return item.kitchen_status === 1;
+            }
+            // Es un item normal, solo verificamos kitchen_status
+            return item.kitchen_status === 1;
+        }).map(item => ({
+            ...item,
+            isParent: parentUids.includes(item.uid),
+            isChild: Boolean(item.pid)
+        })) || [];
 
-      // Primero, encontrar padres que tienen al menos un hijo activo
-      const activeParentUids = parentUids.filter(parentUid => {
-        const children = order.items?.filter(item =>
-          item.pid === parentUid &&
-          !(item.kitchen_status === 1 && item.serving_status === 1)
-        );
-        return children.length > 0;
-      });
-
-      // console.log(activeParentUids);
-
-      // Procesar todos los items
-      const processedItems = order.items?.filter(item =>
-        // Incluir el item si:
-        (activeParentUids.includes(item.uid)) || // Es un padre con hijos activos
-        (item.kitchen_status === 1 && item.serving_status === 0 && !(item.kitchen_status === 1 && item.serving_status === 1)) // Está listo para servir y no está completamente servido
-      ).map(item => ({
-        ...item,
-        isParent: parentUids.includes(item.uid),
-        isChild: Boolean(item.pid)
-      })) || [];
-
-      return {
-        orderTime: order.formatted_time_update,
-        elapsedTime: `${order.elapsedTime}分`,
-        table: order.table_name || "Sin Mesa",
-        items: processedItems,
-        originalOrder: order,
-      };
+        return {
+            orderTime: order.formatted_time_update,
+            elapsedTime: `${order.elapsedTime}分`,
+            table: order.table_name || "Sin Mesa",
+            items: processedItems,
+            originalOrder: order,
+        };
     }).filter((order) => order.items.length > 0);
 
     return {
-      orderItems: _.sortBy(
-        orderItems,
-        (item) => new Date(item.originalOrder.record_date)
-      ),
+        orderItems: _.sortBy(
+            orderItems,
+            (item) => new Date(item.originalOrder.record_date)
+        ),
     };
-  }, [completedOrders]);
+}, [completedOrders]);
 
   // console.log(orderItems);
 

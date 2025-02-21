@@ -24,13 +24,8 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
     const configLocal = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const selectedSound = configLocal?.sound || 'sound2';
     const soundUrl = soundMap[selectedSound];
-    
-    const { isSoundEnabled, toggleSound, playSound } = useSound(
-        soundUrl || soundMap['sound2'], 
-        0.5
-    );
+    const { isSoundEnabled, toggleSound, playSound } = useSound(soundUrl || soundMap['sound2'], 1);
 
-    
 
     const checkNewOrders = useCallback((newOrders) => {
         if (!newOrders) return;

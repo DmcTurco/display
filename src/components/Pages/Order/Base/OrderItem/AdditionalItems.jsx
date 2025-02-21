@@ -28,7 +28,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
           flex items-start justify-between gap-1 text-gray-600
           transition-all duration-300 p-1 rounded
           ${isSelected ? "bg-yellow-200" : ""}
-          ${isAdditionalCompleted ? "" : "cursor-pointer"}
+          ${isAdditionalCompleted ? "bg-green-200" : "cursor-pointer"}
           ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
         `;
     

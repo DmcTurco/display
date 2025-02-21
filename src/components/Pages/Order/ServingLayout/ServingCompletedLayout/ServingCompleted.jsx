@@ -61,9 +61,6 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         return items.filter(item => item.pid === parentId);
     };
 
-    // const toggleRowSelection = (itemId) => {
-    //     setSelectedItemId(prev => prev === itemId ? null : itemId);
-    // };
     const toggleRowSelection = (item, allItems) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
@@ -86,6 +83,34 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                 }
             }
 
+            return newSet;
+        });
+    };
+
+    const toggleTableSelection = (order) => {
+        setSelectedRows(prev => {
+            const newSet = new Set(prev);
+            const allItemsSelected = order.items.every(item =>
+                newSet.has(item.id)
+            );
+
+            order.items.forEach(item => {
+                if (allItemsSelected) {
+                    newSet.delete(item.id);
+                    // Si el ítem es padre, también deseleccionamos sus hijos
+                    if (item.isParent) {
+                        const children = getAllChildren(item.uid, order.items);
+                        children.forEach(child => newSet.delete(child.id));
+                    }
+                } else {
+                    newSet.add(item.id);
+                    // Si el ítem es padre, también seleccionamos sus hijos
+                    if (item.isParent) {
+                        const children = getAllChildren(item.uid, order.items);
+                        children.forEach(child => newSet.add(child.id));
+                    }
+                }
+            });
             return newSet;
         });
     };
@@ -146,7 +171,6 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
         }
     };
 
-
     const getSelectedItemsCount = () => {
         // Usar flatMap para obtener todos los items y encontrar el seleccionado
         const selectedItem = orderItems
@@ -183,7 +207,7 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                     <button onClick={() => setShowConfirmDialog(true)}
                         className='w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-3xl'
                     >
-                        戻す 
+                        戻す
                     </button>
                 </div>
 
@@ -216,44 +240,55 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-gray-200">
-                                {orderItems.map((order, orderIndex) => (
-                                    <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">{order.orderTime}</td>
-                                        <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
-                                            {order.elapsedTime}
-                                        </td>
-                                        <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl">{order.table}</td>
-                                        <td colSpan="3" className="p-0">
-                                            <div className="divide-y divide-gray-100">
-                                                {order.items.map((item, itemIndex) => (
-                                                    <div
-                                                        key={itemIndex}
-                                                        onClick={() => toggleRowSelection(item, order.items)}
-                                                        className={`flex items-center px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
-                                                            ? "bg-yellow-200 hover:bg-yellow-200"
-                                                            : "hover:bg-gray-50"
-                                                            }`}
-                                                    >
-                                                        {/* Nombre del item */}
-                                                        <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
-                                                            {item.isChild && (
-                                                                <div className="w-2 h-px bg-gray-300 mr-3"></div>
-                                                            )}
-                                                            <span className="text-3xl">{item.name}</span>
-                                                        </div>
+                                {orderItems.map((order, orderIndex) => {
+                                    const isTableSelected = order.items.every(item => selectedRows.has(item.id));
+                                    return (
+                                        <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
+                                            <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">{order.orderTime}</td>
+                                            <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
+                                                {order.elapsedTime}
+                                            </td>
+                                            <td
+                                                className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected
+                                                    ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
+                                                    : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
+                                                    }`}
+                                                onClick={() => toggleTableSelection(order)}
 
-                                                        {/* Cantidad del item */}
-                                                        <div className="w-[100px] flex justify-end">
-                                                            {/* {!item.isParent && ( */}
-                                                            <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
-                                                                {item.quantity}
-                                                            </span>
-                                                            {/* )} */}
-                                                        </div>
+                                            >
+                                                {order.table}
+                                            </td>
+                                            <td colSpan="3" className="p-0">
+                                                <div className="divide-y divide-gray-100">
+                                                    {order.items.map((item, itemIndex) => (
+                                                        <div
+                                                            key={itemIndex}
+                                                            onClick={() => toggleRowSelection(item, order.items)}
+                                                            className={`flex items-center px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
+                                                                ? "bg-yellow-200 hover:bg-yellow-200"
+                                                                : "hover:bg-gray-50"
+                                                                }`}
+                                                        >
+                                                            {/* Nombre del item */}
+                                                            <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
+                                                                {item.isChild && (
+                                                                    <div className="w-2 h-px bg-gray-300 mr-3"></div>
+                                                                )}
+                                                                <span className="text-3xl">{item.name}</span>
+                                                            </div>
 
-                                                        {/* Botón de acción - solo visible cuando la fila está seleccionada */}
-                                                        <div className="w-[200px] flex justify-center px-4">
-                                                            {/* {!item.isParent && selectedItemId === item.id && (
+                                                            {/* Cantidad del item */}
+                                                            <div className="w-[100px] flex justify-end">
+                                                                {/* {!item.isParent && ( */}
+                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
+                                                                    {item.quantity}
+                                                                </span>
+                                                                {/* )} */}
+                                                            </div>
+
+                                                            {/* Botón de acción - solo visible cuando la fila está seleccionada */}
+                                                            <div className="w-[200px] flex justify-center px-4">
+                                                                {/* {!item.isParent && selectedItemId === item.id && (
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation(); // Evita que se deseleccione la fila
@@ -264,13 +299,14 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                                     戻す
                                                                 </button>
                                                             )} */}
+                                                            </div>
                                                         </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+                                                    ))}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     </div>
