@@ -205,8 +205,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             setLoading(true);
             setKitchenCode(kitchenCd);
-
-            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&type=${config?.type || 1}`);
+            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
 
             const newData = await response.json();
@@ -218,7 +217,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
 
             let processedNewData;
-            const configLocal = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+            // const configLocal = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
             if (configLocal.layoutType === "swipe" && configLocal.type == "1") {
                 processedNewData = processOrders(newData.data);
             } else {

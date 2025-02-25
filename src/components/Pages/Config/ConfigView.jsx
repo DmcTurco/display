@@ -25,6 +25,12 @@ const ConfigView = () => {
     const [maxAllowedCards, setMaxAllowedCards] = useState(getMaxCards());
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
+    const handleLanguageChange = (event) => {
+        updateCustomSettings({
+            selectedLanguage: event.target.value
+        });
+    };
+
     const handleSoundChange = (event) => {
         updateCustomSettings({
             sound: event.target.value
@@ -229,6 +235,25 @@ const ConfigView = () => {
                                 <FaPlay className="text-lg" />
                             </button>
                         </div>
+                    </div>
+
+                    {/* Selector de Lenguaje */}
+                    <div className="grid grid-cols-2 items-center py-2">
+                        <span className="font-medium text-gray-700">
+                            言語:
+                        </span>
+                        <select
+                            value={config.selectedLanguage ?? ''} // Usando el operador nullish para manejar undefined
+                            onChange={handleLanguageChange}
+                            className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                        >
+                            <option value="">日本語</option>
+                            {config.languages?.map((lang) => (
+                                <option key={lang.language_cd} value={lang.language_cd}>
+                                    {lang.language_title}
+                                </option>
+                            ))}
+                        </select>
                     </div>
 
                 </dl>

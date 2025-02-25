@@ -22,6 +22,21 @@ export function useKitchenSetup() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [isConfigured, setIsConfigured] = useState(false);
+    const [languages, setLanguages] = useState([]);
+
+    const fetchLanguages = async (kitchen_cd) => {
+        try {
+            const response = await fetch(`${FULL_API_URL}?action=getLanguage&kitchen_cd=${kitchen_cd}`);
+            const data = await response.json();
+
+            if (data.status !== 'ok') throw new Error(data.message);
+
+            return data.data;
+        } catch (err) {
+            console.error('Error fetching languages:', err);
+            throw err;
+        }
+    };
 
     const getStoredConfig = () => {  // Obtiene config del localStorage
         const stored = localStorage.getItem(CONFIG_STORAGE_KEY);
@@ -72,7 +87,7 @@ export function useKitchenSetup() {
                     || newConfigData.data.elapsed_time !== storedConfig.elapsed_time)
                 ) {
                     clearConfig();
-                    if(newConfigData.data.type !== storedConfig.type){
+                    if (newConfigData.data.type !== storedConfig.type) {
                         storedConfig.layoutType = null;
                     }
                     await fetchConfig(uid);
@@ -100,10 +115,15 @@ export function useKitchenSetup() {
 
 
             if (currentConfig) {
+                const languageResponse = await fetch(`${FULL_API_URL}?action=get_Language&kitchen_cd=${currentConfig.cd}`);
+                const languageData = await languageResponse.json();
+                // console.log(languageData);
                 const mergedConfig = {
                     ...currentConfig,
                     elapsed_time: currentConfig.elapsed_time,
-                    ...customSettings  // Esto asegurará que siempre tengamos los valores predeterminados
+                    ...customSettings,  // Esto asegurará que siempre tengamos los valores predeterminados
+                    languages: languageData.status === 'ok' ? languageData.data : [], // Agregamos los lenguajes disponibles
+                    selectedLanguage: storedConfig?.selectedLanguage || '' 
                 };
                 localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(mergedConfig));
                 setConfig(mergedConfig);
