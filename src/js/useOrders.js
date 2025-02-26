@@ -250,9 +250,9 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             let response; // Declara la variable primero
             // console.log(config);
             if (config.layoutType === 'kitchenServing') {
-                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}`);
+                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}`);
             } else {
-                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}`);
+                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}`);
             }
             // console.log(response);
 
