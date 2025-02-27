@@ -45,60 +45,194 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-    const { uniqueItems, uniqueTables, orderMatrix, itemsMap } = useMemo(() => {
+
+    // Actualización del useMemo para el conteo separado de ítems normales e hijos
+    // Actualización del useMemo para agrupar correctamente padres e hijos usando UIDs
+    const { uniqueItems, uniqueTables, orderMatrix, itemsMap, parentToChildrenMap, parentChildRelations } = useMemo(() => {
         const items = new Set();
         const tables = new Set();
         const matrix = {};
         const itemsMap = {};
 
+        // Mapeo para registrar las relaciones padre-hijo
+        const parentChildRelations = {};
+
+        // Para agrupar ítems idénticos (mismo tipo de ítem)
+        const itemTypeToGroupKey = {};
+
+        // Primera pasada: identificar relaciones padre-hijo y crear mapeo
+        orders.forEach(order => {
+            const itemsWithPid = order.items?.filter(item => item.pid) || [];
+
+            // Registrar relaciones padre-hijo
+            itemsWithPid.forEach(childItem => {
+                if (!parentChildRelations[childItem.pid]) {
+                    parentChildRelations[childItem.pid] = new Set();
+                }
+                parentChildRelations[childItem.pid].add(childItem.uid);
+            });
+        });
+
+        // Segunda pasada: procesar los ítems
         orders.forEach(order => {
             const tableName = order.table_name || 'Sin Mesa';
             tables.add(tableName);
 
+            // Identificar relaciones padre-hijo
+            const itemsWithPid = order.items?.filter(item => item.pid) || [];
+            const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+
+            // Identificar padres activos (con hijos sin cocinar)
+            const activeParentUids = parentUids.filter(parentUid => {
+                const children = order.items?.filter(item =>
+                    item.pid === parentUid && item.kitchen_status !== 1
+                );
+                return children.length > 0;
+            });
+
             order.items?.forEach(item => {
-                // Solo procesamos si no está completado
-                if (item.kitchen_status !== 1) {
-                    const itemName = item.name;
-                    items.add(itemName);
+                // Aplicamos la lógica de filtrado
+                const shouldProcess =
+                    (activeParentUids.includes(item.uid)) || // Es un padre con hijos sin cocinar
+                    (!item.pid && item.kitchen_status !== 1) || // Es un ítem normal no cocinado
+                    (item.pid && item.kitchen_status !== 1); // Es un hijo no cocinado
 
-                    if (!itemsMap[itemName]) {
-                        itemsMap[itemName] = {};
-                    }
-                    if (!itemsMap[itemName][tableName]) {
-                        itemsMap[itemName][tableName] = [];
-                    }
-                    itemsMap[itemName][tableName].push(item);
+                if (shouldProcess) {
+                    const isParent = parentUids.includes(item.uid);
+                    const isChild = Boolean(item.pid);
 
-                    if (!matrix[itemName]) {
-                        matrix[itemName] = {
+                    // Determinar una clave que identifique el tipo de ítem
+                    let itemTypeKey;
+
+                    if (isParent) {
+                        // Para padres, usamos su code o id o cualquier identificador único de tipo
+                        itemTypeKey = `PARENT_${item.code || item.menu_id || item.name}`;
+                    } else if (isChild) {
+                        // Para hijos, usamos su code + parentCode
+                        const parentItem = order.items?.find(parentItem => parentItem.uid === item.pid);
+                        const parentCode = parentItem ? (parentItem.code || parentItem.menu_id || parentItem.name) : 'unknown';
+                        itemTypeKey = `CHILD_${item.code || item.menu_id || item.name}_OF_${parentCode}`;
+                    } else {
+                        // Ítems normales
+                        itemTypeKey = `NORMAL_${item.code || item.menu_id || item.name}`;
+                    }
+
+                    // Crear una clave de grupo para este tipo de ítem si no existe
+                    if (!itemTypeToGroupKey[itemTypeKey]) {
+                        // Generar una clave única para este grupo (podemos usar el primer UID que encontremos)
+                        itemTypeToGroupKey[itemTypeKey] = item.uid;
+                    }
+
+                    // Usar la clave de grupo asignada a este tipo de ítem
+                    const groupKey = itemTypeToGroupKey[itemTypeKey];
+
+                    // Añadir a items
+                    items.add(groupKey);
+
+                    // Enriquecer el ítem
+                    const enrichedItem = {
+                        ...item,
+                        isParent,
+                        isChild,
+                        groupKey,
+                        parentUid: isChild ? item.pid : null,
+                        itemTypeKey // Guardamos el tipo para referencia
+                    };
+
+                    // Almacenar en itemsMap
+                    if (!itemsMap[groupKey]) {
+                        itemsMap[groupKey] = {};
+                    }
+                    if (!itemsMap[groupKey][tableName]) {
+                        itemsMap[groupKey][tableName] = [];
+                    }
+                    itemsMap[groupKey][tableName].push(enrichedItem);
+
+                    // Crear o actualizar la matriz
+                    if (!matrix[groupKey]) {
+                        matrix[groupKey] = {
                             totals: 0,
                             byTable: {},
-                            pendingByTable: {}
+                            pendingByTable: {},
+                            isParent,
+                            isChild,
+                            displayName: item.name,
+                            uid: item.uid,
+                            originalUids: new Set([item.uid]), // Para seguimiento de todos los UIDs
+                            parentUid: isChild ? item.pid : null,
+                            itemTypeKey
                         };
-                    }
-                    if (!matrix[itemName].byTable[tableName]) {
-                        matrix[itemName].byTable[tableName] = 0;
-                        matrix[itemName].pendingByTable[tableName] = 0;
+                    } else {
+                        // Agregar este UID al conjunto de UIDs originales
+                        matrix[groupKey].originalUids.add(item.uid);
                     }
 
-                    // Solo sumamos los pendientes
-                    matrix[itemName].byTable[tableName] += item.quantity;
-                    matrix[itemName].pendingByTable[tableName] += item.quantity;
-                    matrix[itemName].totals += item.quantity;
+                    if (!matrix[groupKey].byTable[tableName]) {
+                        matrix[groupKey].byTable[tableName] = 0;
+                        matrix[groupKey].pendingByTable[tableName] = 0;
+                    }
+
+                    // Actualizar conteos
+                    matrix[groupKey].byTable[tableName] += item.quantity;
+                    matrix[groupKey].pendingByTable[tableName] += item.quantity;
+                    matrix[groupKey].totals += item.quantity;
                 }
             });
         });
 
-        // Filtramos los items que no tienen pendientes
+        // Filtrar ítems sin pendientes
         const filteredItems = Array.from(items).filter(item =>
             matrix[item] && matrix[item].totals > 0
         );
 
+        // Construir mapa de relaciones para la lógica de selección
+        const parentToChildrenMap = {};
+        filteredItems.forEach(groupKey => {
+            if (matrix[groupKey].isParent) {
+                // Para cada padre, encontrar todos sus hijos agrupados
+                parentToChildrenMap[groupKey] = filteredItems.filter(childKey =>
+                    matrix[childKey].isChild &&
+                    matrix[childKey].parentUid &&
+                    matrix[groupKey].originalUids.has(matrix[childKey].parentUid)
+                );
+            }
+        });
+
+        // Ordenar los ítems para mantener la jerarquía correcta
+        // 1. Primero ordenamos los padres
+        // 2. Generamos una nueva lista ordenada
+        const sortedItems = [];
+        const parentItems = filteredItems.filter(item => matrix[item].isParent);
+        const standaloneItems = filteredItems.filter(item => !matrix[item].isParent && !matrix[item].isChild);
+
+        // Primero añadimos todos los padres con sus hijos
+        parentItems.forEach(parentKey => {
+            // Añadir el padre
+            sortedItems.push(parentKey);
+
+            // Añadir todos sus hijos inmediatamente después
+            if (parentToChildrenMap[parentKey]) {
+                parentToChildrenMap[parentKey].forEach(childKey => {
+                    sortedItems.push(childKey);
+                });
+            }
+        });
+
+        // Finalmente añadimos los ítems independientes
+        standaloneItems.forEach(itemKey => {
+            // Verificar que no lo hayamos añadido ya
+            if (!sortedItems.includes(itemKey)) {
+                sortedItems.push(itemKey);
+            }
+        });
+
         return {
-            uniqueItems: filteredItems,
+            uniqueItems: sortedItems,
             uniqueTables: Array.from(tables).sort(),
             orderMatrix: matrix,
-            itemsMap
+            itemsMap,
+            parentToChildrenMap,
+            parentChildRelations
         };
     }, [orders]);
 
@@ -106,6 +240,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [selectedColumns, setSelectedColumns] = useState(new Set());
 
+    // Selección de columnas con claves de grupo
     const toggleColumnSelection = (table) => {
         setSelectedColumns(prev => {
             const newSet = new Set(prev);
@@ -126,12 +261,12 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                 // Seleccionar la columna
                 newSet.add(table);
                 // Seleccionar todas las celdas con items pendientes en esta columna
-                uniqueItems.forEach(item => {
-                    const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
+                uniqueItems.forEach(groupKey => {
+                    const pendingQuantity = orderMatrix[groupKey].pendingByTable[table] || 0;
                     if (pendingQuantity > 0) {
                         setSelectedCells(prevCells => {
                             const newCells = new Set(prevCells);
-                            newCells.add(`${item}-${table}`);
+                            newCells.add(`${groupKey}-${table}`);
                             return newCells;
                         });
                     }
@@ -141,43 +276,34 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         });
     };
 
-
-    const toggleRowSelection = (item) => {
-        // Solo permitir selección si hay items pendientes
-        const hasPendingItems = Object.values(orderMatrix[item].pendingByTable).some(count => count > 0);
-        if (!hasPendingItems) return;
-
+    // Actualización de toggleRowSelection para usar el sistema basado en UIDs
+    const toggleRowSelection = (groupKey) => {
         setSelectedRows(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(item)) {
-                // Si la fila está seleccionada, la deseleccionamos
-                newSet.delete(item);
-                // Y limpiamos todas las celdas de esa fila
-                setSelectedCells(prevCells => {
-                    const newCells = new Set(prevCells);
-                    Array.from(prevCells).forEach(cellKey => {
-                        if (cellKey.startsWith(`${item}-`)) {
-                            newCells.delete(cellKey);
-                        }
+            const newSelected = new Set(prev);
+
+            if (prev.has(groupKey)) {
+                // Deseleccionar el ítem
+                newSelected.delete(groupKey);
+
+                // Si es un padre, deseleccionar todos sus hijos
+                if (orderMatrix[groupKey].isParent && parentToChildrenMap[groupKey]) {
+                    parentToChildrenMap[groupKey].forEach(childKey => {
+                        newSelected.delete(childKey);
                     });
-                    return newCells;
-                });
+                }
             } else {
-                // Si vamos a seleccionar la fila
-                // Primero limpiamos cualquier celda individual de esta fila
-                setSelectedCells(prevCells => {
-                    const newCells = new Set(prevCells);
-                    Array.from(prevCells).forEach(cellKey => {
-                        if (cellKey.startsWith(`${item}-`)) {
-                            newCells.delete(cellKey);
-                        }
+                // Seleccionar el ítem
+                newSelected.add(groupKey);
+
+                // Si es un padre, seleccionar todos sus hijos
+                if (orderMatrix[groupKey].isParent && parentToChildrenMap[groupKey]) {
+                    parentToChildrenMap[groupKey].forEach(childKey => {
+                        newSelected.add(childKey);
                     });
-                    return newCells;
-                });
-                // Luego seleccionamos la fila completa
-                newSet.add(item);
+                }
             }
-            return newSet;
+
+            return newSelected;
         });
     };
 
@@ -217,52 +343,178 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         setShowConfirmDialog(false);
     };
 
-    const handleUpdate = () => {
+    // Actualización de la función handleUpdate para manejar correctamente los UIDs
+    const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
         }
 
-        const updateItem = (item) => {
-            if (item && item.id && item.kitchen_status !== 1) {
-                updateKitchenStatus(item.id, 1, kitchen_cd);
-            }
-        };
+        try {
+            // Recolectar todos los UIDs a actualizar
+            const uidsToUpdate = new Set();
+            const parentStatuses = new Map(); // Para rastrear el estado de los padres
 
-        // Actualizar items seleccionados por fila
-        selectedRows.forEach(itemName => {
-            uniqueTables.forEach(tableName => {
-                const items = itemsMap[itemName][tableName] || [];
-                items.forEach(updateItem);
+            // Primera pasada: recopilar información de los ítems seleccionados
+            // y crear un mapa de padres y sus hijos
+            const parentChildMap = new Map(); // Mapa de padres a sus hijos
+
+            // Recopilar todos los hijos por cada padre
+            orders.forEach(order => {
+                order.items?.forEach(item => {
+                    if (item.pid) {
+                        if (!parentChildMap.has(item.pid)) {
+                            parentChildMap.set(item.pid, []);
+                        }
+                        parentChildMap.get(item.pid).push(item);
+                    }
+                });
             });
-        });
 
-        // Actualizar celdas individuales
-        selectedCells.forEach(cellKey => {
-            const [itemName, tableName] = cellKey.split('-');
-            const items = itemsMap[itemName][tableName] || [];
-            items.forEach(updateItem);
-        });
+            // Procesar filas seleccionadas
+            selectedRows.forEach(groupKey => {
+                if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                    orderMatrix[groupKey].originalUids.forEach(uid => {
+                        orders.forEach(order => {
+                            const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                            if (item) {
+                                // Añadir el ítem a la lista de actualización
+                                uidsToUpdate.add(item.id);
 
-        // Limpiar selecciones
-        setSelectedRows(new Set());
-        setSelectedCells(new Set());
+                                // Si es un padre, añadir todos sus hijos
+                                if (parentChildMap.has(item.uid)) {
+                                    parentChildMap.get(item.uid).forEach(child => {
+                                        if (child.kitchen_status !== 1) {
+                                            uidsToUpdate.add(child.id);
+                                        }
+                                    });
+                                }
+
+                                // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                if (item.pid) {
+                                    if (!parentStatuses.has(item.pid)) {
+                                        // Encontrar todos los hermanos
+                                        const siblings = parentChildMap.get(item.pid) || [];
+                                        const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                        parentStatuses.set(item.pid, {
+                                            parentItem: order.items?.find(i => i.uid === item.pid),
+                                            pendingSiblings: pendingSiblings,
+                                            selectedSiblings: new Set()
+                                        });
+                                    }
+
+                                    // Añadir este hijo a la lista de seleccionados para este padre
+                                    const parentStatus = parentStatuses.get(item.pid);
+                                    if (parentStatus) {
+                                        parentStatus.selectedSiblings.add(item.id);
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+
+            // Procesar celdas seleccionadas
+            selectedCells.forEach(cellKey => {
+                const [groupKey, tableName] = cellKey.split('-');
+
+                if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                    orderMatrix[groupKey].originalUids.forEach(uid => {
+                        orders.forEach(order => {
+                            if (order.table_name === tableName || (!order.table_name && tableName === 'Sin Mesa')) {
+                                const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                                if (item) {
+                                    // Añadir el ítem a la lista de actualización
+                                    uidsToUpdate.add(item.id);
+
+                                    // Si es un padre, añadir todos sus hijos
+                                    if (parentChildMap.has(item.uid)) {
+                                        parentChildMap.get(item.uid).forEach(child => {
+                                            if (child.kitchen_status !== 1) {
+                                                uidsToUpdate.add(child.id);
+                                            }
+                                        });
+                                    }
+
+                                    // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                    if (item.pid) {
+                                        if (!parentStatuses.has(item.pid)) {
+                                            // Encontrar todos los hermanos
+                                            const siblings = parentChildMap.get(item.pid) || [];
+                                            const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                            parentStatuses.set(item.pid, {
+                                                parentItem: order.items?.find(i => i.uid === item.pid),
+                                                pendingSiblings: pendingSiblings,
+                                                selectedSiblings: new Set()
+                                            });
+                                        }
+
+                                        // Añadir este hijo a la lista de seleccionados para este padre
+                                        const parentStatus = parentStatuses.get(item.pid);
+                                        if (parentStatus) {
+                                            parentStatus.selectedSiblings.add(item.id);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                    });
+                }
+            });
+
+            // Verificar qué padres deben actualizarse automáticamente
+            parentStatuses.forEach((status, parentUid) => {
+                // Si todos los hijos pendientes están seleccionados para actualizar
+                const allPendingSelected = status.pendingSiblings.every(sibling =>
+                    sibling.kitchen_status === 1 || status.selectedSiblings.has(sibling.id) || uidsToUpdate.has(sibling.id)
+                );
+
+                if (allPendingSelected && status.parentItem && status.parentItem.kitchen_status !== 1) {
+                    // Si todos los hijos pendientes serán actualizados, añadir el padre
+                    uidsToUpdate.add(status.parentItem.id);
+                }
+            });
+
+            // Realizar las actualizaciones
+            const updatePromises = Array.from(uidsToUpdate).map(id =>
+                updateKitchenStatus(id, 1, kitchen_cd)
+            );
+
+            await Promise.all(updatePromises);
+
+            // Limpiar selecciones
+            setSelectedRows(new Set());
+            setSelectedCells(new Set());
+            setShowConfirmDialog(false);
+        } catch (error) {
+            console.error('Error al actualizar el estado:', error);
+        }
     };
 
     const getSelectedPendingCount = () => {
         let count = 0;
 
         // Contar items de filas seleccionadas
-        selectedRows.forEach(itemName => {
-            uniqueTables.forEach(tableName => {
-                count += orderMatrix[itemName].pendingByTable[tableName] || 0;
-            });
+        selectedRows.forEach(itemKey => {
+            // Verificar que el ítem exista en orderMatrix
+            if (orderMatrix[itemKey]) {
+                uniqueTables.forEach(tableName => {
+                    // Verificar que pendingByTable exista y tenga el valor de la tabla
+                    count += (orderMatrix[itemKey].pendingByTable || {})[tableName] || 0;
+                });
+            }
         });
 
         // Contar items de celdas seleccionadas
         selectedCells.forEach(cellKey => {
-            const [itemName, tableName] = cellKey.split('-');
-            count += orderMatrix[itemName].pendingByTable[tableName] || 0;
+            const [itemKey, tableName] = cellKey.split('-');
+            // Verificar que el ítem exista en orderMatrix y tenga pendingByTable
+            if (orderMatrix[itemKey] && orderMatrix[itemKey].pendingByTable) {
+                count += orderMatrix[itemKey].pendingByTable[tableName] || 0;
+            }
         });
 
         return count;
@@ -291,7 +543,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
+                                    <th className="w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
                                         メニュー項目
                                     </th>
                                     <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 bg-gray-200">
@@ -314,35 +566,43 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                             </thead>
 
                             <tbody className="divide-y divide-gray-200">
-                                {uniqueItems.map((item, idx) => {
-                                    const hasPendingItems = Object.values(orderMatrix[item].pendingByTable).some(count => count > 0);
+                                {uniqueItems.map((groupKey, idx) => {
+                                    const hasPendingItems = Object.values(orderMatrix[groupKey].pendingByTable).some(count => count > 0);
+                                    const isChild = orderMatrix[groupKey].isChild;
+                                    const displayName = orderMatrix[groupKey].displayName;
+
                                     return (
-                                        <tr key={item}
+                                        <tr key={groupKey}
                                             className={`${hasPendingItems ? 'cursor-pointer' : 'cursor-not-allowed'}
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
                                                 hover:bg-gray-100 transition-colors text-3xl`}
-                                            onClick={() => hasPendingItems && toggleRowSelection(item)}>
-                                            <td className={`w-[300px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
-                                                <ScrollingText text={item} />
+                                            onClick={() => hasPendingItems && toggleRowSelection(groupKey)}>
+                                            <td className={`w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                                <div className={`flex items-center ${isChild ? 'pl-4' : ''}`}>
+                                                    {isChild && (
+                                                        <div className="w-2 h-px bg-gray-300 mr-3"></div>
+                                                    )}
+                                                    <ScrollingText text={displayName} />
+                                                </div>
                                             </td>
                                             <td className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200 sticky left-[300px] z-10
-                                                ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 <span className="inline-flex items-center justify-center text-5xl font-medium text-red-500">
-                                                    {orderMatrix[item].totals}
+                                                    {orderMatrix[groupKey].totals}
                                                 </span>
                                             </td>
                                             {uniqueTables.map(table => {
-                                                const quantity = orderMatrix[item].byTable[table] || 0;
-                                                const pendingQuantity = orderMatrix[item].pendingByTable[table] || 0;
+                                                const quantity = orderMatrix[groupKey].byTable[table] || 0;
+                                                const pendingQuantity = orderMatrix[groupKey].pendingByTable[table] || 0;
                                                 return (
-                                                    <td key={`${item}-${table}`}
-                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center  border-b border-gray-200
-                                                            ${isCellSelected(item, table) || isRowSelected(item) ? 'bg-yellow-200' : ''}
-                                                            ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
+                                                    <td key={`${groupKey}-${table}`}
+                                                        className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200
+                                                        ${isCellSelected(groupKey, table) || isRowSelected(groupKey) ? 'bg-yellow-200' : ''}
+                                                        ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
-                                                            pendingQuantity > 0 && toggleCellSelection(item, table, pendingQuantity);
+                                                            pendingQuantity > 0 && toggleCellSelection(groupKey, table, pendingQuantity);
                                                         }}>
                                                         {quantity > 0 && (
                                                             <div className="flex flex-col items-center gap-1">
@@ -350,23 +610,13 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                                     ${pendingQuantity > 0 ? '' : 'bg-gray-400'}`}>
                                                                     {quantity}
                                                                 </span>
-                                                                {/* {pendingQuantity < quantity && pendingQuantity > 0 && (
-                                                                    <span className="text-xs text-orange-500 font-medium">
-                                                                        ({pendingQuantity} pend.)
-                                                                    </span>
-                                                                )}
-                                                                {pendingQuantity === 0 && (
-                                                                    <span className="text-xs text-green-500 font-medium">
-                                                                        (Completado)
-                                                                    </span>
-                                                                )} */}
                                                             </div>
                                                         )}
                                                     </td>
                                                 );
                                             })}
                                             {/* Celda fantasma que se expande */}
-                                            <td className={`border-b border-gray-200 ${isRowSelected(item) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}></td>
+                                            <td className={`border-b border-gray-200 ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}></td>
                                         </tr>
                                     );
                                 })}

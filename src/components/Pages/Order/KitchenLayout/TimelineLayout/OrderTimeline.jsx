@@ -267,13 +267,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                 ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
                                                                 : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
                                                                 }`}
-                                                        // className={`flex items-left px-4 py-2 ${item.isParent
-                                                        //     ? 'bg-gray-50 cursor-default'
-                                                        //     : `cursor-pointer ${selectedRows.has(item.id)
-                                                        //         ? 'bg-yellow-200 hover:bg-yellow-200'
-                                                        //         : 'hover:bg-gray-50'
-                                                        //     }`
-                                                        //     }`}
                                                         >
                                                             {/* Nombre del item */}
                                                             <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
@@ -282,13 +275,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                 )}
                                                                 <span className="text-3xl">{item.name}</span>
                                                             </div>
-                                                            {/* <div className="flex-1 flex items-center pl-8">
-                                                            {item.isChild && (
-                                                                <div className="w-2 h-px bg-gray-300 mr-3"></div>
-                                                            )}
-                                                            <span className="text-3xl">{item.name}</span>
-                                                        </div> */}
-
+    
                                                             {/* Cantidad del item */}
                                                             <div className="w-[200px] flex justify-end">
                                                                 {/* {!item.isParent && ( */}
