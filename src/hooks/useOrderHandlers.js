@@ -125,10 +125,10 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     }
 
     // Para ítems principales con hijos: expandir/colapsar
-    if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
-      setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
-      return;
-    }
+    // if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
+    //   setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
+    //   return;
+    // }
 
     // Si el ítem ya está completado, no hacer nada
     if (item.kitchen_status === 1 || (isServing && item.serving_status === 1)) {

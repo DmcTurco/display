@@ -240,8 +240,38 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [selectedColumns, setSelectedColumns] = useState(new Set());
 
-    // Selección de columnas con claves de grupo
+    const lastColumnTapRef = useRef({});
+    const columnTapTimeoutRef = useRef({});
+    const DOUBLE_TAP_DELAY = 300;
+
     const toggleColumnSelection = (table) => {
+
+        const selectionMode = config.selectionMode || "1";
+
+        if (selectionMode === "2") {
+            const now = Date.now(); // Añadir esta línea
+            const columnId = table;
+            if (now - (lastColumnTapRef.current[columnId] || 0) < DOUBLE_TAP_DELAY) {
+                clearTimeout(columnTapTimeoutRef.current[columnId]);
+                handleUpdate({
+                    type: 'column',
+                    table
+                });
+            } else {
+                // Primer toque - solo lo registramos
+                if (columnTapTimeoutRef.current[columnId]) {
+                    clearTimeout(columnTapTimeoutRef.current[columnId]);
+                }
+
+                columnTapTimeoutRef.current[columnId] = setTimeout(() => {
+                    // Opcional: acción para toque simple
+                    console.log("Toque simple en columna:", table);
+                }, 250);
+            }
+            lastColumnTapRef.current[columnId] = now;
+            return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
+        }
+
         setSelectedColumns(prev => {
             const newSet = new Set(prev);
             if (newSet.has(table)) {
@@ -276,8 +306,39 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         });
     };
 
-    // Actualización de toggleRowSelection para usar el sistema basado en UIDs
+    const lastRowTapRef = useRef({});
+    const rowTapTimeoutRef = useRef({});
+
     const toggleRowSelection = (groupKey) => {
+
+        const selectionMode = config.selectionMode || "1";
+
+        if (selectionMode === "2") {
+
+            const now = Date.now();
+            const rowId = groupKey; // O simplemente usa groupKey directamente
+
+            if (now - (lastRowTapRef.current[rowId] || 0) < DOUBLE_TAP_DELAY) {
+                clearTimeout(rowTapTimeoutRef.current[rowId]);
+                handleUpdate({
+                    type: 'row',
+                    groupKey
+                });
+            } else {
+                // Primer toque - solo lo registramos
+                if (rowTapTimeoutRef.current[rowId]) {
+                    clearTimeout(rowTapTimeoutRef.current[rowId]);
+                }
+
+                rowTapTimeoutRef.current[rowId] = setTimeout(() => {
+                    // Opcional: acción para toque simple
+                    console.log("Toque simple en fila:", groupKey);
+                }, 250);
+            }
+            lastRowTapRef.current[rowId] = now;
+            return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
+        }
+
         setSelectedRows(prev => {
             const newSelected = new Set(prev);
 
@@ -307,35 +368,71 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         });
     };
 
+    const lastCellTapRef = useRef({});
+    const cellTapTimeoutRef = useRef({});
+
     const toggleCellSelection = (item, table, quantity) => {
-        if (quantity > 0) {
-            setSelectedCells(prev => {
-                const cellKey = `${item}-${table}`;
-                const newSet = new Set(prev);
-                if (newSet.has(cellKey)) {
-                    newSet.delete(cellKey);
-                } else {
-                    // Limpiar selección de fila si existe
-                    if (selectedRows.has(item)) {
-                        setSelectedRows(prev => {
-                            const newRows = new Set(prev);
-                            newRows.delete(item);
-                            return newRows;
-                        });
-                    }
-                    // Limpiar selección de columna si existe
-                    if (selectedColumns.has(table)) {
-                        setSelectedColumns(prev => {
-                            const newCols = new Set(prev);
-                            newCols.delete(table);
-                            return newCols;
-                        });
-                    }
-                    newSet.add(cellKey);
+
+        // Si la cantidad es 0, no hacemos nada
+        if (quantity <= 0) return;
+
+        // Obtener el modo de selección del localStorage
+        const selectionMode = config.selectionMode || "1";
+
+        if (selectionMode === "2") {
+
+            const now = Date.now();
+            const cellId = `${item}-${table}`; // Añadir esta línea
+            // Para celdas
+
+            if (now - (lastCellTapRef.current[cellId] || 0) < DOUBLE_TAP_DELAY) {
+                clearTimeout(cellTapTimeoutRef.current[cellId]);
+                handleUpdate({
+                    type: 'cell',
+                    groupKey: item,
+                    table
+                });
+            } else {
+                // Primer toque - solo lo registramos
+                if (cellTapTimeoutRef.current[cellId]) {
+                    clearTimeout(cellTapTimeoutRef.current[cellId]);
                 }
-                return newSet;
-            });
+
+                cellTapTimeoutRef.current[cellId] = setTimeout(() => {
+                    // Opcional: acción para toque simple
+                    console.log("Toque simple en la celda:", item, table);
+                }, 250);
+            }
+            lastCellTapRef.current[cellId] = now;
+            return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
         }
+
+        setSelectedCells(prev => {
+            const cellKey = `${item}-${table}`;
+            const newSet = new Set(prev);
+            if (newSet.has(cellKey)) {
+                newSet.delete(cellKey);
+            } else {
+                // Limpiar selección de fila si existe
+                if (selectedRows.has(item)) {
+                    setSelectedRows(prev => {
+                        const newRows = new Set(prev);
+                        newRows.delete(item);
+                        return newRows;
+                    });
+                }
+                // Limpiar selección de columna si existe
+                if (selectedColumns.has(table)) {
+                    setSelectedColumns(prev => {
+                        const newCols = new Set(prev);
+                        newCols.delete(table);
+                        return newCols;
+                    });
+                }
+                newSet.add(cellKey);
+            }
+            return newSet;
+        });
     };
 
     const handleConfirm = () => {
@@ -344,7 +441,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     };
 
     // Actualización de la función handleUpdate para manejar correctamente los UIDs
-    const handleUpdate = async () => {
+    const handleUpdate = async (specificItems = null) => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
@@ -354,9 +451,6 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
             // Recolectar todos los UIDs a actualizar
             const uidsToUpdate = new Set();
             const parentStatuses = new Map(); // Para rastrear el estado de los padres
-
-            // Primera pasada: recopilar información de los ítems seleccionados
-            // y crear un mapa de padres y sus hijos
             const parentChildMap = new Map(); // Mapa de padres a sus hijos
 
             // Recopilar todos los hijos por cada padre
@@ -371,59 +465,163 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                 });
             });
 
-            // Procesar filas seleccionadas
-            selectedRows.forEach(groupKey => {
-                if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
-                    orderMatrix[groupKey].originalUids.forEach(uid => {
-                        orders.forEach(order => {
-                            const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
-                            if (item) {
-                                // Añadir el ítem a la lista de actualización
-                                uidsToUpdate.add(item.id);
+            // Procesar según el caso de actualización
+            if (specificItems) {
+                // Actualizaciones específicas (doble toque)
+                switch (specificItems.type) {
+                    case 'column': {
+                        const { table } = specificItems;
+                        const itemsToUpdate = uniqueItems.filter(groupKey =>
+                            (orderMatrix[groupKey].pendingByTable[table] || 0) > 0
+                        );
 
-                                // Si es un padre, añadir todos sus hijos
-                                if (parentChildMap.has(item.uid)) {
-                                    parentChildMap.get(item.uid).forEach(child => {
-                                        if (child.kitchen_status !== 1) {
-                                            uidsToUpdate.add(child.id);
+                        itemsToUpdate.forEach(groupKey => {
+                            if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                                orderMatrix[groupKey].originalUids.forEach(uid => {
+                                    orders.forEach(order => {
+                                        if (order.table_name === table || (!order.table_name && table === 'Sin Mesa')) {
+                                            const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                                            if (item) {
+                                                // Añadir el ítem a la lista de actualización
+                                                uidsToUpdate.add(item.id);
+
+                                                // Si es un padre, añadir todos sus hijos
+                                                if (parentChildMap.has(item.uid)) {
+                                                    parentChildMap.get(item.uid).forEach(child => {
+                                                        if (child.kitchen_status !== 1) {
+                                                            uidsToUpdate.add(child.id);
+                                                        }
+                                                    });
+                                                }
+
+                                                // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                                if (item.pid) {
+                                                    if (!parentStatuses.has(item.pid)) {
+                                                        const siblings = parentChildMap.get(item.pid) || [];
+                                                        const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                                        parentStatuses.set(item.pid, {
+                                                            parentItem: order.items?.find(i => i.uid === item.pid),
+                                                            pendingSiblings: pendingSiblings,
+                                                            selectedSiblings: new Set()
+                                                        });
+                                                    }
+
+                                                    const parentStatus = parentStatuses.get(item.pid);
+                                                    if (parentStatus) {
+                                                        parentStatus.selectedSiblings.add(item.id);
+                                                    }
+                                                }
+                                            }
                                         }
                                     });
-                                }
-
-                                // Si es un hijo, registrar para verificar si el padre debe actualizarse
-                                if (item.pid) {
-                                    if (!parentStatuses.has(item.pid)) {
-                                        // Encontrar todos los hermanos
-                                        const siblings = parentChildMap.get(item.pid) || [];
-                                        const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
-
-                                        parentStatuses.set(item.pid, {
-                                            parentItem: order.items?.find(i => i.uid === item.pid),
-                                            pendingSiblings: pendingSiblings,
-                                            selectedSiblings: new Set()
-                                        });
-                                    }
-
-                                    // Añadir este hijo a la lista de seleccionados para este padre
-                                    const parentStatus = parentStatuses.get(item.pid);
-                                    if (parentStatus) {
-                                        parentStatus.selectedSiblings.add(item.id);
-                                    }
-                                }
+                                });
                             }
                         });
-                    });
+                        break;
+                    }
+
+                    case 'row': {
+                        const { groupKey } = specificItems;
+
+                        if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                            orderMatrix[groupKey].originalUids.forEach(uid => {
+                                orders.forEach(order => {
+                                    const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                                    if (item) {
+                                        // Añadir el ítem a la lista de actualización
+                                        uidsToUpdate.add(item.id);
+
+                                        // Si es un padre, añadir todos sus hijos
+                                        if (parentChildMap.has(item.uid)) {
+                                            parentChildMap.get(item.uid).forEach(child => {
+                                                if (child.kitchen_status !== 1) {
+                                                    uidsToUpdate.add(child.id);
+                                                }
+                                            });
+                                        }
+
+                                        // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                        if (item.pid) {
+                                            if (!parentStatuses.has(item.pid)) {
+                                                const siblings = parentChildMap.get(item.pid) || [];
+                                                const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                                parentStatuses.set(item.pid, {
+                                                    parentItem: order.items?.find(i => i.uid === item.pid),
+                                                    pendingSiblings: pendingSiblings,
+                                                    selectedSiblings: new Set()
+                                                });
+                                            }
+
+                                            const parentStatus = parentStatuses.get(item.pid);
+                                            if (parentStatus) {
+                                                parentStatus.selectedSiblings.add(item.id);
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                        break;
+                    }
+
+                    case 'cell': {
+                        const { groupKey, table } = specificItems;
+
+                        if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                            orderMatrix[groupKey].originalUids.forEach(uid => {
+                                orders.forEach(order => {
+                                    if (order.table_name === table || (!order.table_name && table === 'Sin Mesa')) {
+                                        const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                                        if (item) {
+                                            // Añadir el ítem a la lista de actualización
+                                            uidsToUpdate.add(item.id);
+
+                                            // Si es un padre, añadir todos sus hijos
+                                            if (parentChildMap.has(item.uid)) {
+                                                parentChildMap.get(item.uid).forEach(child => {
+                                                    if (child.kitchen_status !== 1) {
+                                                        uidsToUpdate.add(child.id);
+                                                    }
+                                                });
+                                            }
+
+                                            // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                            if (item.pid) {
+                                                if (!parentStatuses.has(item.pid)) {
+                                                    const siblings = parentChildMap.get(item.pid) || [];
+                                                    const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                                    parentStatuses.set(item.pid, {
+                                                        parentItem: order.items?.find(i => i.uid === item.pid),
+                                                        pendingSiblings: pendingSiblings,
+                                                        selectedSiblings: new Set()
+                                                    });
+                                                }
+
+                                                const parentStatus = parentStatuses.get(item.pid);
+                                                if (parentStatus) {
+                                                    parentStatus.selectedSiblings.add(item.id);
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            });
+                        }
+                        break;
+                    }
                 }
-            });
+            }
+            else {
+                // Actualización de selección múltiple (modo 1)
 
-            // Procesar celdas seleccionadas
-            selectedCells.forEach(cellKey => {
-                const [groupKey, tableName] = cellKey.split('-');
-
-                if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
-                    orderMatrix[groupKey].originalUids.forEach(uid => {
-                        orders.forEach(order => {
-                            if (order.table_name === tableName || (!order.table_name && tableName === 'Sin Mesa')) {
+                // Procesar filas seleccionadas
+                selectedRows.forEach(groupKey => {
+                    if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                        orderMatrix[groupKey].originalUids.forEach(uid => {
+                            orders.forEach(order => {
                                 const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
                                 if (item) {
                                     // Añadir el ítem a la lista de actualización
@@ -459,11 +657,60 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                         }
                                     }
                                 }
-                            }
+                            });
                         });
-                    });
-                }
-            });
+                    }
+                });
+
+                // Procesar celdas seleccionadas
+                selectedCells.forEach(cellKey => {
+                    const [groupKey, tableName] = cellKey.split('-');
+
+                    if (orderMatrix[groupKey] && orderMatrix[groupKey].originalUids) {
+                        orderMatrix[groupKey].originalUids.forEach(uid => {
+                            orders.forEach(order => {
+                                if (order.table_name === tableName || (!order.table_name && tableName === 'Sin Mesa')) {
+                                    const item = order.items?.find(item => item.uid === uid && item.kitchen_status !== 1);
+                                    if (item) {
+                                        // Añadir el ítem a la lista de actualización
+                                        uidsToUpdate.add(item.id);
+
+                                        // Si es un padre, añadir todos sus hijos
+                                        if (parentChildMap.has(item.uid)) {
+                                            parentChildMap.get(item.uid).forEach(child => {
+                                                if (child.kitchen_status !== 1) {
+                                                    uidsToUpdate.add(child.id);
+                                                }
+                                            });
+                                        }
+
+                                        // Si es un hijo, registrar para verificar si el padre debe actualizarse
+                                        if (item.pid) {
+                                            if (!parentStatuses.has(item.pid)) {
+                                                // Encontrar todos los hermanos
+                                                const siblings = parentChildMap.get(item.pid) || [];
+                                                const pendingSiblings = siblings.filter(sibling => sibling.kitchen_status !== 1);
+
+                                                parentStatuses.set(item.pid, {
+                                                    parentItem: order.items?.find(i => i.uid === item.pid),
+                                                    pendingSiblings: pendingSiblings,
+                                                    selectedSiblings: new Set()
+                                                });
+                                            }
+
+                                            // Añadir este hijo a la lista de seleccionados para este padre
+                                            const parentStatus = parentStatuses.get(item.pid);
+                                            if (parentStatus) {
+                                                parentStatus.selectedSiblings.add(item.id);
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+                        });
+                    }
+                });
+            }
 
             // Verificar qué padres deben actualizarse automáticamente
             parentStatuses.forEach((status, parentUid) => {
@@ -479,16 +726,20 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
             });
 
             // Realizar las actualizaciones
-            const updatePromises = Array.from(uidsToUpdate).map(id =>
-                updateKitchenStatus(id, 1, kitchen_cd)
-            );
+            if (uidsToUpdate.size > 0) {
+                const updatePromises = Array.from(uidsToUpdate).map(id =>
+                    updateKitchenStatus(id, 1, kitchen_cd)
+                );
 
-            await Promise.all(updatePromises);
+                await Promise.all(updatePromises);
+            }
 
-            // Limpiar selecciones
-            setSelectedRows(new Set());
-            setSelectedCells(new Set());
-            setShowConfirmDialog(false);
+            // Limpiar selecciones solo si no son ítems específicos
+            if (!specificItems) {
+                setSelectedRows(new Set());
+                setSelectedCells(new Set());
+                setShowConfirmDialog(false);
+            }
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
         }

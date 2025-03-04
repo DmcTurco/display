@@ -9,13 +9,13 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   const isServed = item.serving_status === 1;
   const [isTouching, setIsTouching] = useState(false);
   const isServing = type_display == 2;
-  const [config, setConfig] = useState({});
+  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   // const isSelected = selectedItems?.has(item.uid);
 
-  useEffect(() => {
-    const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-    setConfig(savedConfig);
-  }, []);
+  // useEffect(() => {
+  //   const savedConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  //   setConfig(savedConfig);
+  // }, []);
 
   const getFontSizeClass = () => {
     switch (config.fontSize) {
@@ -42,6 +42,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   // Para serving, el item está disponible si está completado en cocina pero no servido
   const isClickable = isServing ? (isCompleted && !isServed) : !isCompleted;
   const isSelected = selectedItems.has(item.id);
+  // console.log(isServing);
 
   const getBackgroundColor = () => {
 
@@ -54,8 +55,15 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   };
 
   const handleClick = () => {
-    if (!isServing && !isCompleted) {
-      onToggleSelection(item);
+
+    if (config.selectionMode === "1") {
+      if (!isServing && !isCompleted) {
+        onToggleSelection(item);
+      }
+    } else {
+      if (isClickable) {
+        onItemClick(item, false);
+      }
     }
   };
 

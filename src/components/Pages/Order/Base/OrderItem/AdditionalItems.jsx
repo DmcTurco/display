@@ -7,11 +7,32 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
   const lastTapsRef = useRef({});
   const tapTimeoutsRef = useRef({});
   const isServing = type_display == 2;
+  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
-  const handleClick = (additionalItem,isAdditionalCompleted) => {
-    if (!isServing && !isAdditionalCompleted) {
-      onToggleSelection(additionalItem);
+  const handleClick = (additionalItem, isAdditionalCompleted) => {
+
+    if (config.selectionMode === "1") {
+      if (!isServing && !isAdditionalCompleted) {
+        onToggleSelection(additionalItem);
+      }
+    } else {
+      // Modo 2: Solo doble toque para marcar como completado
+      const now = Date.now();
+      const DOUBLE_TAP_DELAY = 300;
+      const itemId = additionalItem.uid;
+
+      if (now - (lastTapsRef.current[itemId] || 0) < DOUBLE_TAP_DELAY) {
+        // Doble toque detectado - Marcar como completado
+        clearTimeout(tapTimeoutsRef.current[itemId]);
+        if (isServing) {
+          onItemClick(additionalItem, true, true, false, true);
+        } else {
+          onItemClick(additionalItem, true, true);
+        }
+      }
+      lastTapsRef.current[itemId] = now;
     }
+
   };
 
   return (
@@ -31,7 +52,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
           ${isAdditionalCompleted ? "bg-green-200" : "cursor-pointer"}
           ${isItemExpanded ? "rounded-b-none border-b border-gray-200" : ""}
         `;
-    
+
 
         return (
           <div key={additionalItem.uid} className="relative">

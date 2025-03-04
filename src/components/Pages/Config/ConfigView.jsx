@@ -13,7 +13,7 @@ const soundPaths = {
     sound3,
     sound4
 };
-// Calcular el número máximo de tarjetas basado en el ancho de la pantalla
+
 const getMaxCards = () => {
     const screenWidth = window.innerWidth;
     const maxCards = Math.floor(screenWidth / 220);
@@ -41,27 +41,12 @@ const ConfigView = () => {
         const audio = new Audio(soundPaths[soundType]);
         audio.play();
     };
-    // const handleLayoutChange = (event) => {
-    //     const updatedConfig = {
-    //         ...config,
-    //         layoutType: event.target.value
-    //     };
-    //     setConfig(updatedConfig);
-    //     localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
-    // };
+
     const handleLayoutChange = (event) => {
         updateCustomSettings({
             layoutType: event.target.value
         });
     };
-
-    // const handleBack = () => {
-    //     if (config.uid) {
-    //         navigate(`/kitchen/${config.uid}`);
-    //     } else {
-    //         navigate('/kitchen');
-    //     }
-    // };
 
     const handleFontSizeChange = (event) => {
         updateCustomSettings({
@@ -74,22 +59,18 @@ const ConfigView = () => {
         });
     };
 
-
-    // const handleFontSizeChange = (event) => {
-    //     const updatedConfig = {
-    //         ...config,
-    //         fontSize: event.target.value
-    //     };
-    //     setConfig(updatedConfig);
-    //     localStorage.setItem('kitchenConfig', JSON.stringify(updatedConfig));
-    // }
+    const handleSelectionModeChange = (event) => {
+        updateCustomSettings({
+            selectionMode: event.target.value
+        });
+    };
 
     const typeLabels = {
         1: '調理',
         2: '配膳'
     }
 
-    // Layout options based on type
+
     const getLayoutOptions = () => {
         if (config.type == "1") {
             return [
@@ -126,7 +107,6 @@ const ConfigView = () => {
 
     return (
         <div className="p-4">
-            {/* <h2 className="text-2xl font-bold mb-6">Configuración de Cocina</h2> */}
             <div className="bg-white rounded-lg shadow-md p-6">
                 <dl className="grid gap-4">
                     {/* Configuración existente */}
@@ -148,10 +128,7 @@ const ConfigView = () => {
                         <dt className="font-medium text-gray-600">タイプ:</dt>
                         <dd>{typeLabels[config.type] || config.type}</dd>
                     </div>
-                    {/* <div className="grid grid-cols-2">
-                        <dt className="font-medium text-gray-600">ステータス:</dt>
-                        <dd>{config.status}</dd>
-                    </div> */}
+
                     <div className="grid grid-cols-2">
                         <dt className="font-medium text-gray-600">Uid:</dt>
                         <dd>{config.uid}</dd>
@@ -212,30 +189,32 @@ const ConfigView = () => {
                     </div>
 
                     {/* Agregar el selector de sonido */}
-                    <div className="grid grid-cols-2 items-center py-2">
-                        <span className="font-medium text-gray-700">
-                            通知音:
-                        </span>
-                        <div className="flex items-center gap-2">
-                            <select
-                                value={config.sound || 'sound2'}
-                                onChange={handleSoundChange}
-                                className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
-                            >
-                                <option value="sound1">音声 1</option>
-                                <option value="sound2">音声 2</option>
-                                <option value="sound3">音声 3</option>
-                                <option value="sound4">音声 4</option>
-                            </select>
-                            <button
-                                onClick={() => playSound(config.sound || 'sound2')}
-                                className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                                title="音声を再生"
-                            >
-                                <FaPlay className="text-lg" />
-                            </button>
+                    {config.type === '1' && (
+                        <div className="grid grid-cols-2 items-center py-2">
+                            <span className="font-medium text-gray-700">
+                                通知音:
+                            </span>
+                            <div className="flex items-center gap-2">
+                                <select
+                                    value={config.sound || 'sound2'}
+                                    onChange={handleSoundChange}
+                                    className="flex-1 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                                >
+                                    <option value="sound1">音声 1</option>
+                                    <option value="sound2">音声 2</option>
+                                    <option value="sound3">音声 3</option>
+                                    <option value="sound4">音声 4</option>
+                                </select>
+                                <button
+                                    onClick={() => playSound(config.sound || 'sound2')}
+                                    className="p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                                    title="音声を再生"
+                                >
+                                    <FaPlay className="text-lg" />
+                                </button>
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     {/* Selector de Lenguaje */}
                     <div className="grid grid-cols-2 items-center py-2">
@@ -256,15 +235,30 @@ const ConfigView = () => {
                         </select>
                     </div>
 
+                    {/* Selector de modo de selección (NUEVO) */}
+                    {config.type === '1' && (
+                        <div className='grid grid-cols-2 items-center py-2'>
+                            <span className='font-medium text-gray-700'>
+                                選択モード:
+                            </span>
+                            <select
+                                value={config.selectionMode || '1'}
+                                onChange={handleSelectionModeChange}
+                                className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
+                            >
+                                <option value="1">タップ選択モード - 1</option>
+                                <option value="2">表示モード  - 2</option>
+                            </select>
+
+                        </div>
+                    )}
+
+
+
                 </dl>
             </div>
 
-            {/* <button
-                onClick={handleBack}
-                className="mt-6 px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-            >
-                Regresar a la Cocina
-            </button> */}
+
         </div>
     );
 };

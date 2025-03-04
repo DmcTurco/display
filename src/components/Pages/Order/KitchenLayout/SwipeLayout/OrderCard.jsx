@@ -23,6 +23,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
     totalPages: 1,
   });
 
+  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   // Función para verificar si todos los items de una mesa están seleccionados
   const areAllTableItemsSelected = () => {
     return orders.every(order =>
@@ -74,22 +75,95 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
     }
   };
 
+  // Renderizado condicional para el header de la tabla
+  const renderTableHeader = () => {
+    if (config.selectionMode == 1) {
+      return (
+        <div
+          className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
+          onClick={() => onToggleSelection(null, 'table', { orders }, null)}
+          role="button"
+          aria-pressed={areAllTableItemsSelected()}
+        >
+          <OrderHeader
+            type={type}
+            customer={customer}
+            total_people={total_people}
+            isSelected={areAllTableItemsSelected()}
+          />
+        </div>
+      );
+    } else {
+      return (
+        <div className="p-2 sm:p-2">
+          <OrderHeader
+            type={type}
+            customer={customer}
+            total_people={total_people}
+          />
+        </div>
+      );
+    }
+  };
+
+  // Renderizado condicional para el header de cada orden
+  const renderOrderHeader = (order) => {
+    if (config.selectionMode == 1) {
+      return (
+        <div
+          className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
+          onClick={() => onToggleSelection(null, 'order', null, order)}
+        >
+          <span className="inline-flex items-center gap-4 text-sm font-medium">
+            {order.formatted_time}
+            {order.status === 'urgente' ? (
+              <span className="ml-1 inline-flex items-center text-red-500">
+                <UrgentAlert className="w-5 h-5" />
+                <span>{order.elapsedTime}分経過 </span>
+              </span>
+            ) : (
+              <span className="ml-1 inline-flex items-center text-blue-700">
+                <Timer className="w-5 h-5" />
+                <span>{order.elapsedTime}分経過 </span>
+              </span>
+            )}
+          </span>
+
+          <span className="text-sm">
+            #{`${order.order_main_cd}-${order.order_count}`}
+          </span>
+        </div>
+      );
+    } else {
+      return (
+        <div className="flex justify-between items-center mb-2">
+          <span className="inline-flex items-center gap-4 text-sm font-medium">
+            {order.formatted_time}
+            {order.status === 'urgente' ? (
+              <span className="ml-1 inline-flex items-center text-red-500">
+                <UrgentAlert className="w-5 h-5" />
+                <span>{order.elapsedTime}分経過 </span>
+              </span>
+            ) : (
+              <span className="ml-1 inline-flex items-center text-blue-700">
+                <Timer className="w-5 h-5" />
+                <span>{order.elapsedTime}分経過 </span>
+              </span>
+            )}
+          </span>
+
+          <span className="text-sm">
+            #{`${order.order_main_cd}-${order.order_count}`}
+          </span>
+        </div>
+      );
+    }
+  };
+
+
   return (
     <div className="rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col bg-gray-200">
-      <div
-        className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
-        onClick={() => onToggleSelection(null, 'table', { orders }, null)}
-        role="button"
-        aria-pressed={areAllTableItemsSelected()}
-      >
-        <OrderHeader
-          type={type}
-          customer={customer}
-          total_people={total_people}
-          isSelected={areAllTableItemsSelected()}
-        />
-      </div>
-
+      {renderTableHeader()}
       {/* Contenedor de órdenes con scroll */}
       <div
         ref={containerRef}
@@ -111,30 +185,8 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
                 key={`${order.order_main_cd}_${order.order_count}`}
                 className={`mb-3 p-3 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
               >
-                {/* Header de cada orden clickeable */}
-                <div 
-                  className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
-                  onClick={() => onToggleSelection(null, 'order', null, order)}
-                >
-                  <span className="inline-flex items-center gap-4 text-sm font-medium">
-                    {order.formatted_time}
-                    {order.status === 'urgente' ? (
-                      <span className="ml-1 inline-flex items-center text-red-500">
-                        <UrgentAlert className="w-5 h-5" />
-                        <span>{order.elapsedTime}分経過 </span>
-                      </span>
-                    ) : (
-                      <span className="ml-1 inline-flex items-center text-blue-700">
-                        <Timer className="w-5 h-5" />
-                        <span>{order.elapsedTime}分経過 </span>
-                      </span>
-                    )}
-                  </span>
-
-                  <span className="text-sm">
-                    #{`${order.order_main_cd}-${order.order_count}`}
-                  </span>
-                </div>
+                {/* Header de cada orden con renderizado condicional */}
+                {renderOrderHeader(order)}
 
                 {/* Usar OrderItems para los items de la orden */}
                 <OrderItems
