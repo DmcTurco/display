@@ -1,11 +1,16 @@
-import React, { useMemo, useState } from 'react';
-import _, { filter } from 'lodash';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import _, { filter, update } from 'lodash';
 
 const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
+    const selectionMode = config.selectionMode || "1"; // Modo por defecto: botones
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
+
+    const lastTouchRef = useRef({});
+    const touchTimeoutRef = useRef({});
+    const DOUBLE_TAP_DELAY = 300;
 
     // Procesamiento inicial de las órdenes
     const { orderItems, itemTotals } = useMemo(() => {
@@ -69,8 +74,138 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         return items.filter(item => item.pid === parentId);
     };
 
+    // Función para manejar el doble toque de un ítem
+    const handleItemTouch = useCallback((item, allItems) => {
+        const now = Date.now();
+        const touchId = `item-${item.id}`; // Identificador único para este ítem
+
+        if (selectionMode === "2") {
+            // Si es modo doble toque
+            if (now - (lastTouchRef.current[touchId] || 0) < DOUBLE_TAP_DELAY) {
+                // Es un doble toque, limpiamos el timeout y actualizamos
+                if (touchTimeoutRef.current[touchId]) {
+                    clearTimeout(touchTimeoutRef.current[touchId]);
+                }
+
+                // Colección de ids a actualizar
+                const itemIds = new Set([item.id]);
+
+                // Si es padre, incluir a sus hijos
+                if (item.isParent) {
+                    const children = getAllChildren(item.uid, allItems);
+                    children.forEach(child => itemIds.add(child.id));
+                }
+                // Si es hijo, verificar si debemos actualizar al padre
+                else if (item.isChild) {
+                    const siblings = getAllChildren(item.pid, allItems);
+                    const allSiblingsWillBeReady = siblings.every(sibling =>
+                        sibling.kitchen_status === 1 || sibling.id === item.id
+                    );
+
+                    if (allSiblingsWillBeReady) {
+                        const parent = allItems.find(i => i.uid === item.pid);
+                        if (parent) {
+                            itemIds.add(parent.id);
+                        }
+                    }
+                }
+
+                // Realizar la actualización
+                handleItemsUpdate(itemIds);
+            } else {
+                // Es el primer toque, guardamos tiempo y configuramos timeout
+                if (touchTimeoutRef.current[touchId]) {
+                    clearTimeout(touchTimeoutRef.current[touchId]);
+                }
+
+                touchTimeoutRef.current[touchId] = setTimeout(() => {
+                    // Opcional: acción para toque simple en modo 2
+                    // console.log("Toque simple en ítem:", item.name);
+                }, 250);
+            }
+
+            // Actualizar la referencia del último toque
+            lastTouchRef.current[touchId] = now;
+        } else {
+            // En modo 1, usar el comportamiento normal de selección
+            toggleRowSelection(item, allItems);
+        }
+    }, [selectionMode, getAllChildren]);
+
+    // Función para manejar el doble toque en una mesa completa
+    const handleTableTouch = useCallback((order) => {
+        const now = Date.now();
+        const touchId = `table-${order.orderTime}-${order.table}`; // Identificador único para esta mesa
+
+        if (selectionMode === "2") {
+            // Si es modo doble toque
+            if (now - (lastTouchRef.current[touchId] || 0) < DOUBLE_TAP_DELAY) {
+                // Es un doble toque, limpiamos el timeout y actualizamos
+                if (touchTimeoutRef.current[touchId]) {
+                    clearTimeout(touchTimeoutRef.current[touchId]);
+                }
+
+                // Colección de ids a actualizar
+                const itemIds = new Set();
+
+                // Añadir todos los ítems de la mesa
+                order.items.forEach(item => {
+                    itemIds.add(item.id);
+
+                    // Si es padre, incluir a sus hijos
+                    if (item.isParent) {
+                        const children = getAllChildren(item.uid, order.items);
+                        children.forEach(child => itemIds.add(child.id));
+                    }
+                });
+
+                // Realizar la actualización
+                handleItemsUpdate(itemIds);
+            } else {
+                // Es el primer toque, guardamos tiempo y configuramos timeout
+                if (touchTimeoutRef.current[touchId]) {
+                    clearTimeout(touchTimeoutRef.current[touchId]);
+                }
+
+                touchTimeoutRef.current[touchId] = setTimeout(() => {
+                    // Opcional: acción para toque simple en modo 2
+                    // console.log("Toque simple en mesa:", order.table);
+                }, 250);
+            }
+
+            // Actualizar la referencia del último toque
+            lastTouchRef.current[touchId] = now;
+        } else {
+            // En modo 1, usar el comportamiento normal de selección
+            toggleTableSelection(order);
+        }
+    }, [selectionMode, getAllChildren]);
+
+    const handleItemsUpdate = useCallback(async (itemIds) => {
+        if (!kitchen_cd) {
+            console.error('No se encontró kitchen_cd en la configuración');
+            return;
+        }
+
+        try {
+            const updatePromises = [];
+
+            for (const order of orderItems) {
+                for (const item of order.items) {
+                    if (itemIds.has(item.id)) {
+                        updatePromises.push(updateKitchenStatus(item.id, 1, kitchen_cd));
+                    }
+                }
+            }
+
+            await Promise.all(updatePromises);
+        } catch (error) {
+            console.error('Error al actualizar el estado:', error);
+        }
+    }, [kitchen_cd, orderItems, updateKitchenStatus]);
+
     // Modificar toggleRowSelection para manejar la selección de padres e hijos
-    const toggleRowSelection = (item, allItems) => {
+    const toggleRowSelection = useCallback((item, allItems) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
 
@@ -94,9 +229,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
             return newSet;
         });
-    };
+    }, [getAllChildren]);
 
-    const toggleTableSelection = (order) => {
+    const toggleTableSelection = useCallback((order) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
             const allItemsSelected = order.items.every(item =>
@@ -122,15 +257,15 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
             return newSet;
         });
-    };
+    }, [getAllChildren]);
 
-    const handleConfirm = () => {
+    const handleConfirm = useCallback(() => {
         handleUpdate();
         setShowConfirmDialog(false);
-    };
+    }, []);
 
     // Actualizar estado de los ítems seleccionados
-    const handleUpdate = async () => {
+    const handleUpdate = useCallback(async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
@@ -175,10 +310,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
         }
-    };
+    }, [kitchen_cd, orderItems, selectedRows, updateKitchenStatus, getAllChildren]);
 
     // Contar ítems seleccionados
-    const getSelectedItemsCount = () => {
+    const getSelectedItemsCount = useCallback(() => {
         let count = 0;
         orderItems.forEach(order => {
             order.items.forEach(item => {
@@ -188,14 +323,15 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
         });
         return count;
-    }
+    }, [orderItems, selectedRows]);
 
     // Estilo para el tiempo transcurrido
-    const getTimeStyle = (elapsedTime, configTime) => {
+    const getTimeStyle = useCallback((elapsedTime, configTime) => {
         const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
         const threshold = parseInt(configTime || 0);
         return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'}`;
-    };
+    }, []);
+
 
     return (
         <div className="flex flex-col h-full">
@@ -252,7 +388,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                     ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
                                                     : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
                                                     }`}
-                                                onClick={() => toggleTableSelection(order)}
+                                                onClick={() => handleTableTouch(order)}
 
                                             >
                                                 {order.table}
@@ -262,7 +398,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                     {order.items.map((item, itemIndex) => (
                                                         <div
                                                             key={itemIndex}
-                                                            onClick={() => toggleRowSelection(item, order.items)}
+                                                            onClick={() => handleItemTouch(item, order.items)}
                                                             className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
                                                                 ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
                                                                 : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
@@ -275,7 +411,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                 )}
                                                                 <span className="text-3xl">{item.name}</span>
                                                             </div>
-    
+
                                                             {/* Cantidad del item */}
                                                             <div className="w-[200px] flex justify-end">
                                                                 {/* {!item.isParent && ( */}
