@@ -205,7 +205,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     }, [kitchen_cd, orderItems, updateKitchenStatus]);
 
     // Modificar toggleRowSelection para manejar la selección de padres e hijos
-    const toggleRowSelection = useCallback((item, allItems) => {
+    const toggleRowSelection = (item, allItems) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
 
@@ -229,9 +229,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
             return newSet;
         });
-    }, [getAllChildren]);
+    };
 
-    const toggleTableSelection = useCallback((order) => {
+    const toggleTableSelection = (order) => {
         setSelectedRows(prev => {
             const newSet = new Set(prev);
             const allItemsSelected = order.items.every(item =>
@@ -257,15 +257,15 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
             return newSet;
         });
-    }, [getAllChildren]);
+    };
 
-    const handleConfirm = useCallback(() => {
+    const handleConfirm = () => {
         handleUpdate();
         setShowConfirmDialog(false);
-    }, []);
+    };
 
     // Actualizar estado de los ítems seleccionados
-    const handleUpdate = useCallback(async () => {
+    const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
@@ -310,10 +310,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
         }
-    }, [kitchen_cd, orderItems, selectedRows, updateKitchenStatus, getAllChildren]);
+    };
 
     // Contar ítems seleccionados
-    const getSelectedItemsCount = useCallback(() => {
+    const getSelectedItemsCount = () => {
         let count = 0;
         orderItems.forEach(order => {
             order.items.forEach(item => {
@@ -323,14 +323,14 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
         });
         return count;
-    }, [orderItems, selectedRows]);
+    }
 
     // Estilo para el tiempo transcurrido
-    const getTimeStyle = useCallback((elapsedTime, configTime) => {
+    const getTimeStyle = (elapsedTime, configTime) => {
         const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
         const threshold = parseInt(configTime || 0);
         return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'}`;
-    }, []);
+    };
 
 
     return (
