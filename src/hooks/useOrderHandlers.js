@@ -119,10 +119,10 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
     }
 
     // Manejar doble toque
-    if (isDoubleTap) {
-      handleConfirm(item, isAdditional);
-      return;
-    }
+    // if (isDoubleTap) {
+    //   handleConfirm(item, isAdditional);
+    //   return;
+    // }
 
     // Para ítems principales con hijos: expandir/colapsar
     // if (!isAdditional && organizedItems[item.uid]?.additionalItems.length > 0) {
@@ -143,6 +143,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
       handleConfirm(item, isAdditional);
     } else {
       // Toque simple
+      console.log('Toque simple');
       tapTimeoutRef.current = setTimeout(() => {
         if (expandedItemId && expandedItemId !== item.uid) {
           setExpandedItemId(item.uid); // Cambia al nuevo ítem

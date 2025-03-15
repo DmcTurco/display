@@ -42,8 +42,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
         }
 
         if (!isFirstLoad.current &&
-            currentOrdersCount > previousOrdersCount.current &&
-            previousOrdersCount.current !== 0) {
+            currentOrdersCount > previousOrdersCount.current) {
             playSound();
         }
 

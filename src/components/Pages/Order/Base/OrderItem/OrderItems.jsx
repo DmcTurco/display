@@ -76,7 +76,7 @@ const OrderItems = ({ items,allorders, expandedItemId, setExpandedItemId, update
                 onItemClick={handleItemClickWithDragCheck}
                 allAdditionalsComplete={allAdditionalsComplete}
                 hasAdditionals={hasAdditionals}
-                isExpanded={() => { }}
+                isExpanded={isExpanded}
                 expandedItemId={expandedItemId}
                 type_display={type_display}
                 selectedItems={selectedItems}
