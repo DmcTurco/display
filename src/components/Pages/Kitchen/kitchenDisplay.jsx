@@ -219,6 +219,25 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
           )}
         </button>
       )}
+      {config.type === "2" && (
+        <button
+          style={{ right: 320, top: 23 }}
+          onClick={enableSound}
+          className={`
+          fixed right-4 z-50 p-3 
+          rounded-full shadow-lg 
+          transition-all duration-300 
+          ${isSoundEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}
+        `}
+          title={isSoundEnabled ? '通知音オン' : '通知音オフ'}
+        >
+          {isSoundEnabled ? (
+            <FaVolumeUp className="text-white text-xl" />
+          ) : (
+            <FaVolumeMute className="text-white text-xl" />
+          )}
+        </button>
+      )}
     </div>
   );
 };

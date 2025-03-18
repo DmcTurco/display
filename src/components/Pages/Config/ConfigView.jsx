@@ -189,7 +189,7 @@ const ConfigView = () => {
                     </div>
 
                     {/* Agregar el selector de sonido */}
-                    {config.type === '1' && (
+
                         <div className="grid grid-cols-2 items-center py-2">
                             <span className="font-medium text-gray-700">
                                 通知音:
@@ -214,7 +214,7 @@ const ConfigView = () => {
                                 </button>
                             </div>
                         </div>
-                    )}
+
 
                     {/* Selector de Lenguaje */}
                     <div className="grid grid-cols-2 items-center py-2">
