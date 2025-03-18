@@ -24,6 +24,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
   });
 
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  const selectionMode = config.selectionMode || "1";
   // Función para verificar si todos los items de una mesa están seleccionados
   const areAllTableItemsSelected = () => {
     return orders.every(order =>
@@ -77,7 +78,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
 
   // Renderizado condicional para el header de la tabla
   const renderTableHeader = () => {
-    if (config.selectionMode == 1) {
+    if (selectionMode == 1) {
       return (
         <div
           className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
@@ -108,7 +109,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
 
   // Renderizado condicional para el header de cada orden
   const renderOrderHeader = (order) => {
-    if (config.selectionMode == 1) {
+    if (selectionMode == 1) {
       return (
         <div
           className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"

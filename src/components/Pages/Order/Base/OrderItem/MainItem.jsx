@@ -10,6 +10,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   const [isTouching, setIsTouching] = useState(false);
   const isServing = type_display == 2;
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  const selectionMode = config.selectionMode || "1";
   // const isSelected = selectedItems?.has(item.uid);
 
   // useEffect(() => {
@@ -60,7 +61,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
 
   const handleClick = () => {
 
-    if (config.selectionMode === "1") {
+    if (selectionMode === "1") {
       if (!isServing && !isCompleted) {
         onToggleSelection(item);
       }
