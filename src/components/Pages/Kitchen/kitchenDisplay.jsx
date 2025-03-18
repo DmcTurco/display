@@ -52,39 +52,45 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
   }, [config, isOnline]);
 
   // Actualizar contadores
-  if (layoutType == 'swipe') {
+  if (layoutType == "swipe") {
     useEffect(() => {
       if (orders && config?.type != 2) {
-        const counts = orders.reduce((acc, tableGroup) => {
-          // Contar órdenes por estado en cada grupo
-          const tableCounts = tableGroup.orders.reduce((tableAcc, order) => {
-            switch (order.status) {
-              case 'no-iniciado':
-                tableAcc.pending++;
-                break;
-              case 'en-progreso':
-                tableAcc.inProgress++;
-                break;
-              case 'urgente':
-                tableAcc.urgent++;
-                break;
-            }
-            return tableAcc;
-          }, { pending: 0, inProgress: 0, urgent: 0 });
+        const counts = orders.reduce(
+          (acc, tableGroup) => {
+            // Contar órdenes por estado en cada grupo
+            const tableCounts = tableGroup.orders.reduce(
+              (tableAcc, order) => {
+                switch (order.status) {
+                  case "no-iniciado":
+                    tableAcc.pending++;
+                    break;
+                  case "en-progreso":
+                    tableAcc.inProgress++;
+                    break;
+                  case "urgente":
+                    tableAcc.urgent++;
+                    break;
+                }
+                return tableAcc;
+              },
+              { pending: 0, inProgress: 0, urgent: 0 }
+            );
 
-          // Sumar los contadores de la mesa actual a los acumulados
-          return {
-            pending: acc.pending + tableCounts.pending,
-            inProgress: acc.inProgress + tableCounts.inProgress,
-            urgent: acc.urgent + tableCounts.urgent
-          };
-        }, { pending: 0, inProgress: 0, urgent: 0 });
+            // Sumar los contadores de la mesa actual a los acumulados
+            return {
+              pending: acc.pending + tableCounts.pending,
+              inProgress: acc.inProgress + tableCounts.inProgress,
+              urgent: acc.urgent + tableCounts.urgent,
+            };
+          },
+          { pending: 0, inProgress: 0, urgent: 0 }
+        );
 
         // Actualizar los estados
         setPendingCount(counts.pending);
         setInProgressCount(counts.inProgress);
         setUrgentCount(counts.urgent);
-      } else if (config?.type === 'serving') {
+      } else if (config?.type === "serving") {
         setPendingCount(0);
         setInProgressCount(0);
         setUrgentCount(0);
@@ -92,24 +98,26 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
     }, [orders, config?.type]);
   } else {
     useEffect(() => {
-
       if (orders && config?.type != 2) {
-
-        const pendingOrders = orders.filter(order => order.status == 'no-iniciado').length;
-        const inProgressOrders = orders.filter(order => order.status === 'en-progreso').length;
-        const urgentOrders = orders.filter(order => order.status === 'urgente').length;
+        const pendingOrders = orders.filter(
+          (order) => order.status == "no-iniciado"
+        ).length;
+        const inProgressOrders = orders.filter(
+          (order) => order.status === "en-progreso"
+        ).length;
+        const urgentOrders = orders.filter(
+          (order) => order.status === "urgente"
+        ).length;
 
         setPendingCount(pendingOrders);
         setInProgressCount(inProgressOrders);
         setUrgentCount(urgentOrders);
-
-      } else if (config?.type === 'serving') {
+      } else if (config?.type === "serving") {
         // Si es serving, establecer contadores en 0
         setPendingCount(0);
         setInProgressCount(0);
         setUrgentCount(0);
       }
-
     }, [orders, config?.type]);
   }
 
@@ -119,24 +127,24 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       completedOrders,
       expandedItemId,
       setExpandedItemId,
-      updateKitchenStatus
+      updateKitchenStatus,
     };
 
     switch (layoutType) {
-      case 'grid':
+      case "grid":
         return <OrderGrid {...layoutProps} />;
-      case 'table':
+      case "table":
         return <OrderTablet {...layoutProps} />;
-      case 'timeline':
+      case "timeline":
         return <OrderTimeline {...layoutProps} />;
-      case 'kitchenServing':
+      case "kitchenServing":
         return <OrderServing {...layoutProps} />;
       // Nuevos casos para Serving
-      case 'serving-timeline':
+      case "serving-timeline":
         return <ServingTimeline {...layoutProps} />;
-      case 'serving-completed':
+      case "serving-completed":
         return <ServingCompleted {...layoutProps} />;
-      case 'swipe':
+      case "swipe":
       default:
         return <OrderSwipe {...layoutProps} />;
     }
@@ -148,7 +156,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-pulse">
             <FaWifi className="text-red-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">インターネット接続がありません</p>
+            <p className="text-2xl font-semibold text-gray-700">
+              インターネット接続がありません
+            </p>
             <p className="text-sm text-gray-500">接続を確認してください。</p>
           </div>
         </div>
@@ -160,7 +170,9 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-pulse">
             <FaServer className="text-yellow-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">サーバー接続エラー</p>
+            <p className="text-2xl font-semibold text-gray-700">
+              サーバー接続エラー
+            </p>
             <p className="text-sm text-gray-500">{error}</p>
           </div>
         </div>
@@ -180,12 +192,19 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       );
     }
 
-    if (!Array.isArray(orders) || orders.length === 0 && layoutType !== 'serving-completed' && layoutType !== 'kitchenServing') {
+    if (
+      !Array.isArray(orders) ||
+      (orders.length === 0 &&
+        layoutType !== "serving-completed" &&
+        layoutType !== "kitchenServing")
+    ) {
       return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-bounce">
             <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">注文データがありません</p>
+            <p className="text-2xl font-semibold text-gray-700">
+              注文データがありません
+            </p>
           </div>
         </div>
       );
@@ -196,40 +215,25 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
 
   return (
     <div className="bg-gray-50 flex flex-col h-full relative">
-      <div className="flex-1 overflow-hidden">
-        {renderContent()}
-      </div>
-
-      {config.type === "1" && (
+      <div className="flex-1 overflow-hidden">{renderContent()}</div>
+      {(config.type === "1" || config.type === "2") && (
         <button
-          style={{ right: 420, top: 23 }}
+          style={{
+            right: config.type === "1" ? 420 : 320,
+            top: 23,
+          }}
           onClick={enableSound}
           className={`
           fixed right-4 z-50 p-3 
           rounded-full shadow-lg 
           transition-all duration-300 
-          ${isSoundEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}
+          ${
+            isSoundEnabled
+              ? "bg-green-500 hover:bg-green-600"
+              : "bg-gray-500 hover:bg-gray-600"
+          }
         `}
-          title={isSoundEnabled ? '通知音オン' : '通知音オフ'}
-        >
-          {isSoundEnabled ? (
-            <FaVolumeUp className="text-white text-xl" />
-          ) : (
-            <FaVolumeMute className="text-white text-xl" />
-          )}
-        </button>
-      )}
-      {config.type === "2" && (
-        <button
-          style={{ right: 320, top: 23 }}
-          onClick={enableSound}
-          className={`
-          fixed right-4 z-50 p-3 
-          rounded-full shadow-lg 
-          transition-all duration-300 
-          ${isSoundEnabled ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-500 hover:bg-gray-600'}
-        `}
-          title={isSoundEnabled ? '通知音オン' : '通知音オフ'}
+          title={isSoundEnabled ? "通知音オン" : "通知音オフ"}
         >
           {isSoundEnabled ? (
             <FaVolumeUp className="text-white text-xl" />
