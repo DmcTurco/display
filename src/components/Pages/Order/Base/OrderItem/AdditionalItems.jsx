@@ -90,7 +90,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
               {/* Ícono de completado */}
               {isAdditionalCompleted && (
                 <CheckCircle2
-                  className={`h-3 w-3 ${isServing ? "text-blue-500" : "text-green-500"}`}
+                  className={`h-4 w-4 sm:h-5 sm:w-5  ${isServing ? "text-blue-500" : "text-green-500"}`}
                 />
               )}
             </div>
