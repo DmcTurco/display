@@ -48,10 +48,10 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
   const getBackgroundColor = () => {
 
     if (expandedItemId === item.uid) {
-      return isServing ? "bg-blue-300" : "bg-green-300";
+      return isServing ? "bg-blue-300" : "bg-yellow-300";
     }
 
-    if (isSelected) return "bg-yellow-200";
+    if (isSelected) return "bg-yellow-300";
     if (!isServing) {
 
       return isCompleted ? "bg-green-200" : "bg-white";

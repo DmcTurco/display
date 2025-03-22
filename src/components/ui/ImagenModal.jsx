@@ -9,7 +9,7 @@ const ImageModal = ({ imageUrl, itemName, open, onOpenChange }) => {
             <AlertDialogContent className="w-full max-w-xl">
                 <AlertDialogHeader>
                     <div className="flex justify-between items-center">
-                        <AlertDialogTitle>Imagen de {itemName}</AlertDialogTitle>
+                        <AlertDialogTitle>画像 {itemName}</AlertDialogTitle>
                         <button
                             onClick={() => onOpenChange(false)}
                             className="p-1 rounded-full hover:bg-gray-200"
@@ -21,7 +21,7 @@ const ImageModal = ({ imageUrl, itemName, open, onOpenChange }) => {
                 <div className="flex justify-center mt-4">
                     <img
                         src={imageUrl}
-                        alt={`Imagen para ${itemName}`}
+                        alt={`画像 ${itemName}`}
                         className="max-w-full h-auto rounded-md shadow-md"
                     />
                 </div>

@@ -57,7 +57,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
           transition-all duration-300 p-1 rounded
           ${isSelected ? "bg-yellow-200" : ""}
           ${isAdditionalCompleted ? "bg-green-200" : "cursor-pointer"}
-          ${isItemExpanded ? "bg-green-300" : ""}
+          ${isItemExpanded ? "bg-bg-yellow-300" : ""}
         `;
 
 
