@@ -1,10 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, Image, X } from 'lucide-react';
 import AdditionalItems from './AdditionalItems';
 import { use } from 'react';
 import _ from "lodash";
 
-const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display, selectedItems, onToggleSelection }) => {
+const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display, selectedItems, onToggleSelection, onImageClick }) => {
   const isCompleted = item.kitchen_status === 1;
   const isServed = item.serving_status === 1;
   const [isTouching, setIsTouching] = useState(false);
@@ -101,14 +101,35 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
           )}
           <span className={`${getFontSizeClass()} text-left flex-1 break-words`}>{item.name}</span>
         </div>
-        {isServing ? (
-          isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />
-        ) : (
-          (isCompleted || allAdditionalsComplete) && (
-            <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />
-          )
-        )}
+        <div className="flex items-center gap-2">
+
+          {/* Indicador de imagen manuscrita */}
+          {item.handwriteImage !== null && (
+            <div 
+              className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
+              onClick={(e) => {
+                e.stopPropagation(); // Evitar que el clic afecte al elemento padre
+                if (onImageClick) {
+                  onImageClick(item);
+                }
+              }}
+            >
+              <Image className="h-5 w-5 text-indigo-500" />
+            </div>
+          )}
+
+          {/* Checkmarks originales */}
+          {isServing ? (
+            isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />
+          ) : (
+            (isCompleted || allAdditionalsComplete) && (
+              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />
+            )
+          )}
+        </div>
       </div>
+
+
 
       {/* Items adicionales */}
       {hasAdditionals && (

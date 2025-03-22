@@ -7,7 +7,7 @@ import UrgentAlert from '../../Base/UrgentAlert';
 import { Timer } from 'lucide-react';
 import '../../../../../assets/styles/scrollingText.css';
 
-function OrderCard({ orders = [], allorders, tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus, selectedItems, onToggleSelection }) {
+function OrderCard({ orders = [], allorders, tableName, total_people, type, customer, expandedItemId, setExpandedItemId, updateKitchenStatus, selectedItems, onToggleSelection, onImageClick }) {
   const {
     containerRef,
     dragOffset,
@@ -200,6 +200,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
                   selectedItems={selectedItems}
                   onToggleSelection={onToggleSelection}
                   isOrderSelected={areAllOrderItemsSelected(order)}
+                  onImageClick={onImageClick}
                 />
               </div>
             ))}

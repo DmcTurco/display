@@ -111,6 +111,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 kitchen_status: detail.kitchen_status,
                 serving_status: detail.serving_status,
                 modification: detail.modification,
+                handwriteImage: detail.handwriteImage,
             }));
 
             // Insertar la orden en el grupo de la mesa correspondiente
@@ -164,6 +165,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 kitchen_status: detail.kitchen_status,
                 serving_status: detail.serving_status,
                 modification: detail.modification,
+                handwriteImage: detail.handwriteImage,
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
@@ -223,6 +225,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 processedNewData = processOrdersTable(newData.data);
             }
 
+            // console.log(processedNewData);
             checkNewOrders(processedNewData);
             setOrders(processedNewData);
 

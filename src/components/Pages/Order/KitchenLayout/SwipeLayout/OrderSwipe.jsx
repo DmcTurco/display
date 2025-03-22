@@ -3,8 +3,10 @@ import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 import _ from "lodash";
 import { useOrderHandlers } from '@/hooks/useOrderHandlers';
+import ImageModal from '@/components/ui/ImagenModal';
+import { FaVolumeUp, FaVolumeMute } from "react-icons/fa";
 
-const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenStatus }) => {
+const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenStatus, enableSound, isSoundEnabled }) => {
     const [currentPage, setCurrentPage] = useState(1);
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
@@ -14,6 +16,10 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
 
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+
+    // Estado para el modal de imagen
+    const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const {
         containerRef,
@@ -40,6 +46,19 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         direction: 'horizontal',
         enabled: true
     });
+
+    // Función para manejar el clic en el icono de imagen
+    const handleImageClick = (item) => {
+        setSelectedImage({
+            url: item.handwriteImage,
+            name: item.name
+        });
+        setImageModalOpen(true);
+    };
+
+    useEffect(() => {
+        lastPageRef.current = currentPage;
+    }, [currentPage]);
 
     useEffect(() => {
         lastPageRef.current = currentPage;
@@ -119,7 +138,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                         }
                     });
                     break;
-                    
+
                 case 'item':
                     // Lógica existente para items individuales
                     if (item.additionalItems && item.additionalItems.length > 0) {
@@ -164,7 +183,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                 const itemsWithPid = order.items?.filter(item => item.pid) || [];
                 // Obtener IDs únicos de padres
                 const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
-    
+
                 // Identificar padres activos (con hijos sin cocinar)
                 const activeParentUids = parentUids.filter(parentUid => {
                     const children = order.items?.filter(item =>
@@ -172,7 +191,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     );
                     return children.length > 0;
                 });
-    
+
                 // Filtrar ítems relevantes
                 const processedItems = order.items?.filter(item =>
                     (activeParentUids.includes(item.uid)) || // Es un padre con hijos sin cocinar
@@ -183,7 +202,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     isParent: parentUids.includes(item.uid),
                     isChild: Boolean(item.pid)
                 })) || [];
-    
+
                 return {
                     orderTime: order.formatted_time,
                     elapsedTime: `${order.elapsedTime}分`,
@@ -192,7 +211,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     originalOrder: order
                 };
             }).filter(order => order.items.length > 0); // Filtrar órdenes sin items
-    
+
             // Retornar el grupo procesado solo si tiene órdenes con items
             return {
                 tableName: tableGroup.tableName,
@@ -201,9 +220,9 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                 orders: processedOrders
             };
         }).filter(group => group.orders.length > 0); // Filtrar grupos sin órdenes
-    
+
         // Ordenar por fecha
-        const flattenedOrders = processedGroups.flatMap(group => 
+        const flattenedOrders = processedGroups.flatMap(group =>
             group.orders.map(order => ({
                 ...order,
                 tableGroup: {
@@ -213,7 +232,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                 }
             }))
         );
-    
+
         return {
             orderItems: _.sortBy(
                 flattenedOrders,
@@ -224,11 +243,11 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
 
     const getAllChildren = (parentId, items) => {
         if (!Array.isArray(items)) {
-          console.warn('Items no es un array:', items);
-          return [];
+            console.warn('Items no es un array:', items);
+            return [];
         }
         return items.filter(item => item.pid === parentId);
-      };
+    };
 
     const handleUpdate = async () => {
         if (!kitchen_cd) {
@@ -239,14 +258,14 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         try {
             for (const order of orderItems) {
                 for (const item of order.items) {
-                    if(selectedItems.has(item.id)){
-                        if(item.isParent){
+                    if (selectedItems.has(item.id)) {
+                        if (item.isParent) {
                             const children = getAllChildren(item.uid, order.items)
                             await Promise.all([
                                 updateKitchenStatus(item.id, 1, kitchen_cd),
                                 ...children.map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
-                              ]);
-                        }else if( item.isChild){
+                            ]);
+                        } else if (item.isChild) {
                             const siblings = getAllChildren(item.pid, order.items);
                             const allSiblingsWillBeReady = siblings.every(sibling =>
                                 sibling.kitchen_status === 1 || selectedItems.has(sibling.id)
@@ -263,7 +282,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                             } else {
                                 await updateKitchenStatus(item.id, 1, kitchen_cd);
                             }
-                        }else{
+                        } else {
                             await updateKitchenStatus(item.id, 1, kitchen_cd);
                         }
                     }
@@ -342,6 +361,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                                                     customer={tableGroup.tableName}
                                                     selectedItems={selectedItems}
                                                     onToggleSelection={handleToggleSelection}
+                                                    onImageClick={handleImageClick}  // Pasar la función de manejo de imagen
                                                 />
                                             </div>
                                         ))}
@@ -372,6 +392,33 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     >
                         {currentPage} / {totalPages}
                     </div>
+
+                    {/* Indicador de sonido */}
+                    <div>
+                        {(config.type === "1" || config.type === "2") && (
+                            <button
+                                style={{
+                                    right: config.type === "1" ? 420 : 320,
+                                    top: 23,
+                                }}
+                                onClick={enableSound}
+                                className={`
+                                    fixed right-4 z-50 p-3 
+                                    rounded-full shadow-lg 
+                                    transition-all duration-300 
+                                    ${isSoundEnabled ? "bg-green-500 hover:bg-green-600" : "bg-gray-500 hover:bg-gray-600"}`}
+                                title={isSoundEnabled ? "通知音オン" : "通知音オフ"}
+                            >
+                                {isSoundEnabled ? (
+                                    <FaVolumeUp className="text-white text-xl" />
+                                ) : (
+                                    <FaVolumeMute className="text-white text-xl" />
+                                )}
+                            </button>
+                        )}
+                    </div>
+
+
                 </div>
             </div>
 
@@ -399,6 +446,18 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                 </div>
 
             </div>
+            {/* Modal para mostrar la imagen */}
+            {selectedImage && (
+                <ImageModal
+                    open={imageModalOpen}
+                    onOpenChange={setImageModalOpen}
+                    imageUrl={selectedImage.url}
+                    itemName={selectedImage.name}
+                />
+            )}
+
+
+
         </div>
     );
 };
