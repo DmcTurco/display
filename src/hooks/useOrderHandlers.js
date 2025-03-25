@@ -150,7 +150,7 @@ export const useOrderHandlers = (organizedItems, expandedItemId, setExpandedItem
         } else {
           setExpandedItemId(expandedItemId === item.uid ? null : item.uid);
         }
-      }, 150);
+      }, 100);
     }
     lastTapRef.current = now;
   };

@@ -144,6 +144,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
             getQuantityFontSizeClass={getQuantityFontSizeClass}
             selectedItems={selectedItems}
             onToggleSelection={onToggleSelection}
+            onImageClick={onImageClick}
 
           />
         </div>

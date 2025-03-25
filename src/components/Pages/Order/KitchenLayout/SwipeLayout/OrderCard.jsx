@@ -168,12 +168,12 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
       {/* Contenedor de órdenes con scroll */}
       <div
         ref={containerRef}
-        className="flex-1 overflow-auto scrollbar-container p-2"
+        className="flex-1 overflow-auto scrollbar-container p-1"
         onTouchStart={onTouchStart}
         onTouchEnd={onTouchEnd}
         onMouseDown={onMouseDown}
       >
-        <div className="p-2 sm:p-2 flex-1 overflow-hidden">
+        <div className="p-1 sm:p-1 flex-1 overflow-hidden">
           <div
             className="h-full overflow-auto scrollbar-container"
             style={{
@@ -184,7 +184,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
             {orders?.map(order => (
               <div
                 key={`${order.order_main_cd}_${order.order_count}`}
-                className={`mb-3 p-3 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
+                className={`mb-2 p-2 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
               >
                 {/* Header de cada orden con renderizado condicional */}
                 {renderOrderHeader(order)}

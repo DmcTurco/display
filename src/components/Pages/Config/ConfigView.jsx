@@ -246,8 +246,8 @@ const ConfigView = () => {
                                 onChange={handleSelectionModeChange}
                                 className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm transition-all"
                             >
-                                <option value="1">タップ選択モード - 1</option>
-                                <option value="2">表示モード  - 2</option>
+                                <option value="1">確認ボタンを表示 - 1</option>
+                                <option value="2">ダブルタップで完了  - 2</option>
                             </select>
 
                         </div>

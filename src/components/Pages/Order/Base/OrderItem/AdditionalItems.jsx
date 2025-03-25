@@ -1,8 +1,8 @@
 import React, { useRef } from 'react';
-import { CheckCircle2, X, ChefHat } from 'lucide-react';
+import { CheckCircle2,Image, X, ChefHat } from 'lucide-react';
 import _ from "lodash";
 
-const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, getFontSizeClass, getQuantityFontSizeClass, selectedItems, onToggleSelection }) => {
+const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, getFontSizeClass, getQuantityFontSizeClass, selectedItems, onToggleSelection,onImageClick }) => {
   // Referencias para el doble toque para cada item
   const lastTapsRef = useRef({});
   const tapTimeoutsRef = useRef({});
@@ -51,13 +51,13 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
 
         const isItemExpanded = expandedItemId === additionalItem.uid;
         const isSelected = selectedItems.has(additionalItem.id);
-
+        // console.log(isSelected);
         const itemClasses = `
           flex items-start justify-between gap-1 text-gray-600
           transition-all duration-300 p-1 rounded
-          ${isSelected ? "bg-yellow-200" : ""}
+          ${isSelected ? "bg-yellow-300" : ""}
           ${isAdditionalCompleted ? "bg-green-200" : "cursor-pointer"}
-          ${isItemExpanded ? "bg-bg-yellow-300" : ""}
+          ${isItemExpanded ? "bg-yellow-300" : ""}
         `;
 
 
@@ -66,9 +66,9 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
             {/* Contenedor principal del ítem adicional */}
             <div
               onClick={(e) => {
-                e.stopPropagation(); 
+                e.stopPropagation();
                 if (!isAdditionalCompleted) handleClick(additionalItem, isAdditionalCompleted);
-                
+
               }}
               className={itemClasses}
             >
@@ -87,12 +87,31 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
                 <span className="flex-1 text-2xl text-gray-700">{additionalItem.name}</span>
               </div>
 
-              {/* Ícono de completado */}
-              {isAdditionalCompleted && (
-                <CheckCircle2
-                  className={`h-4 w-4 sm:h-5 sm:w-5  ${isServing ? "text-blue-500" : "text-green-500"}`}
-                />
-              )}
+              <div className="flex items-center gap-2">
+                {/* Indicador de imagen manuscrita */}
+                {additionalItem.handwriteImage !== null && (
+                  <div
+                    className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
+                    onClick={(e) => {
+                      e.stopPropagation(); // Evitar que el clic afecte al elemento padre
+                      if (onImageClick) {
+                        onImageClick(additionalItem);
+                      }
+                    }}
+                  >
+                    <Image className="h-5 w-5 text-indigo-500" />
+                  </div>
+                )}
+
+                {/* Ícono de completado */}
+                {isAdditionalCompleted && (
+                  <CheckCircle2
+                    className={`h-4 w-4 sm:h-5 sm:w-5  ${isServing ? "text-blue-500" : "text-green-500"}`}
+                  />
+                )}
+
+              </div>
+
             </div>
           </div>
         );
