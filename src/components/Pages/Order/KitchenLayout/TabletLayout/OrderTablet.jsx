@@ -43,6 +43,7 @@ const getTextWidth = (text) => {
 
 const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+    const selectionMode = config.selectionMode || "1";
     const kitchen_cd = config.cd;
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
@@ -240,13 +241,17 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
     const [selectedRows, setSelectedRows] = useState(new Set());
     const [selectedColumns, setSelectedColumns] = useState(new Set());
 
+    const [mode2SelectedRows, setMode2SelectedRows] = useState(new Set());
+    const [mode2SelectedCells, setMode2SelectedCells] = useState(new Set());
+    const [mode2SelectedColumns, setMode2SelectedColumns] = useState(new Set());
+
     const lastColumnTapRef = useRef({});
     const columnTapTimeoutRef = useRef({});
     const DOUBLE_TAP_DELAY = 300;
 
     const toggleColumnSelection = (table) => {
 
-        const selectionMode = config.selectionMode || "1";
+        // const selectionMode = config.selectionMode || "1";
 
         if (selectionMode === "2") {
             const now = Date.now(); // Añadir esta línea
@@ -257,16 +262,37 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                     type: 'column',
                     table
                 });
+                setSelectedColumns(new Set());
+                setSelectedCells(new Set());
             } else {
-                // Primer toque - solo lo registramos
-                if (columnTapTimeoutRef.current[columnId]) {
-                    clearTimeout(columnTapTimeoutRef.current[columnId]);
-                }
 
-                columnTapTimeoutRef.current[columnId] = setTimeout(() => {
-                    // Opcional: acción para toque simple
-                    console.log("Toque simple en columna:", table);
-                }, 250);
+                setSelectedColumns(prev => {
+                    // Si ya estaba seleccionada, deseleccionar
+                    if (prev.has(table)) {
+                        // Creamos un nuevo Set vacío para deseleccionar
+                        setSelectedCells(new Set());
+                        return new Set(); // Retornar Set vacío para deseleccionar
+                    } else {
+                        // Seleccionar la columna
+                        const newSet = new Set();
+                        newSet.add(table);
+                        
+                        // Seleccionar todas las celdas con items pendientes en esta columna
+                        setSelectedCells(prevCells => {
+                            const newCells = new Set();
+                            uniqueItems.forEach(groupKey => {
+                                const pendingQuantity = orderMatrix[groupKey].pendingByTable[table] || 0;
+                                if (pendingQuantity > 0) {
+                                    newCells.add(`${groupKey}-${table}`);
+                                }
+                            });
+                            return newCells;
+                        });
+                        
+                        setSelectedRows(new Set());
+                        return newSet;
+                    }
+                });
             }
             lastColumnTapRef.current[columnId] = now;
             return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
@@ -311,7 +337,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
 
     const toggleRowSelection = (groupKey) => {
 
-        const selectionMode = config.selectionMode || "1";
+        // const selectionMode = config.selectionMode || "1";
 
         if (selectionMode === "2") {
 
@@ -324,16 +350,39 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                     type: 'row',
                     groupKey
                 });
+                setSelectedRows(new Set());
+                setSelectedCells(new Set());
             } else {
-                // Primer toque - solo lo registramos
-                if (rowTapTimeoutRef.current[rowId]) {
-                    clearTimeout(rowTapTimeoutRef.current[rowId]);
-                }
+                // // Primer toque - solo lo registramos
+                // if (rowTapTimeoutRef.current[rowId]) {
+                //     clearTimeout(rowTapTimeoutRef.current[rowId]);
+                // }
 
-                rowTapTimeoutRef.current[rowId] = setTimeout(() => {
-                    // Opcional: acción para toque simple
-                    console.log("Toque simple en fila:", groupKey);
-                }, 250);
+                // rowTapTimeoutRef.current[rowId] = setTimeout(() => {
+                //     // Opcional: acción para toque simple
+                //     console.log("Toque simple en fila:", groupKey);
+                // }, 250);
+                setSelectedRows(prev => {
+                    // Si ya estaba seleccionada, deseleccionar
+                    if (prev.has(groupKey)) {
+                        return new Set(); // Retornar Set vacío
+                    } else {
+                        // Seleccionar el ítem
+                        const newSelected = new Set();
+                        newSelected.add(groupKey);
+                        
+                        // Si es un padre, seleccionar todos sus hijos
+                        if (orderMatrix[groupKey].isParent && parentToChildrenMap[groupKey]) {
+                            parentToChildrenMap[groupKey].forEach(childKey => {
+                                newSelected.add(childKey);
+                            });
+                        }
+                        
+                        setSelectedColumns(new Set());
+                        setSelectedCells(new Set());
+                        return newSelected;
+                    }
+                });
             }
             lastRowTapRef.current[rowId] = now;
             return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
@@ -377,7 +426,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
         if (quantity <= 0) return;
 
         // Obtener el modo de selección del localStorage
-        const selectionMode = config.selectionMode || "1";
+        // const selectionMode = config.selectionMode || "1";
 
         if (selectionMode === "2") {
 
@@ -392,16 +441,25 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                     groupKey: item,
                     table
                 });
+                setSelectedCells(new Set());
             } else {
-                // Primer toque - solo lo registramos
-                if (cellTapTimeoutRef.current[cellId]) {
-                    clearTimeout(cellTapTimeoutRef.current[cellId]);
-                }
+                setSelectedCells(prev => {
+                    const cellKey = `${item}-${table}`;
+                    
+                    // Si ya estaba seleccionada, deseleccionar
+                    if (prev.has(cellKey)) {
+                        return new Set(); // Retornar Set vacío para deseleccionar
+                    } else {
+                        // Seleccionar solo esta celda
+                        const newSet = new Set();
+                        newSet.add(cellKey);
+                        
+                        setSelectedRows(new Set());
+                        setSelectedColumns(new Set());
+                        return newSet;
+                    }
+                });
 
-                cellTapTimeoutRef.current[cellId] = setTimeout(() => {
-                    // Opcional: acción para toque simple
-                    console.log("Toque simple en la celda:", item, table);
-                }, 250);
             }
             lastCellTapRef.current[cellId] = now;
             return; // Importante: detener la ejecución aquí para que no ejecute el código del modo 1
@@ -777,7 +835,8 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
 
     return (
         <div className="flex flex-col h-full">
-            {(selectedRows.size > 0 || selectedCells.size > 0) && (
+            {(selectedRows.size > 0 || selectedCells.size > 0) && 
+                (selectionMode !== "2") &&(
                 <div className="sticky top-0 z-40 mb-2">
                     <button
                         onClick={() => setShowConfirmDialog(true)}  // Cambiar aquí
@@ -794,10 +853,10 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 bg-gray-200">
+                                    <th className="w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 ">
                                         メニュー項目
                                     </th>
-                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 bg-gray-200">
+                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 ">
                                         合計
                                     </th>
                                     {uniqueTables.map(table => (
@@ -807,7 +866,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 bg-gray-50 text-center font-bold text-3xl text-gray-800 
                                                 border-b border-gray-200 cursor-pointer  
                                                 transition-colors
-                                                ${isColumnSelected(table) ? 'bg-yellow-200' : ''}`}>
+                                                ${isColumnSelected(table) ? 'bg-yellow-300' : ''}`}>
                                             {table}
                                         </th>
                                     ))}
@@ -825,11 +884,11 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                     return (
                                         <tr key={groupKey}
                                             className={`${hasPendingItems ? 'cursor-pointer' : 'cursor-not-allowed'}
-                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
-                                                hover:bg-gray-100 transition-colors text-3xl`}
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-300' : (idx % 2 === 0 ? 'bg-white' : 'bg-gray-50')}
+                                                transition-colors text-3xl`}
                                             onClick={() => hasPendingItems && toggleRowSelection(groupKey)}>
                                             <td className={`w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 border-b border-gray-200 font-medium text-gray-700 whitespace-nowrap sticky left-0 z-10 text-3xl
-                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-300' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 <div className={`flex items-center ${isChild ? 'pl-4' : ''}`}>
                                                     {isChild && (
                                                         <div className="w-2 h-px bg-gray-300 mr-3"></div>
@@ -838,7 +897,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 </div>
                                             </td>
                                             <td className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200 sticky left-[300px] z-10
-                                                ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
+                                                ${isRowSelected(groupKey) ? 'bg-yellow-300' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}>
                                                 <span className="inline-flex items-center justify-center text-5xl font-medium text-red-500">
                                                     {orderMatrix[groupKey].totals}
                                                 </span>
@@ -849,7 +908,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 return (
                                                     <td key={`${groupKey}-${table}`}
                                                         className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 text-center border-b border-gray-200
-                                                        ${isCellSelected(groupKey, table) || isRowSelected(groupKey) ? 'bg-yellow-200' : ''}
+                                                        ${isCellSelected(groupKey, table) || isRowSelected(groupKey) ? 'bg-yellow-300' : ''}
                                                         ${pendingQuantity > 0 ? 'cursor-pointer' : 'cursor-not-allowed'}`}
                                                         onClick={(e) => {
                                                             e.stopPropagation();
@@ -867,7 +926,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                                 );
                                             })}
                                             {/* Celda fantasma que se expande */}
-                                            <td className={`border-b border-gray-200 ${isRowSelected(groupKey) ? 'bg-yellow-200' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}></td>
+                                            <td className={`border-b border-gray-200 ${isRowSelected(groupKey) ? 'bg-yellow-300' : idx % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}></td>
                                         </tr>
                                     );
                                 })}

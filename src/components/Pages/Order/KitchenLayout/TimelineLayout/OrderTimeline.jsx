@@ -1,5 +1,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { CheckCircle2, Image, X } from 'lucide-react';
 import _, { filter, update } from 'lodash';
+import ImageModal from '@/components/ui/ImagenModal';
 
 const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
@@ -7,6 +9,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const selectionMode = config.selectionMode || "1"; // Modo por defecto: botones
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
+
+    // Estado para el modal de imagen
+    const [imageModalOpen, setImageModalOpen] = useState(false);
+    const [selectedImage, setSelectedImage] = useState(null);
 
     const lastTouchRef = useRef({});
     const touchTimeoutRef = useRef({});
@@ -112,6 +118,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
                 // Realizar la actualización
                 handleItemsUpdate(itemIds);
+
+                //limpiar seleccionados despues de Actualizar
+                setSelectedRows(new Set());
             } else {
                 // Es el primer toque, guardamos tiempo y configuramos timeout
                 if (touchTimeoutRef.current[touchId]) {
@@ -120,7 +129,8 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
                 touchTimeoutRef.current[touchId] = setTimeout(() => {
                     // Opcional: acción para toque simple en modo 2
-                    // console.log("Toque simple en ítem:", item.name);
+                    console.log("Toque simple en ítem:", item.name);
+                    toggleRowSelection(item, allItems);
                 }, 250);
             }
 
@@ -144,7 +154,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 if (touchTimeoutRef.current[touchId]) {
                     clearTimeout(touchTimeoutRef.current[touchId]);
                 }
-
+0
                 // Colección de ids a actualizar
                 const itemIds = new Set();
 
@@ -161,6 +171,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
                 // Realizar la actualización
                 handleItemsUpdate(itemIds);
+
+                //limpiar seleccionados despues de actualizar
+                setSelectedRows(new Set());
+
             } else {
                 // Es el primer toque, guardamos tiempo y configuramos timeout
                 if (touchTimeoutRef.current[touchId]) {
@@ -169,7 +183,8 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
                 touchTimeoutRef.current[touchId] = setTimeout(() => {
                     // Opcional: acción para toque simple en modo 2
-                    // console.log("Toque simple en mesa:", order.table);
+                    console.log("Toque simple en mesa:", order.table);
+                    toggleTableSelection(order);
                 }, 250);
             }
 
@@ -207,6 +222,25 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     // Modificar toggleRowSelection para manejar la selección de padres e hijos
     const toggleRowSelection = (item, allItems) => {
         setSelectedRows(prev => {
+
+            if(selectionMode === "2"){
+
+                if(prev.has(item.id)){
+                    return new Set();
+                }else{
+                    const newSet = new Set();
+                    if(item.parent){
+                        newSet.add(item.id);
+                        const children = getAllChildren(item.uid, allItems);
+                        child.forEach(child => newSet.add(child.id));
+                    }else{
+                        newSet.add(item.id);
+                    }
+
+                    return newSet;
+                }
+            }
+
             const newSet = new Set(prev);
 
             if (item.isParent) {
@@ -233,6 +267,29 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
     const toggleTableSelection = (order) => {
         setSelectedRows(prev => {
+
+            if(selectionMode === "2"){
+
+                const allItemsSelected = order.items.every(item => prev.has(item.id));
+
+                if(allItemsSelected){
+                    return new Set();
+                }else{
+                    const newSet = new Set();
+                    
+                    order.items.forEach(item =>{
+                        newSet.add(item.id);
+                        if(item.isParent){
+                            const children = getAllChildren(item.uid, order.items);
+                            children.forEach(child => newSet.add(child.id));
+                        }
+                    });
+
+                    return newSet;
+                }
+
+            }
+
             const newSet = new Set(prev);
             const allItemsSelected = order.items.every(item =>
                 newSet.has(item.id)
@@ -332,10 +389,20 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'}`;
     };
 
+    // Función para manejar el clic en el icono de imagen
+    const handleImageClick = (item) => {
+        setSelectedImage({
+            url: item.handwriteImage,
+            name: item.name
+        });
+        setImageModalOpen(true);
+    };
+
 
     return (
         <div className="flex flex-col h-full">
-            {selectedRows.size > 0 && (
+            {selectedRows.size > 0 &&
+            (selectionMode !== "2") && (
                 <div className="sticky top-0 z-40 mb-2">
                     <button
                         onClick={() => setShowConfirmDialog(true)}
@@ -353,13 +420,13 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         注文時間
                                     </th>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         経過時間
                                     </th>
-                                    <th className="w-[200px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[200px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         テーブル
                                     </th>
                                     <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
@@ -385,8 +452,8 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
                                             <td
                                                 className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected
-                                                    ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
-                                                    : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
+                                                    ? 'bg-yellow-300 ' // Estado seleccionado y su hover
+                                                    : ''                  // Hover solo cuando no está seleccionado
                                                     }`}
                                                 onClick={() => handleTableTouch(order)}
 
@@ -394,22 +461,51 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                 {order.table}
                                             </td>
                                             <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
-                                                <div className="divide-y divide-gray-100">
+                                                <div className="divide-y divide-gray-200">
                                                     {order.items.map((item, itemIndex) => (
                                                         <div
                                                             key={itemIndex}
                                                             onClick={() => handleItemTouch(item, order.items)}
                                                             className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
-                                                                ? 'bg-yellow-200 hover:bg-yellow-200' // Estado seleccionado y su hover
-                                                                : 'hover:bg-gray-50'                  // Hover solo cuando no está seleccionado
+                                                                ? 'bg-yellow-300 ' // Estado seleccionado y su hover
+                                                                : ''                  // Hover solo cuando no está seleccionado
                                                                 }`}
                                                         >
+                                                            <div className="w-[50px] flex justify-star">
+                                                                {item.modification && item.modification !== "　" && (
+                                                                    <span className={`text-3xl bg-gray-100  rounded text-red-600 `}>
+                                                                    {item.modification}
+                                                                    </span>
+                                                                )}
+                                                            </div>
                                                             {/* Nombre del item */}
                                                             <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
                                                                 {item.isChild && (
-                                                                    <div className="w-2 h-px bg-gray-300 mr-3"></div>
-                                                                )}
+                                                                    <div className="w-2 h-px bg-gray-300 mr-3 mt-4"></div>
+                                                                )} 
+                                                                {/* {item.modification && item.modification !== "　" && (
+                                                                    <span className={`text-3xl bg-gray-100  rounded text-red-600 mr-4`}>
+                                                                    {item.modification}
+                                                                    </span>
+                                                                )} */}
                                                                 <span className="text-3xl">{item.name}</span>
+                                                            </div>
+
+                                                            <div className="w-[50px] flex justify-end">
+                                                                {/* Indicador de imagen manuscrita */}
+                                                                {item.handwriteImage !== null && (
+                                                                    <div 
+                                                                    className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation(); // Evitar que el clic afecte al elemento padre
+                                                                        if (handleImageClick) {
+                                                                            handleImageClick(item);
+                                                                        }
+                                                                    }}
+                                                                    >
+                                                                    <Image className="h-5 w-5 text-indigo-500" />
+                                                                    </div>
+                                                                )}
                                                             </div>
 
                                                             {/* Cantidad del item */}
@@ -468,6 +564,16 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                     </div>
                 </div>
             </div>
+
+            {/* Modal para mostrar la imagen */}
+            {selectedImage && (
+                <ImageModal
+                    open={imageModalOpen}
+                    onOpenChange={setImageModalOpen}
+                    imageUrl={selectedImage.url}
+                    itemName={selectedImage.name}
+                />
+            )}
         </div>
     );
 };
