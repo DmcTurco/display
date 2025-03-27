@@ -13,6 +13,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
     const ordersPerPage = config.cardQuantity;
     const totalPages = Math.ceil(orders.length / ordersPerPage);
     const lastPageRef = useRef(currentPage);
+    const selectionMode = config.selectionMode || "1";
 
     const [selectedItems, setSelectedItems] = useState(new Set());
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
@@ -20,6 +21,11 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
     // Estado para el modal de imagen
     const [imageModalOpen, setImageModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+
+    //Referencias para double tap 
+    const lastTapRef = useRef({});
+    const tapTimeoutRef = useRef({});
+    const DOUBLE_TAP_DELAY = 300;
 
     const {
         containerRef,
@@ -81,23 +87,174 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
 
     const handleToggleSelection = (item, type = 'item', tableGroup = null, order = null) => {
         // console.log('Item Seleccionado', item, 'Tipo: ', type);
+        const now = Date.now();
 
-        setSelectedItems(prev => {
-            const newSet = new Set(prev);
+        let tapId;
+        switch (type) {
+            case 'table':
+                tapId = `table-${tableGroup.tableName}`;
+                break;
+            case 'order':
+                tapId = `order-${order.orderTime}-${order.table}`;
+                break;
+            case 'item':
 
-            switch (type) {
-                case 'table':
-                    // Seleccionar/deseleccionar todos los items de la mesa
-                    const allTableItemsSelected = tableGroup.orders.every(order =>
-                        order.items.every(item =>
+                tapId = `item-${item.id}`;
+                break;
+        }
+
+        if (selectionMode === "2") {
+            if (now - (lastTapRef.current[tapId] || 0) < DOUBLE_TAP_DELAY) {
+                clearTimeout(tapTimeoutRef.current[tapId]);
+                const itemIds = new Set();
+                switch (type) {
+                    case 'table':
+                        tableGroup.orders.forEach(ord => {
+                            ord.items.forEach(itm => {
+                                itemIds.add(itm.id);
+
+                                //si es padre incluir a sus hijos
+                                if (itm.isParent) {
+                                    const children = getAllChildren(itm.uid, ord.items);
+                                    children.forEach(child => itemIds.add(child.id));
+                                }
+                            });
+                        });
+                        break;
+                    case 'order':
+                        order.items.forEach(itm => {
+                            itemIds.add(itm.id);
+
+                            if (itm.isParent) {
+                                const children = getAllChildren(itm.uid, order.items);
+                                children.forEach(child => itemIds.add(child.id));
+                            }
+                        });
+                        break;
+                    case 'item':
+                        itemIds.add(item.id);
+                        if (item.isParent) {
+                            const children = getAllChildren(item.uid, order.items);
+                            children.forEach(child => itemIds.add(child.id));
+                        };
+                        break;
+                }
+
+                // Actualizar items y limpiar selecciones
+                handleUpdate(itemIds);
+                setSelectedItems(new Set());
+
+            } else {
+                // Primer tap - selección visual única
+                setSelectedItems(prev => {
+                    const newSet = new Set();
+                    switch (type) {
+                        case 'table':
+                            // Si ya está todo seleccionado, deseleccionar todo
+                            const allTableItemsSelected = tableGroup.orders.every(ord =>
+                                ord.items.every(itm =>
+                                    prev.has(itm.id) &&
+                                    (!itm.additionalItems || itm.additionalItems.every(child => prev.has(child.id)))
+                                )
+                            );
+
+                            if (allTableItemsSelected) {
+                                return newSet; // Set vacío para deseleccionar
+                            }
+
+                            // Seleccionar todos los items de la mesa
+                            tableGroup.orders.forEach(ord => {
+                                ord.items.forEach(itm => {
+                                    newSet.add(itm.id);
+                                    if (itm.additionalItems) {
+                                        itm.additionalItems.forEach(child => newSet.add(child.id));
+                                    }
+                                });
+                            });
+                            break;
+                        case 'order':
+                            // Si ya está todo seleccionado, deseleccionar todo
+                            const allOrderItemsSelected = order.items.every(itm =>
+                                prev.has(itm.id) &&
+                                (!itm.additionalItems || itm.additionalItems.every(child => prev.has(child.id)))
+                            );
+
+                            if (allOrderItemsSelected) {
+                                return newSet; // Set vacío para deseleccionar
+                            }
+
+                            // Seleccionar todos los items de la orden
+                            order.items.forEach(itm => {
+                                newSet.add(itm.id);
+                                if (itm.additionalItems) {
+                                    itm.additionalItems.forEach(child => newSet.add(child.id));
+                                }
+                            });
+                            break;
+                        case 'item':
+                            // Si ya está seleccionado, deseleccionar
+                            if (prev.has(item.id)) {
+                                return newSet; // Set vacío para deseleccionar
+                            }
+
+                            // Seleccionar este item (y sus hijos si tiene)
+                            newSet.add(item.id);
+                            if (item.additionalItems) {
+                                item.additionalItems.forEach(child => newSet.add(child.id));
+                            }
+                            break;
+                    }
+
+                    return newSet;
+                });
+            }
+
+            // Guardar tiempo de tap
+            lastTapRef.current[tapId] = now;
+        } else {
+
+            setSelectedItems(prev => {
+                const newSet = new Set(prev);
+
+                switch (type) {
+                    case 'table':
+                        // Seleccionar/deseleccionar todos los items de la mesa
+                        const allTableItemsSelected = tableGroup.orders.every(order =>
+                            order.items.every(item =>
+                                newSet.has(item.id) &&
+                                (!item.additionalItems || item.additionalItems.every(child => newSet.has(child.id)))
+                            )
+                        );
+
+                        tableGroup.orders.forEach(order => {
+                            order.items.forEach(item => {
+                                if (allTableItemsSelected) {
+                                    // Deseleccionar items
+                                    newSet.delete(item.id);
+                                    if (item.additionalItems) {
+                                        item.additionalItems.forEach(child => newSet.delete(child.id));
+                                    }
+                                } else {
+                                    // Seleccionar items
+                                    newSet.add(item.id);
+                                    if (item.additionalItems) {
+                                        item.additionalItems.forEach(child => newSet.add(child.id));
+                                    }
+                                }
+                            });
+                        });
+                        break;
+
+                    case 'order':
+
+                        // Seleccionar/deseleccionar todos los items de la orden
+                        const allOrderItemsSelected = order.items.every(item =>
                             newSet.has(item.id) &&
                             (!item.additionalItems || item.additionalItems.every(child => newSet.has(child.id)))
-                        )
-                    );
+                        );
 
-                    tableGroup.orders.forEach(order => {
                         order.items.forEach(item => {
-                            if (allTableItemsSelected) {
+                            if (allOrderItemsSelected) {
                                 // Deseleccionar items
                                 newSet.delete(item.id);
                                 if (item.additionalItems) {
@@ -111,66 +268,43 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                                 }
                             }
                         });
-                    });
-                    break;
+                        break;
 
-                case 'order':
-
-                    // Seleccionar/deseleccionar todos los items de la orden
-                    const allOrderItemsSelected = order.items.every(item =>
-                        newSet.has(item.id) &&
-                        (!item.additionalItems || item.additionalItems.every(child => newSet.has(child.id)))
-                    );
-
-                    order.items.forEach(item => {
-                        if (allOrderItemsSelected) {
-                            // Deseleccionar items
-                            newSet.delete(item.id);
-                            if (item.additionalItems) {
-                                item.additionalItems.forEach(child => newSet.delete(child.id));
+                    case 'item':
+                        // Lógica existente para items individuales
+                        if (item.additionalItems && item.additionalItems.length > 0) {
+                            if (newSet.has(item.id)) {
+                                // Si ya está seleccionado, eliminar padre e hijos
+                                newSet.delete(item.id);
+                                item.additionalItems.forEach(childItem => {
+                                    newSet.delete(childItem.id);
+                                });
+                            } else {
+                                // Si no está seleccionado, agregar padre e hijos
+                                newSet.add(item.id);
+                                item.additionalItems.forEach(childItem => {
+                                    newSet.add(childItem.id);
+                                });
                             }
                         } else {
-                            // Seleccionar items
-                            newSet.add(item.id);
-                            if (item.additionalItems) {
-                                item.additionalItems.forEach(child => newSet.add(child.id));
+                            // Si es un item hijo o individual
+                            if (newSet.has(item.id)) {
+                                newSet.delete(item.id);
+                            } else {
+                                newSet.add(item.id);
                             }
                         }
-                    });
-                    break;
 
-                case 'item':
-                    // Lógica existente para items individuales
-                    if (item.additionalItems && item.additionalItems.length > 0) {
-                        if (newSet.has(item.id)) {
-                            // Si ya está seleccionado, eliminar padre e hijos
-                            newSet.delete(item.id);
-                            item.additionalItems.forEach(childItem => {
-                                newSet.delete(childItem.id);
-                            });
-                        } else {
-                            // Si no está seleccionado, agregar padre e hijos
-                            newSet.add(item.id);
-                            item.additionalItems.forEach(childItem => {
-                                newSet.add(childItem.id);
-                            });
-                        }
-                    } else {
-                        // Si es un item hijo o individual
-                        if (newSet.has(item.id)) {
-                            newSet.delete(item.id);
-                        } else {
-                            newSet.add(item.id);
-                        }
-                    }
+                        break;
 
-                    break;
+                }
 
-            }
+                // console.log('Items seleccionados:', Array.from(newSet));
+                return newSet;
+            });
+        }
 
-            // console.log('Items seleccionados:', Array.from(newSet));
-            return newSet;
-        });
+
     };
 
 
@@ -249,16 +383,19 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
         return items.filter(item => item.pid === parentId);
     };
 
-    const handleUpdate = async () => {
+    const handleUpdate = async (itemIdsToUpdate = null) => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
             return;
         }
 
         try {
+
+            const itemIds = itemIdsToUpdate || selectedItems;
+
             for (const order of orderItems) {
                 for (const item of order.items) {
-                    if (selectedItems.has(item.id)) {
+                    if (itemIds.has(item.id)) {
                         if (item.isParent) {
                             const children = getAllChildren(item.uid, order.items)
                             await Promise.all([
@@ -268,7 +405,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                         } else if (item.isChild) {
                             const siblings = getAllChildren(item.pid, order.items);
                             const allSiblingsWillBeReady = siblings.every(sibling =>
-                                sibling.kitchen_status === 1 || selectedItems.has(sibling.id)
+                                sibling.kitchen_status === 1 || itemIds.has(sibling.id)
                             );
 
                             if (allSiblingsWillBeReady) {
@@ -300,18 +437,19 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
     return (
 
         <div className='flex flex-col h-screen'>
-            {selectedItems.size > 0 && (
-                <div className="sticky top-0 z-50 px-4  ">
-                    <button
-                        onClick={() => setShowConfirmDialog(true)}
-                        className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xl"
-                    >
-                        {/* 戻す ({selectedItems.size}点) */}
-                        【調理済みにする】
-                    </button>
-                </div>
+            {selectedItems.size > 0 &&
+                (selectionMode !== "2") && (
+                    <div className="sticky top-0 z-50 px-4  ">
+                        <button
+                            onClick={() => setShowConfirmDialog(true)}
+                            className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-xl"
+                        >
+                            {/* 戻す ({selectedItems.size}点) */}
+                            【調理済みにする】
+                        </button>
+                    </div>
 
-            )}
+                )}
 
             <div className='h-full overflow-hidden'>
                 <div
@@ -355,8 +493,8 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                                                     type={tableGroup.type}
                                                     total_people={tableGroup.total_people}
                                                     tableName={tableGroup.tableName}
-                                                    expandedItemId={expandedItemId}
-                                                    setExpandedItemId={setExpandedItemId}
+                                                    expandedItemId={() => { }}
+                                                    setExpandedItemId={() => { }}
                                                     updateKitchenStatus={updateKitchenStatus}
                                                     customer={tableGroup.tableName}
                                                     selectedItems={selectedItems}
@@ -437,7 +575,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                             キャンセル
                         </button>
                         <button
-                            onClick={handleUpdate}
+                            onClick={() => handleUpdate()}
                             className="px-4 py-2 text-sm font-medium text-white bg-green-500 rounded-md hover:bg-green-600"
                         >
                             更新する

@@ -78,87 +78,128 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
 
   // Renderizado condicional para el header de la tabla
   const renderTableHeader = () => {
-    if (selectionMode == 1) {
-      return (
-        <div
-          className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
-          onClick={() => onToggleSelection(null, 'table', { orders }, null)}
-          role="button"
-          aria-pressed={areAllTableItemsSelected()}
-        >
-          <OrderHeader
-            type={type}
-            customer={customer}
-            total_people={total_people}
-            isSelected={areAllTableItemsSelected()}
-          />
-        </div>
-      );
-    } else {
-      return (
-        <div className="p-2 sm:p-2">
-          <OrderHeader
-            type={type}
-            customer={customer}
-            total_people={total_people}
-          />
-        </div>
-      );
-    }
+    return (
+      <div
+        className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
+        onClick={() => onToggleSelection(null, 'table', { orders }, null)}
+        role="button"
+        aria-pressed={areAllTableItemsSelected()}
+      >
+        <OrderHeader
+          type={type}
+          customer={customer}
+          total_people={total_people}
+          isSelected={areAllTableItemsSelected()}
+        />
+      </div>
+    );
+
+    // if (selectionMode == 1) {
+    //   return (
+    //     <div
+    //       className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
+    //       onClick={() => onToggleSelection(null, 'table', { orders }, null)}
+    //       role="button"
+    //       aria-pressed={areAllTableItemsSelected()}
+    //     >
+    //       <OrderHeader
+    //         type={type}
+    //         customer={customer}
+    //         total_people={total_people}
+    //         isSelected={areAllTableItemsSelected()}
+    //       />
+    //     </div>
+    //   );
+    // } else {
+    //   return (
+    //     <div className="p-2 sm:p-2">
+    //       <OrderHeader
+    //         type={type}
+    //         customer={customer}
+    //         total_people={total_people}
+    //       />
+    //     </div>
+    //   );
+    // }
   };
 
   // Renderizado condicional para el header de cada orden
   const renderOrderHeader = (order) => {
-    if (selectionMode == 1) {
-      return (
-        <div
-          className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
-          onClick={() => onToggleSelection(null, 'order', null, order)}
-        >
-          <span className="inline-flex items-center gap-4 text-sm font-medium">
-            {order.formatted_time}
-            {order.status === 'urgente' ? (
-              <span className="ml-1 inline-flex items-center text-red-500">
-                <UrgentAlert className="w-5 h-5" />
-                <span>{order.elapsedTime}分経過 </span>
-              </span>
-            ) : (
-              <span className="ml-1 inline-flex items-center text-blue-700">
-                <Timer className="w-5 h-5" />
-                <span>{order.elapsedTime}分経過 </span>
-              </span>
-            )}
-          </span>
+    return (
+      <div
+        className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
+        onClick={() => onToggleSelection(null, 'order', null, order)}
+      >
+        <span className="inline-flex items-center gap-4 text-sm font-medium">
+          {order.formatted_time}
+          {order.status === 'urgente' ? (
+            <span className="ml-1 inline-flex items-center text-red-500">
+              <UrgentAlert className="w-5 h-5" />
+              <span>{order.elapsedTime}分経過 </span>
+            </span>
+          ) : (
+            <span className="ml-1 inline-flex items-center text-blue-700">
+              <Timer className="w-5 h-5" />
+              <span>{order.elapsedTime}分経過 </span>
+            </span>
+          )}
+        </span>
 
-          <span className="text-sm">
-            #{`${order.order_main_cd}-${order.order_count}`}
-          </span>
-        </div>
-      );
-    } else {
-      return (
-        <div className="flex justify-between items-center mb-2">
-          <span className="inline-flex items-center gap-4 text-sm font-medium">
-            {order.formatted_time}
-            {order.status === 'urgente' ? (
-              <span className="ml-1 inline-flex items-center text-red-500">
-                <UrgentAlert className="w-5 h-5" />
-                <span>{order.elapsedTime}分経過 </span>
-              </span>
-            ) : (
-              <span className="ml-1 inline-flex items-center text-blue-700">
-                <Timer className="w-5 h-5" />
-                <span>{order.elapsedTime}分経過 </span>
-              </span>
-            )}
-          </span>
+        <span className="text-sm">
+          #{`${order.order_main_cd}-${order.order_count}`}
+        </span>
+      </div>
+    );
+    // if (selectionMode == 1) {
+    //   return (
+    //     <div
+    //       className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
+    //       onClick={() => onToggleSelection(null, 'order', null, order)}
+    //     >
+    //       <span className="inline-flex items-center gap-4 text-sm font-medium">
+    //         {order.formatted_time}
+    //         {order.status === 'urgente' ? (
+    //           <span className="ml-1 inline-flex items-center text-red-500">
+    //             <UrgentAlert className="w-5 h-5" />
+    //             <span>{order.elapsedTime}分経過 </span>
+    //           </span>
+    //         ) : (
+    //           <span className="ml-1 inline-flex items-center text-blue-700">
+    //             <Timer className="w-5 h-5" />
+    //             <span>{order.elapsedTime}分経過 </span>
+    //           </span>
+    //         )}
+    //       </span>
 
-          <span className="text-sm">
-            #{`${order.order_main_cd}-${order.order_count}`}
-          </span>
-        </div>
-      );
-    }
+    //       <span className="text-sm">
+    //         #{`${order.order_main_cd}-${order.order_count}`}
+    //       </span>
+    //     </div>
+    //   );
+    // } else {
+    //   return (
+    //     <div className="flex justify-between items-center mb-2">
+    //       <span className="inline-flex items-center gap-4 text-sm font-medium">
+    //         {order.formatted_time}
+    //         {order.status === 'urgente' ? (
+    //           <span className="ml-1 inline-flex items-center text-red-500">
+    //             <UrgentAlert className="w-5 h-5" />
+    //             <span>{order.elapsedTime}分経過 </span>
+    //           </span>
+    //         ) : (
+    //           <span className="ml-1 inline-flex items-center text-blue-700">
+    //             <Timer className="w-5 h-5" />
+    //             <span>{order.elapsedTime}分経過 </span>
+    //           </span>
+    //         )}
+    //       </span>
+
+    //       <span className="text-sm">
+    //         #{`${order.order_main_cd}-${order.order_count}`}
+    //       </span>
+    //     </div>
+    //   );
+    // }
   };
 
 

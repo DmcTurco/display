@@ -47,29 +47,31 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
 
   const getBackgroundColor = () => {
 
-    if (expandedItemId === item.uid) {
-      return isServing ? "bg-blue-300" : "bg-yellow-300";
-    }
+    // if (expandedItemId === item.uid) {
+    //   return isServing ? "bg-blue-300" : "bg-yellow-300";
+    // }
 
     if (isSelected) return "bg-yellow-300";
+    
     if (!isServing) {
-
       return isCompleted ? "bg-green-200" : "bg-white";
     }
     return isServed ? "bg-blue-200" : "bg-white";
   };
 
   const handleClick = () => {
-
-    if (selectionMode === "1") {
-      if (!isServing && !isCompleted) {
-        onToggleSelection(item);
-      }
-    } else {
-      if (isClickable) {
-        onItemClick(item, false);
-      }
+    if (!isServing && !isCompleted) {
+      onToggleSelection(item);
     }
+    // if (selectionMode === "1") {
+    //   if (!isServing && !isCompleted) {
+    //     onToggleSelection(item);
+    //   }
+    // } else {
+    //   if (isClickable) {
+    //     onItemClick(item, false);
+    //   }
+    // }
   };
 
 

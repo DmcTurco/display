@@ -11,19 +11,21 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
   const selectionMode = config.selectionMode || "1";
 
   const handleClick = (additionalItem, isAdditionalCompleted) => {
-
-    if (selectionMode === "1") {
-      if (!isServing && !isAdditionalCompleted) {
-        onToggleSelection(additionalItem);
-      }
-    } else {
-      // Modo 2: Solo doble toque para marcar como completado
-      if (isServing) {
-        onItemClick(additionalItem, true, true, false, true);
-      } else {
-        onItemClick(additionalItem, true, true);
-      }
+    if (!isServing && !isAdditionalCompleted) {
+      onToggleSelection(additionalItem);
     }
+    // if (selectionMode === "1") {
+    //   if (!isServing && !isAdditionalCompleted) {
+    //     onToggleSelection(additionalItem);
+    //   }
+    // } else {
+    //   // Modo 2: Solo doble toque para marcar como completado
+    //   if (isServing) {
+    //     onItemClick(additionalItem, true, true, false, true);
+    //   } else {
+    //     onItemClick(additionalItem, true, true);
+    //   }
+    // }
     //   const now = Date.now();
     //   const DOUBLE_TAP_DELAY = 300;
     //   const itemId = additionalItem.uid;
