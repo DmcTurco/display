@@ -229,10 +229,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                     return new Set();
                 }else{
                     const newSet = new Set();
-                    if(item.parent){
+                    if(item.isParent){
                         newSet.add(item.id);
                         const children = getAllChildren(item.uid, allItems);
-                        child.forEach(child => newSet.add(child.id));
+                        children.forEach(child => newSet.add(child.id));
                     }else{
                         newSet.add(item.id);
                     }
@@ -420,22 +420,22 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         注文時間
                                     </th>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         経過時間
                                     </th>
-                                    <th className="w-[200px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[200px]py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
                                         テーブル
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="py-3 px-4 bg-gray-200 text-left font-bold text-gray-800 border-b border-gray-200">
                                         メニュー
                                     </th>
-                                    <th className="w-[200px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="w-[200px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                                         全体合計
                                     </th>
                                 </tr>

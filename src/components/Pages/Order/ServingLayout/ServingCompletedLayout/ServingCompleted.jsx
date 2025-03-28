@@ -220,22 +220,22 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-4 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         配膳時間
                                     </th>
-                                    <th className="w-[100px] py-3 px-2 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[100px] py-3 px-2 text-left font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         経過時間
                                     </th>
-                                    <th className="w-[200px]py-3 px-4 bg-gray-50 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                                    <th className="w-[200px]py-3 px-4  text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                                         テーブル
                                     </th>
-                                    <th className="py-3 px-4 bg-gray-50 text-left font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="py-3 px-4 bg-gray-200 text-left font-bold text-gray-800 border-b border-gray-200">
                                         メニュー
                                     </th>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-50 text-right font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="w-[200px] py-3 px-4 bg-gray-50 border-b border-gray-200">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-200 border-b border-gray-200">
                                     </th>
                                 </tr>
                             </thead>

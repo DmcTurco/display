@@ -532,7 +532,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                     </div>
 
                     {/* Indicador de sonido */}
-                    <div>
+                    {/* <div>
                         {(config.type === "1" || config.type === "2") && (
                             <button
                                 style={{
@@ -554,7 +554,7 @@ const OrderSwipe = ({ orders, expandedItemId, setExpandedItemId, updateKitchenSt
                                 )}
                             </button>
                         )}
-                    </div>
+                    </div> */}
 
 
                 </div>

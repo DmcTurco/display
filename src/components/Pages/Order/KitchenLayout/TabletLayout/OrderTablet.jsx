@@ -853,17 +853,17 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full border-collapse">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-50 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 ">
+                                    <th className="w-[350px] min-w-[300px] max-w-[300px] py-3 px-4 bg-gray-200 text-left text-3xl font-bold text-gray-800 border-b border-gray-200 sticky left-0 z-30 ">
                                         メニュー項目
                                     </th>
-                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-50 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 ">
+                                    <th className="w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-3xl text-gray-800 border-b border-gray-200 sticky left-[300px] z-30 ">
                                         合計
                                     </th>
                                     {uniqueTables.map(table => (
                                         <th key={table}
                                             onClick={() => toggleColumnSelection(table)}
                                             className={`w-[100px] min-w-[100px] max-w-[100px] py-3 px-4 
-                                                bg-gray-50 text-center font-bold text-3xl text-gray-800 
+                                                bg-gray-200 text-center font-bold text-3xl text-gray-800 
                                                 border-b border-gray-200 cursor-pointer  
                                                 transition-colors
                                                 ${isColumnSelected(table) ? 'bg-yellow-300' : ''}`}>
@@ -871,7 +871,7 @@ const OrderTablet = ({ orders, updateKitchenStatus }) => {
                                         </th>
                                     ))}
                                     {/* Columna fantasma que se expande */}
-                                    <th className="w-full bg-gray-50 border-b border-gray-200"></th>
+                                    <th className="w-full bg-gray-200 border-b border-gray-200"></th>
                                 </tr>
                             </thead>
 
