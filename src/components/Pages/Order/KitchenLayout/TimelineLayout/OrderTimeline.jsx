@@ -503,7 +503,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                         }
                                                                     }}
                                                                     >
-                                                                    <Image className="h-5 w-5 text-indigo-500" />
+                                                                    <Image className="h-10 w-10 text-indigo-500" />
                                                                     </div>
                                                                 )}
                                                             </div>
