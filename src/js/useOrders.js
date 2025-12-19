@@ -115,6 +115,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 price_type: detail.price_type,
                 price: detail.price,
                 later_price_change_flg: detail.later_price_change_flg,
+                belongs_to_kitchen: detail.belongs_to_kitchen ?? true
             }));
 
             // Insertar la orden en el grupo de la mesa correspondiente
@@ -173,6 +174,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 price_type: detail.price_type,
                 price: detail.price,
                 later_price_change_flg: detail.later_price_change_flg,
+                belongs_to_kitchen: detail.belongs_to_kitchen ?? true,
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
@@ -233,7 +235,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             } else {
                 processedNewData = processOrdersTable(newData.data);
             }
-
+            // console.log(processedNewData);
             checkNewOrders(processedNewData);
             setOrders(processedNewData);
 

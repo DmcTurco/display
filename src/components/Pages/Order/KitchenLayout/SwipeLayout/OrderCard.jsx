@@ -27,20 +27,28 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
   const selectionMode = config.selectionMode || "1";
   // Función para verificar si todos los items de una mesa están seleccionados
   const areAllTableItemsSelected = () => {
-    return orders.every(order =>
-      order.items.every(item => {
-        const isMainItemSelected = selectedItems.has(item.id);
-        const areChildrenSelected = item.additionalItems ?
-          item.additionalItems.every(child => selectedItems.has(child.id)) :
-          true;
-        return isMainItemSelected && areChildrenSelected;
-      })
+    // 🔥 MODIFICADO: Solo considerar items habilitados
+    const enabledItems = orders.flatMap(order =>
+      order.items.filter(item => !item.isDisabled)
     );
+
+    if (enabledItems.length === 0) return false;
+    return enabledItems.every(item => {
+      const isMainItemSelected = selectedItems.has(item.id);
+      const areChildrenSelected = item.additionalItems ?
+        item.additionalItems.every(child => selectedItems.has(child.id)) :
+        true;
+      return isMainItemSelected && areChildrenSelected;
+    });
   };
 
   // Función para verificar si todos los items de una orden están seleccionados
   const areAllOrderItemsSelected = (order) => {
-    return order.items.every(item => {
+    // 🔥 MODIFICADO: Solo considerar items habilitados
+    const enabledItems = order.items.filter(item => !item.isDisabled);
+    if (enabledItems.length === 0) return false;
+
+    return enabledItems.every(item => {
       const isMainItemSelected = selectedItems.has(item.id);
       const areChildrenSelected = item.additionalItems ?
         item.additionalItems.every(child => selectedItems.has(child.id)) :
@@ -204,7 +212,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
 
   const judgeLastOrders = (orders, index) => {
     const countOrders = orders.length;
-    if(countOrders == index +1) {
+    if (countOrders == index + 1) {
       return "true";
     }
     return "false";

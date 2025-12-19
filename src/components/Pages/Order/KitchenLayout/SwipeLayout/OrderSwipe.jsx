@@ -16,13 +16,13 @@ const OrderSwipe = ({
 }) => {
     // ==================== CONFIGURACIÓN Y ESTADO ====================
     const config = useMemo(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {}, []);
-
+    // console.log("Ordenes :", orders);
     const {
         cd: kitchen_cd,
         cardQuantity: ordersPerPage = 6,
         selectionMode = "1"
     } = config;
-    
+
     const [currentPage, setCurrentPage] = useState(1);
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [imageModalOpen, setImageModalOpen] = useState(false);
@@ -50,11 +50,20 @@ const OrderSwipe = ({
                     (activeParentUids.includes(item.uid)) ||
                     (!item.pid && item.kitchen_status !== 1) ||
                     (item.pid && item.kitchen_status !== 1)
-                ).map(item => ({
-                    ...item,
-                    isParent: parentUids.includes(item.uid),
-                    isChild: Boolean(item.pid)
-                })) || [];
+                ).map(item => {
+                    const isParent = parentUids.includes(item.uid);
+
+                    // 🔥 NUEVO: Identificar padres prestados
+                    const isBorrowedParent = isParent && item.belongs_to_kitchen === false;
+
+                    return {
+                        ...item,
+                        isParent,
+                        isChild: Boolean(item.pid),
+                        isBorrowedParent, // 🔥 NUEVO
+                        isDisabled: isBorrowedParent // 🔥 NUEVO: Solo padres prestados están deshabilitados
+                    };
+                }) || [];
 
                 return {
                     orderTime: order.formatted_time,
@@ -89,6 +98,36 @@ const OrderSwipe = ({
         );
     }, [orders]);
 
+
+    const tableGroupsWithProcessedItems = useMemo(() => {
+        const groupedByTable = orderItems.reduce((acc, orderItem) => {
+            const tableName = orderItem.tableGroup.tableName;
+
+            if (!acc[tableName]) {
+                acc[tableName] = {
+                    tableName: tableName,
+                    type: orderItem.tableGroup.type,
+                    total_people: orderItem.tableGroup.total_people,
+                    orders: []
+                };
+            }
+
+            acc[tableName].orders.push({
+                ...orderItem.originalOrder,
+                items: orderItem.items // Items con isBorrowedParent e isDisabled
+            });
+
+            return acc;
+        }, {});
+
+        // Mantener el orden original de las mesas
+        return Object.values(groupedByTable).sort((a, b) => {
+            const orderA = a.orders[0];
+            const orderB = b.orders[0];
+            return new Date(orderA.record_date) - new Date(orderB.record_date);
+        });
+    }, [orderItems]);
+
     // ==================== MANEJO DE ACTUALIZACIÓN ====================
     const handleUpdate = async (itemIdsToUpdate = null) => {
         if (!kitchen_cd) {
@@ -101,7 +140,7 @@ const OrderSwipe = ({
         try {
             const itemIds = itemIdsToUpdate || selectedItems;
             const updatePromises = [];
-
+            console.log(itemIds);
             for (const order of orderItems) {
                 for (const item of order.items) {
                     if (itemIds.has(item.id)) {
@@ -176,7 +215,7 @@ const OrderSwipe = ({
     const getPageOrders = (page) => {
         const start = (page - 1) * ordersPerPage;
         const end = start + ordersPerPage;
-        return orders.slice(start, end);
+        return tableGroupsWithProcessedItems.slice(start, end);
     };
 
     // ==================== SWIPE ====================
@@ -321,8 +360,7 @@ const OrderSwipe = ({
 
                     {/* Indicador de página */}
                     <div
-                        className="fixed z-50 bg-black/60 text-white px-3 py-1 
-                                   rounded-full text-sm backdrop-blur-sm select-none"
+                        className="fixed z-50 bg-black/60 text-white px-3 py-1 rounded-full text-sm backdrop-blur-sm select-none"
                         style={{ right: 110, top: 30 }}
                     >
                         {currentPage} / {totalPages}
@@ -343,9 +381,7 @@ const OrderSwipe = ({
                             <button
                                 onClick={() => setShowConfirmDialog(false)}
                                 disabled={isUpdating}
-                                className="px-4 py-2 text-sm font-medium text-gray-700 
-                                         bg-gray-100 rounded-md hover:bg-gray-200
-                                         disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 キャンセル
                             </button>
@@ -353,8 +389,8 @@ const OrderSwipe = ({
                                 onClick={() => handleUpdate()}
                                 disabled={isUpdating}
                                 className="px-4 py-2 text-sm font-medium text-white 
-                                         bg-green-500 rounded-md hover:bg-green-600
-                                         disabled:opacity-50 disabled:cursor-not-allowed"
+                                            bg-green-500 rounded-md hover:bg-green-600
+                                            disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 {isUpdating ? '更新中...' : '更新する'}
                             </button>
