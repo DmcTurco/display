@@ -218,7 +218,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             if (!response.ok) throw new Error('Error al obtener los pedidos');
 
             const newData = await response.json();
-            console.log(newData);
+            // console.log(newData);
             if (newData.status === 'error') throw new Error(newData.message);
 
             if (!newData.data) {

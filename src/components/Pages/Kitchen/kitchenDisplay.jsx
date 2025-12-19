@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { FaClipboardList, FaSpinner, FaWifi, FaServer, FaVolumeMute, FaVolumeUp } from "react-icons/fa";
 import { buildApiUrl } from "../../../hooks/useKitchenSetup";
 import { useOrders } from "../../../js/useOrders";
@@ -12,114 +12,110 @@ import OrderServing from "../Order/KitchenLayout/viewServingLayout/OrderServing"
 
 const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, config }) => {
   const [expandedItemId, setExpandedItemId] = useState(null);
-  const API_URL = buildApiUrl();
-  const { orders, completedOrders, loading, error, getTodayOrders, getTodayCompletedOrders, updateKitchenStatus, enableSound, isSoundEnabled } = useOrders(config, API_URL);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const localConfig = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
 
-  const layoutType = (localConfig?.layoutType || 'swipe');
+  const API_URL = buildApiUrl();
+  const localConfig = useMemo(() =>
+    JSON.parse(localStorage.getItem('kitchenConfig')) || {},
+    []
+  );
+  const layoutType = localConfig?.layoutType || 'swipe';
+
+  const {
+    orders,
+    completedOrders,
+    loading,
+    error,
+    getTodayOrders,
+    getTodayCompletedOrders,
+    updateKitchenStatus,
+    enableSound,
+    isSoundEnabled
+  } = useOrders(config, API_URL);
+
+  // Constantes para comparaciones
+  const SERVING_TYPE = 2;
+  const isServingType = Number(config?.type) === SERVING_TYPE;
+  const isSwipeLayout = layoutType === 'swipe';
+  const needsCompletedOrders = layoutType === 'serving-completed';
+  const showsEmptyState = layoutType !== 'serving-completed' && layoutType !== 'kitchenServing';
 
   // Manejar conexión y obtener órdenes
   useEffect(() => {
-    if (config) {  // Solo si hay config
-      const handleOnline = () => {
-        setIsOnline(true);
-        // if (config?.cd) {
-        getTodayOrders(config.cd);
-        if (layoutType == 'serving-completed') {
-          getTodayCompletedOrders(config.cd);
-        }
+    if (!config?.cd) return;
 
-      };
-
-      const handleOffline = () => setIsOnline(false);
-
-      window.addEventListener('online', handleOnline);
-      window.addEventListener('offline', handleOffline);
-
-      if (config?.cd && isOnline) {
-        getTodayOrders(config.cd).finally(() => {
-          setIsInitialLoad(false);
-        });
+    const handleOnline = () => {
+      setIsOnline(true);
+      getTodayOrders(config.cd);
+      if (needsCompletedOrders) {
+        getTodayCompletedOrders(config.cd);
       }
+    };
 
-      return () => {
-        window.removeEventListener('online', handleOnline);
-        window.removeEventListener('offline', handleOffline);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    if (isOnline) {
+      getTodayOrders(config.cd).finally(() => {
+        setIsInitialLoad(false);
+      });
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [config?.cd, isOnline, needsCompletedOrders]);
+
+  // Calcular contadores basado en el layout
+  const calculateCounters = useMemo(() => {
+    if (isServingType || !orders || !Array.isArray(orders)) {
+      return { pending: 0, inProgress: 0, urgent: 0 };
+    }
+
+    if (isSwipeLayout) {
+      // Para swipe: orders es un array de grupos de mesa
+      return orders.reduce((acc, tableGroup) => {
+        const tableCounts = tableGroup.orders.reduce((tableAcc, order) => {
+          switch (order.status) {
+            case "no-iniciado":
+              tableAcc.pending++;
+              break;
+            case "en-progreso":
+              tableAcc.inProgress++;
+              break;
+            case "urgente":
+              tableAcc.urgent++;
+              break;
+          }
+          return tableAcc;
+        }, { pending: 0, inProgress: 0, urgent: 0 });
+
+        return {
+          pending: acc.pending + tableCounts.pending,
+          inProgress: acc.inProgress + tableCounts.inProgress,
+          urgent: acc.urgent + tableCounts.urgent,
+        };
+      }, { pending: 0, inProgress: 0, urgent: 0 });
+    } else {
+      // Para otros layouts: orders es un array plano de órdenes
+      return {
+        pending: orders.filter(order => order.status === "no-iniciado").length,
+        inProgress: orders.filter(order => order.status === "en-progreso").length,
+        urgent: orders.filter(order => order.status === "urgente").length,
       };
     }
-  }, [config, isOnline]);
+  }, [orders, isServingType, isSwipeLayout]);
 
   // Actualizar contadores
-  if (layoutType == "swipe") {
-    useEffect(() => {
-      if (orders && config?.type != 2) {
-        const counts = orders.reduce(
-          (acc, tableGroup) => {
-            // Contar órdenes por estado en cada grupo
-            const tableCounts = tableGroup.orders.reduce(
-              (tableAcc, order) => {
-                switch (order.status) {
-                  case "no-iniciado":
-                    tableAcc.pending++;
-                    break;
-                  case "en-progreso":
-                    tableAcc.inProgress++;
-                    break;
-                  case "urgente":
-                    tableAcc.urgent++;
-                    break;
-                }
-                return tableAcc;
-              },
-              { pending: 0, inProgress: 0, urgent: 0 }
-            );
-
-            // Sumar los contadores de la mesa actual a los acumulados
-            return {
-              pending: acc.pending + tableCounts.pending,
-              inProgress: acc.inProgress + tableCounts.inProgress,
-              urgent: acc.urgent + tableCounts.urgent,
-            };
-          },
-          { pending: 0, inProgress: 0, urgent: 0 }
-        );
-
-        // Actualizar los estados
-        setPendingCount(counts.pending);
-        setInProgressCount(counts.inProgress);
-        setUrgentCount(counts.urgent);
-      } else if (config?.type === "serving") {
-        setPendingCount(0);
-        setInProgressCount(0);
-        setUrgentCount(0);
-      }
-    }, [orders, config?.type]);
-  } else {
-    useEffect(() => {
-      if (orders && config?.type != 2) {
-        const pendingOrders = orders.filter(
-          (order) => order.status == "no-iniciado"
-        ).length;
-        const inProgressOrders = orders.filter(
-          (order) => order.status === "en-progreso"
-        ).length;
-        const urgentOrders = orders.filter(
-          (order) => order.status === "urgente"
-        ).length;
-
-        setPendingCount(pendingOrders);
-        setInProgressCount(inProgressOrders);
-        setUrgentCount(urgentOrders);
-      } else if (config?.type === "serving") {
-        // Si es serving, establecer contadores en 0
-        setPendingCount(0);
-        setInProgressCount(0);
-        setUrgentCount(0);
-      }
-    }, [orders, config?.type]);
-  }
+  useEffect(() => {
+    setPendingCount(calculateCounters.pending);
+    setInProgressCount(calculateCounters.inProgress);
+    setUrgentCount(calculateCounters.urgent);
+  }, [calculateCounters, setPendingCount, setInProgressCount, setUrgentCount]);
 
   const renderOrderLayout = () => {
     const layoutProps = {
@@ -128,28 +124,22 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       expandedItemId,
       setExpandedItemId,
       updateKitchenStatus,
-      enableSound, 
+      enableSound,
       isSoundEnabled
     };
 
-    switch (layoutType) {
-      case "grid":
-        return <OrderGrid {...layoutProps} />;
-      case "table":
-        return <OrderTablet {...layoutProps} />;
-      case "timeline":
-        return <OrderTimeline {...layoutProps} />;
-      case "kitchenServing":
-        return <OrderServing {...layoutProps} />;
-      // Nuevos casos para Serving
-      case "serving-timeline":
-        return <ServingTimeline {...layoutProps} />;
-      case "serving-completed":
-        return <ServingCompleted {...layoutProps} />;
-      case "swipe":
-      default:
-        return <OrderSwipe {...layoutProps} />;
-    }
+    const layoutComponents = {
+      "grid": OrderGrid,
+      "table": OrderTablet,
+      "timeline": OrderTimeline,
+      "kitchenServing": OrderServing,
+      "serving-timeline": ServingTimeline,
+      "serving-completed": ServingCompleted,
+      "swipe": OrderSwipe,
+    };
+
+    const LayoutComponent = layoutComponents[layoutType] || OrderSwipe;
+    return <LayoutComponent {...layoutProps} />;
   };
 
   const renderContent = () => {
@@ -181,7 +171,6 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       );
     }
 
-    // Solo mostrar la pantalla de carga durante la carga inicial
     if (isInitialLoad && loading) {
       return (
         <div className="flex items-center justify-center h-full">
@@ -194,12 +183,7 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
       );
     }
 
-    if (
-      !Array.isArray(orders) ||
-      (orders.length === 0 &&
-        layoutType !== "serving-completed" &&
-        layoutType !== "kitchenServing")
-    ) {
+    if (!Array.isArray(orders) || (orders.length === 0 && showsEmptyState)) {
       return (
         <div className="flex items-center justify-center h-full">
           <div className="text-center animate-bounce">
@@ -215,35 +199,34 @@ const KitchenDisplay = ({ setPendingCount, setInProgressCount, setUrgentCount, c
     return renderOrderLayout();
   };
 
+  const showSoundButton = Number(config?.type) === 1 || Number(config?.type) === 2;
+  const soundButtonRight = Number(config?.type) === 1 ? 420 : 320;
+
   return (
     <div className="bg-gray-50 flex flex-col h-full relative">
       <div className="flex-1 overflow-hidden">
         {renderContent()}
       </div>
-      {/* Indicador de sonido */}
-      <div>
-          {(config.type === "1" || config.type === "2") && (
-              <button
-                  style={{
-                      right: config.type === "1" ? 420 : 320,
-                      top: 23,
-                  }}
-                  onClick={enableSound}
-                  className={`
-                      fixed right-4 z-40 p-3 
-                      rounded-full shadow-lg 
-                      transition-all duration-300 
-                      ${isSoundEnabled ? "bg-green-500 hover:bg-green-600" : "bg-gray-500 hover:bg-gray-600"}`}
-                  title={isSoundEnabled ? "通知音オン" : "通知音オフ"}
-              >
-                  {isSoundEnabled ? (
-                      <FaVolumeUp className="text-white text-xl" />
-                  ) : (
-                      <FaVolumeMute className="text-white text-xl" />
-                  )}
-              </button>
+
+      {showSoundButton && (
+        <button
+          style={{ right: soundButtonRight, top: 23 }}
+          onClick={enableSound}
+          className={`
+            fixed z-40 p-3 rounded-full shadow-lg 
+            transition-all duration-300 
+            ${isSoundEnabled ? "bg-green-500 hover:bg-green-600" : "bg-gray-500 hover:bg-gray-600"}
+          `}
+          title={isSoundEnabled ? "通知音オン" : "通知音オフ"}
+          aria-label={isSoundEnabled ? "Deshabilitar sonido" : "Habilitar sonido"}
+        >
+          {isSoundEnabled ? (
+            <FaVolumeUp className="text-white text-xl" />
+          ) : (
+            <FaVolumeMute className="text-white text-xl" />
           )}
-      </div>
+        </button>
+      )}
     </div>
   );
 };
