@@ -1,12 +1,13 @@
 import React, { useMemo, useState } from 'react'
 import _, { filter } from 'lodash';
-import { FaClipboardList } from 'react-icons/fa';
+import { FaClipboardList, FaAngleUp, FaAngleDown } from 'react-icons/fa';
 
 const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   const config = JSON.parse(localStorage.getItem("kitchenConfig")) || {};
   const kitchen_cd = config.cd;
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [sortElapsedTime, setSortElapsedTime] = useState("desc"); //ascかdescのみ
 
   const { orderItems } = useMemo(() => {
     const orderItems = completedOrders.map((order) => {
@@ -43,20 +44,21 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
 
         return {
             orderTime: order.formatted_time_update,
-            elapsedTime: `${order.elapsedTime}分`,
+            elapsedTime: order.elapsedTime,
             table: order.table_name || "Sin Mesa",
             items: processedItems,
             originalOrder: order,
         };
     }).filter((order) => order.items.length > 0);
 
-    return {
-        orderItems: _.sortBy(
-            orderItems,
-            (item) => new Date(item.originalOrder.record_date)
-        ),
-    };
-}, [completedOrders]);
+    const sorted = _.orderBy(
+      orderItems,
+      ['elapsedTime'],
+      [sortElapsedTime]
+    );
+
+    return { orderItems: sorted };
+}, [completedOrders, sortElapsedTime]);
 
   // console.log(orderItems);
 
@@ -104,7 +106,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
       console.error('No se encontro kitchen_cd en la configuracion');
       return;
     }
-  
+
     try {
       for (const completedOrders of orderItems) {
         for (const item of completedOrders.items) {
@@ -134,7 +136,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
           }
         }
       }
-  
+
       setSelectedRows(new Set());
       setShowConfirmDialog(false);
     } catch (error) {
@@ -142,12 +144,28 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
     }
   };
 
+
   const getTimeStyle = (elapsedTime, configTime) => {
     const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
     const threshold = parseInt(configTime || 0);
     return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
       }`;
   };
+
+      const getDisplayItems = (items) => {
+        const result = [];
+        const itemMap = new Map(items.map(item => [item.uid, item]));
+
+        items.forEach(item => {
+            if (!item.isChild) {
+                result.push(item); // 親を追加
+                const children = getAllChildren(item.uid, items); // 親に対応する子を取得
+                result.push(...children); // 子も追加
+            }
+        });
+
+        return result;
+    };
 
   if (!orderItems?.length) {
     return (
@@ -159,6 +177,10 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
         </div>
     );
   }
+
+  const toggleSort = (setSort) => {
+    setSort((prev) => (prev === "asc" ? "desc" : "asc"));
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -185,8 +207,13 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                   <th className="w-[100px] py-3 px-4 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                     調理時間
                   </th>
-                  <th className="w-[100px] py-3 px-4 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
+                  <th className="w-[120px] py-3 px-4 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                     経過時間
+                    {sortElapsedTime === "asc" ? (
+                      <FaAngleUp className="inline-block ml-1" onClick={() => toggleSort(setSortElapsedTime)} />
+                    ) : (
+                      <FaAngleDown className="inline-block ml-1" onClick={() => toggleSort(setSortElapsedTime)} />
+                    )}
                   </th>
                   <th className="w-[200px] py-3 px-4 text-center font-bold text-gray-800 border-b border-gray-200 bg-gray-200">
                     テーブル
@@ -197,7 +224,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                   <th className="w-[200px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                     数量
                   </th>
-                  <th className="w-[250px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200"></th>
+                  <th className="w-[50px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200"></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -210,7 +237,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                     <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl">{order.table}</td>
                     <td colSpan="3" className="p-0">
                       <div className="divide-y divide-gray-100">
-                        {order.items.map((item, itemIndex) => (
+                        {getDisplayItems(order.items).map((item, itemIndex) => (
                           <div
                             key={itemIndex}
                             onClick={() => toggleRowSelection(item, order.items)}
@@ -223,7 +250,13 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                               {item.isChild && (
                                 <div className="w-2 h-px bg-gray-300 mr-3"></div>
                               )}
-                              <span className="text-3xl">{item.name}</span>
+                              <span className="text-3xl">{item.name}
+                                {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
+                                  <span className={`text-3xl text-red-500`}>
+                                      {"　"}@{item.price}
+                                  </span>
+                              )}
+                              </span>
                             </div>
 
                             <div className="w-[200px] flex justify-end">
@@ -234,7 +267,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                               {/* )} */}
                             </div>
 
-                            <div className="w-[250px] flex justify-end px-4">
+                            <div className="w-[50px] flex justify-end px-4">
 
                             </div>
 

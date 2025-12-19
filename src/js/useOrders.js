@@ -112,6 +112,9 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 serving_status: detail.serving_status,
                 modification: detail.modification,
                 handwriteImage: detail.handwriteImage,
+                price_type: detail.price_type,
+                price: detail.price,
+                later_price_change_flg: detail.later_price_change_flg,
             }));
 
             // Insertar la orden en el grupo de la mesa correspondiente
@@ -131,6 +134,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 elapsedTime: calculateElapsedTime(config.type == 2 ? order.update_date : order.record_date),
                 items: mappedItems,
                 record_date: order.record_date,
+                delivery_date: order.delivery_date,
             });
 
             return acc;
@@ -166,6 +170,9 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 serving_status: detail.serving_status,
                 modification: detail.modification,
                 handwriteImage: detail.handwriteImage,
+                price_type: detail.price_type,
+                price: detail.price,
+                later_price_change_flg: detail.later_price_change_flg,
             }));
 
             const hasInProgressItem = mappedItems.some(item => item.kitchen_status === 1);
@@ -206,10 +213,12 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             setLoading(true);
             setKitchenCode(kitchenCd);
-            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}`);
+
+            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}&layout=${configLocal.layoutType}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
 
             const newData = await response.json();
+            console.log(newData);
             if (newData.status === 'error') throw new Error(newData.message);
 
             if (!newData.data) {
@@ -225,7 +234,6 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
                 processedNewData = processOrdersTable(newData.data);
             }
 
-            // console.log(processedNewData);
             checkNewOrders(processedNewData);
             setOrders(processedNewData);
 
@@ -252,9 +260,9 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             let response; // Declara la variable primero
             // console.log(config);
             if (config.layoutType === 'kitchenServing') {
-                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}`);
+                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
             } else {
-                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}`);
+                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
             }
             // console.log(response);
 

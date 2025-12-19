@@ -276,7 +276,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                     return new Set();
                 }else{
                     const newSet = new Set();
-                    
+
                     order.items.forEach(item =>{
                         newSet.add(item.id);
                         if(item.isParent){
@@ -398,6 +398,21 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         setImageModalOpen(true);
     };
 
+    const getDisplayItems = (items) => {
+        const result = [];
+        const itemMap = new Map(items.map(item => [item.uid, item]));
+
+        items.forEach(item => {
+            if (!item.isChild) {
+                result.push(item); // 親を追加
+                const children = getAllChildren(item.uid, items); // 親に対応する子を取得
+                result.push(...children); // 子も追加
+            }
+        });
+
+        return result;
+    };
+
 
     return (
         <div className="flex flex-col h-full">
@@ -432,10 +447,10 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                     <th className="py-3 px-4 bg-gray-200 text-left font-bold text-gray-800 border-b border-gray-200">
                                         メニュー
                                     </th>
-                                    <th className="w-[200px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[120px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                                         数量
                                     </th>
-                                    <th className="w-[200px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
+                                    <th className="w-[120px] py-3 px-4 bg-gray-200 text-right font-bold text-gray-800 border-b border-gray-200">
                                         全体合計
                                     </th>
                                 </tr>
@@ -462,7 +477,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                             </td>
                                             <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
                                                 <div className="divide-y divide-gray-200">
-                                                    {order.items.map((item, itemIndex) => (
+                                                    {getDisplayItems(order.items).map((item, itemIndex) => (
                                                         <div
                                                             key={itemIndex}
                                                             onClick={() => handleItemTouch(item, order.items)}
@@ -471,30 +486,38 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                 : ''                  // Hover solo cuando no está seleccionado
                                                                 }`}
                                                         >
-                                                            <div className="w-[50px] flex justify-star">
+                                                                <div className="w-[50px] flex justify-star">
                                                                 {item.modification && item.modification !== "　" && (
                                                                     <span className={`text-3xl bg-gray-100  rounded text-red-600 `}>
                                                                     {item.modification}
                                                                     </span>
-                                                                )}
+                                                            )}
                                                             </div>
                                                             {/* Nombre del item */}
                                                             <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
                                                                 {item.isChild && (
                                                                     <div className="w-2 h-px bg-gray-300 mr-3 mt-4"></div>
-                                                                )} 
+                                                                )}
                                                                 {/* {item.modification && item.modification !== "　" && (
                                                                     <span className={`text-3xl bg-gray-100  rounded text-red-600 mr-4`}>
                                                                     {item.modification}
                                                                     </span>
                                                                 )} */}
-                                                                <span className="text-3xl">{item.name}</span>
+                                                                <span className="text-3xl">
+                                                                    {item.name}
+                                                                    {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
+                                                                        <span className={`text-3xl text-red-500`}>
+                                                                            {"　"}@{item.price}
+                                                                        </span>
+                                                                    )}
+                                                                </span>
                                                             </div>
 
-                                                            <div className="w-[50px] flex justify-end">
-                                                                {/* Indicador de imagen manuscrita */}
-                                                                {item.handwriteImage !== null && (
-                                                                    <div 
+
+                                                            {item.handwriteImage !== null && (
+                                                                <div className="w-[50px] flex justify-end">
+                                                                    {/* Indicador de imagen manuscrita */}
+                                                                    <div
                                                                     className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
                                                                     onClick={(e) => {
                                                                         e.stopPropagation(); // Evitar que el clic afecte al elemento padre
@@ -505,11 +528,11 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                                     >
                                                                     <Image className="h-10 w-10 text-indigo-500" />
                                                                     </div>
-                                                                )}
-                                                            </div>
+                                                                </div>
+                                                            )}
 
                                                             {/* Cantidad del item */}
-                                                            <div className="w-[200px] flex justify-end">
+                                                            <div className="w-[120px] flex justify-end">
                                                                 {/* {!item.isParent && ( */}
                                                                 <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
                                                                     {item.quantity}
@@ -518,7 +541,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                             </div>
 
                                                             {/* Total del item */}
-                                                            <div className="w-[200px] flex justify-end px-4">
+                                                            <div className="w-[120px] flex justify-end px-4">
                                                                 {/* {!item.isParent && ( */}
                                                                 <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
                                                                     {itemTotals[item.name].total}

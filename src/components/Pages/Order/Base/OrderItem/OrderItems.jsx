@@ -4,7 +4,7 @@ import MainItem from './MainItem';
 import { useOrderHandlers } from '../../../../../hooks/useOrderHandlers';
 import { useSwipe } from '../../../../../hooks/useSwipe';
 
-const OrderItems = ({ items,allorders, expandedItemId, setExpandedItemId, updateKitchenStatus, type_display, selectedItems, onToggleSelection, onImageClick }) => {
+const OrderItems = ({ items,allorders, expandedItemId, setExpandedItemId, updateKitchenStatus, type_display, selectedItems, onToggleSelection, onImageClick, isLastOrderItems }) => {
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   // Usar el hook de swipe para scroll vertical
   const {
@@ -82,6 +82,7 @@ const OrderItems = ({ items,allorders, expandedItemId, setExpandedItemId, update
                 selectedItems={selectedItems}
                 onToggleSelection={onToggleSelection}
                 onImageClick={onImageClick}
+                isLastOrderItems={isLastOrderItems}
               />
 
             </div>

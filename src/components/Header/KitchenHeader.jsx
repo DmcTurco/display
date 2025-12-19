@@ -37,18 +37,18 @@ const KitchenHeader = ({ pendingCount, inProgressCount, urgentCount, isConfigPag
   const toggleKitchenServingLayout = () => {
 
     if (configlocal.layoutType === "kitchenServing") {
-        const previousLayout = localStorage.getItem('previousKitchenLayout') || "swipe";
-        updateCustomSettings({
-            layoutType: previousLayout
-        });
+      const previousLayout = localStorage.getItem('previousKitchenLayout') || "swipe";
+      updateCustomSettings({
+        layoutType: previousLayout
+      });
     } else {
-        localStorage.setItem('previousKitchenLayout', configlocal.layoutType);
-        updateCustomSettings({
-            layoutType: "kitchenServing"
-        });
+      localStorage.setItem('previousKitchenLayout', configlocal.layoutType);
+      updateCustomSettings({
+        layoutType: "kitchenServing"
+      });
     }
     window.location.reload();
-};
+  };
 
 
   return (

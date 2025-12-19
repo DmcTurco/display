@@ -4,6 +4,11 @@ import UrgentAlert from './UrgentAlert';
 
 const OrderHeader = ({ time, type, total_people, customer }) => {
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
+  const configSystem = JSON.parse(localStorage.getItem('configSystem')) || {};
+  const configSystems = configSystem.configSystems || [];
+  const showTableText = configSystems.find(item => item.title === "kitchen_display_show_table_text") || 0;
+  const textHideFlg = showTableText.setting;
+  const tableName = (textHideFlg && Number(textHideFlg) === 1) ? customer : "テーブル : " + customer; // customerは席名?
 
   const getFontSizeClass = () => {
     switch (config.fontSize) {
@@ -47,7 +52,7 @@ const OrderHeader = ({ time, type, total_people, customer }) => {
         <div className="flex items-center gap-2">
           {getTypeIcon()}
           <h2 className={`${getFontSizeClass()} font-bold text-gray-800`}>
-            テーブル : {customer}
+            {tableName}
           </h2>
         </div>
 

@@ -2,9 +2,10 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { CheckCircle2, Image, X } from 'lucide-react';
 import AdditionalItems from './AdditionalItems';
 import { use } from 'react';
+import { MdFiberNew } from "react-icons/md";
 import _ from "lodash";
 
-const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display, selectedItems, onToggleSelection, onImageClick }) => {
+const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, isExpanded, expandedItemId, type_display, selectedItems, onToggleSelection, onImageClick, isLastOrderItems }) => {
   const isCompleted = item.kitchen_status === 1;
   const isServed = item.serving_status === 1;
   const [isTouching, setIsTouching] = useState(false);
@@ -52,7 +53,7 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
     // }
 
     if (isSelected) return "bg-yellow-300";
-    
+
     if (!isServing) {
       return isCompleted ? "bg-green-200" : "bg-white";
     }
@@ -101,13 +102,18 @@ const MainItem = ({ item, onItemClick, allAdditionalsComplete, hasAdditionals, i
               {item.modification}
             </span>
           )}
-          <span className={`${getFontSizeClass()} text-left flex-1 break-words`}>{item.name}</span>
+          <span className={`${getFontSizeClass()} text-left flex-1 break-words`}>{isLastOrderItems == "true" ? <MdFiberNew className='text-red-500'/> : ""}
+            {item.name}
+            {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
+              <span className="text-red-500 text-2xl"> {" "}@{item.price}</span>
+            )}
+          </span>
         </div>
         <div className="flex items-center gap-2">
 
           {/* Indicador de imagen manuscrita */}
           {item.handwriteImage !== null && (
-            <div 
+            <div
               className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
               onClick={(e) => {
                 e.stopPropagation(); // Evitar que el clic afecte al elemento padre

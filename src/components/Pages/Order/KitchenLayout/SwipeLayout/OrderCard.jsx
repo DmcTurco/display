@@ -135,12 +135,12 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
           {order.status === 'urgente' ? (
             <span className="ml-1 inline-flex items-center text-red-500">
               <UrgentAlert className="w-5 h-5" />
-              <span>{order.elapsedTime}分経過 </span>
+              {order.delivery_date ? (<span>{order.elapsedTime * -1}分後配達・受取予定</span>) : (<span>{order.elapsedTime}分経過 </span>)}
             </span>
           ) : (
             <span className="ml-1 inline-flex items-center text-blue-700">
               <Timer className="w-5 h-5" />
-              <span>{order.elapsedTime}分経過 </span>
+              {order.delivery_date ? (<span>{order.elapsedTime * -1}分後配達・受取予定</span>) : (<span>{order.elapsedTime}分経過 </span>)}
             </span>
           )}
         </span>
@@ -202,6 +202,13 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
     // }
   };
 
+  const judgeLastOrders = (orders, index) => {
+    const countOrders = orders.length;
+    if(countOrders == index +1) {
+      return "true";
+    }
+    return "false";
+  }
 
   return (
     <div className="rounded-lg shadow-md flex-shrink-0 w-full h-[calc(90vh-6rem)] flex flex-col bg-gray-200">
@@ -222,7 +229,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
               transition: 'transform 0.1s ease-out'
             }}
           >
-            {orders?.map(order => (
+            {orders?.map((order, index) => (
               <div
                 key={`${order.order_main_cd}_${order.order_count}`}
                 className={`mb-2 p-2 rounded-lg ${getStatusColor(order.status, order.type_display)}`}
@@ -242,6 +249,7 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
                   onToggleSelection={onToggleSelection}
                   isOrderSelected={areAllOrderItemsSelected(order)}
                   onImageClick={onImageClick}
+                  isLastOrderItems={judgeLastOrders(orders, index)}
                 />
               </div>
             ))}

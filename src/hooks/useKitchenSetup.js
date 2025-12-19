@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 
 
 const CONFIG_STORAGE_KEY = 'kitchenConfig';
+const CONFIG_SYSTEM_STORAGE_KEY = 'configSystem';
 const LAST_UID_KEY = 'lastKitchenUID';
 const API_URL_KEY = 'apiUrl';
 
@@ -123,10 +124,22 @@ export function useKitchenSetup() {
                     elapsed_time: currentConfig.elapsed_time,
                     ...customSettings,  // Esto asegurará que siempre tengamos los valores predeterminados
                     languages: languageData.status === 'ok' ? languageData.data : [], // Agregamos los lenguajes disponibles
-                    selectedLanguage: storedConfig?.selectedLanguage || '' 
+                    selectedLanguage: storedConfig?.selectedLanguage || ''
                 };
                 localStorage.setItem(CONFIG_STORAGE_KEY, JSON.stringify(mergedConfig));
                 setConfig(mergedConfig);
+            }
+
+            const configSystemResponse = await fetch(`${FULL_API_URL}?action=get_configSystem&kitchen_cd=${currentConfig.cd}`);
+            const configSystemData = await configSystemResponse.json();
+            if (configSystemData.status === 'ok') {
+                const storedConfigSystem = localStorage.getItem(CONFIG_SYSTEM_STORAGE_KEY);
+                const newConfigSystem = {
+                    configSystems: configSystemData.data
+                };
+                if (!storedConfigSystem || JSON.stringify(newConfigSystem) !== storedConfigSystem) {
+                    localStorage.setItem(CONFIG_SYSTEM_STORAGE_KEY, JSON.stringify(newConfigSystem));
+                }
             }
         } catch (err) {
             setError(err.message);
@@ -137,6 +150,7 @@ export function useKitchenSetup() {
 
     const clearConfig = () => {
         localStorage.removeItem(CONFIG_STORAGE_KEY);
+        localStorage.removeItem(CONFIG_SYSTEM_STORAGE_KEY);
         localStorage.removeItem(LAST_UID_KEY);
         localStorage.removeItem('apiUrl');
         setConfig(null);
