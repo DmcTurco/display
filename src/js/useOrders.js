@@ -301,7 +301,7 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             }
 
             // console.log('typeDisplay:', typeDisplay);
-            // console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
+            console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
             const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
                 method: 'POST',
                 headers: {

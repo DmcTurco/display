@@ -30,11 +30,13 @@ const OrderSwipe = ({
     const [isUpdating, setIsUpdating] = useState(false);
 
     const lastPageRef = useRef(currentPage);
-    const totalPages = Math.max(1, Math.ceil(orders.length / ordersPerPage));
+
+
 
     // ==================== PROCESAMIENTO DE ÓRDENES ====================
-    const orderItems = useMemo(() => {
-        const processedGroups = orders.map((tableGroup) => {
+    // ==================== PROCESAMIENTO DE ÓRDENES ====================
+    const processedOrderGroups = useMemo(() => {
+        return orders.map((tableGroup) => {
             const processedOrders = tableGroup.orders.map(order => {
                 const itemsWithPid = order.items?.filter(item => item.pid) || [];
                 const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
@@ -52,25 +54,20 @@ const OrderSwipe = ({
                     (item.pid && item.kitchen_status !== 1)
                 ).map(item => {
                     const isParent = parentUids.includes(item.uid);
-
-                    // 🔥 NUEVO: Identificar padres prestados
                     const isBorrowedParent = isParent && item.belongs_to_kitchen === false;
 
                     return {
                         ...item,
                         isParent,
                         isChild: Boolean(item.pid),
-                        isBorrowedParent, // 🔥 NUEVO
-                        isDisabled: isBorrowedParent // 🔥 NUEVO: Solo padres prestados están deshabilitados
+                        isBorrowedParent,
+                        isDisabled: isBorrowedParent
                     };
                 }) || [];
 
                 return {
-                    orderTime: order.formatted_time,
-                    elapsedTime: `${order.elapsedTime}分`,
-                    table: order.table_name || 'Sin Mesa',
-                    items: processedItems,
-                    originalOrder: order
+                    ...order, // ✅ Mantener todas las propiedades originales
+                    items: processedItems // ✅ Reemplazar solo los items
                 };
             }).filter(order => order.items.length > 0);
 
@@ -81,53 +78,8 @@ const OrderSwipe = ({
                 orders: processedOrders
             };
         }).filter(group => group.orders.length > 0);
-
-        const flattenedOrders = processedGroups.flatMap(group =>
-            group.orders.map(order => ({
-                ...order,
-                tableGroup: {
-                    tableName: group.tableName,
-                    type: group.type,
-                    total_people: group.total_people
-                }
-            }))
-        );
-
-        return _.sortBy(flattenedOrders, order =>
-            new Date(order.originalOrder.record_date)
-        );
     }, [orders]);
-
-
-    const tableGroupsWithProcessedItems = useMemo(() => {
-        const groupedByTable = orderItems.reduce((acc, orderItem) => {
-            const tableName = orderItem.tableGroup.tableName;
-
-            if (!acc[tableName]) {
-                acc[tableName] = {
-                    tableName: tableName,
-                    type: orderItem.tableGroup.type,
-                    total_people: orderItem.tableGroup.total_people,
-                    orders: []
-                };
-            }
-
-            acc[tableName].orders.push({
-                ...orderItem.originalOrder,
-                items: orderItem.items // Items con isBorrowedParent e isDisabled
-            });
-
-            return acc;
-        }, {});
-
-        // Mantener el orden original de las mesas
-        return Object.values(groupedByTable).sort((a, b) => {
-            const orderA = a.orders[0];
-            const orderB = b.orders[0];
-            return new Date(orderA.record_date) - new Date(orderB.record_date);
-        });
-    }, [orderItems]);
-
+    const totalPages = Math.max(1, Math.ceil(processedOrderGroups.length / ordersPerPage));
     // ==================== MANEJO DE ACTUALIZACIÓN ====================
     const handleUpdate = async (itemIdsToUpdate = null) => {
         if (!kitchen_cd) {
@@ -140,43 +92,53 @@ const OrderSwipe = ({
         try {
             const itemIds = itemIdsToUpdate || selectedItems;
             const updatePromises = [];
-            console.log(itemIds);
-            for (const order of orderItems) {
-                for (const item of order.items) {
-                    if (itemIds.has(item.id)) {
-                        if (item.isParent) {
-                            // Padre: actualizar padre e hijos
-                            const children = getAllChildren(item.uid, order.items);
-                            updatePromises.push(
-                                updateKitchenStatus(item.id, 1, kitchen_cd),
-                                ...children.map(child =>
-                                    updateKitchenStatus(child.id, 1, kitchen_cd)
-                                )
-                            );
-                        } else if (item.isChild) {
-                            // Hijo: verificar si actualizar padre también
-                            const siblings = getAllChildren(item.pid, order.items);
-                            const allSiblingsReady = siblings.every(sibling =>
-                                sibling.kitchen_status === 1 || itemIds.has(sibling.id)
-                            );
 
-                            updatePromises.push(
-                                updateKitchenStatus(item.id, 1, kitchen_cd)
-                            );
-
-                            if (allSiblingsReady) {
-                                const parent = order.items.find(i => i.uid === item.pid);
-                                if (parent) {
-                                    updatePromises.push(
-                                        updateKitchenStatus(parent.id, 1, kitchen_cd)
-                                    );
-                                }
+            // ✅ Iterar sobre processedOrderGroups en lugar de orderItems
+            for (const tableGroup of processedOrderGroups) {
+                for (const order of tableGroup.orders) {
+                    for (const item of order.items) {
+                        if (itemIds.has(item.id)) {
+                            // 🔥 NUEVO: Saltar items deshabilitados (padres prestados)
+                            if (item.isDisabled) {
+                                console.log(`⚠️ Saltando padre prestado: ${item.name}`);
+                                continue;
                             }
-                        } else {
-                            // Item normal
-                            updatePromises.push(
-                                updateKitchenStatus(item.id, 1, kitchen_cd)
-                            );
+
+                            if (item.isParent) {
+                                // Padre: actualizar padre e hijos
+                                const children = getAllChildren(item.uid, order.items);
+                                updatePromises.push(
+                                    updateKitchenStatus(item.id, 1, kitchen_cd),
+                                    ...children.map(child =>
+                                        updateKitchenStatus(child.id, 1, kitchen_cd)
+                                    )
+                                );
+                            } else if (item.isChild) {
+                                // Hijo: verificar si actualizar padre también
+                                const siblings = getAllChildren(item.pid, order.items);
+                                const allSiblingsReady = siblings.every(sibling =>
+                                    sibling.kitchen_status === 1 || itemIds.has(sibling.id)
+                                );
+
+                                updatePromises.push(
+                                    updateKitchenStatus(item.id, 1, kitchen_cd)
+                                );
+
+                                if (allSiblingsReady) {
+                                    const parent = order.items.find(i => i.uid === item.pid);
+                                    // 🔥 NUEVO: Solo actualizar padre si NO está deshabilitado
+                                    if (parent && !parent.isDisabled) {
+                                        updatePromises.push(
+                                            updateKitchenStatus(parent.id, 1, kitchen_cd)
+                                        );
+                                    }
+                                }
+                            } else {
+                                // Item normal
+                                updatePromises.push(
+                                    updateKitchenStatus(item.id, 1, kitchen_cd)
+                                );
+                            }
                         }
                     }
                 }
@@ -187,7 +149,6 @@ const OrderSwipe = ({
             setShowConfirmDialog(false);
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
-            // Aquí podrías agregar un toast o notificación de error
         } finally {
             setIsUpdating(false);
         }
@@ -212,10 +173,11 @@ const OrderSwipe = ({
         }
     }, [totalPages]);
 
+
     const getPageOrders = (page) => {
         const start = (page - 1) * ordersPerPage;
         const end = start + ordersPerPage;
-        return tableGroupsWithProcessedItems.slice(start, end);
+        return processedOrderGroups.slice(start, end);
     };
 
     // ==================== SWIPE ====================
