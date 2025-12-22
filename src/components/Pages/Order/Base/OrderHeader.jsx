@@ -1,8 +1,6 @@
 import { ShoppingBag, Timer, Truck, Users } from "lucide-react";
-import React, { useEffect, useState } from "react";
-import UrgentAlert from './UrgentAlert';
 
-const OrderHeader = ({ time, type, total_people, customer }) => {
+const OrderHeader = ({type, total_people, customer }) => {
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   const configSystem = JSON.parse(localStorage.getItem('configSystem')) || {};
   const configSystems = configSystem.configSystems || [];

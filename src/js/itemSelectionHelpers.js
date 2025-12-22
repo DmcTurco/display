@@ -1,14 +1,13 @@
 // utils/itemSelectionHelpers.js
 
 /**
- * Obtiene todos los hijos de un item padre
+ * Obtiene todos los hijos de un item (usando additionalItems)
  */
-export const getAllChildren = (parentUid, items) => {
-    if (!Array.isArray(items)) {
-        console.warn('Items no es un array:', items);
+export const getAllChildren = (item) => {
+    if (!item.additionalItems || !Array.isArray(item.additionalItems)) {
         return [];
     }
-    return items.filter(item => item.pid === parentUid);
+    return item.additionalItems.filter(child => !child.isDisabled);
 };
 
 /**
@@ -19,10 +18,18 @@ export const getTableItemIds = (tableGroup) => {
 
     tableGroup.orders.forEach(order => {
         order.items.forEach(item => {
+            // Saltar items deshabilitados
+            if (item.isDisabled) return;
+
             ids.add(item.id);
-            if (item.isParent) {
-                const children = getAllChildren(item.uid, order.items);
-                children.forEach(child => ids.add(child.id));
+
+            // Si tiene hijos, agregarlos
+            if (item.additionalItems) {
+                item.additionalItems.forEach(child => {
+                    if (!child.isDisabled) {
+                        ids.add(child.id);
+                    }
+                });
             }
         });
     });
@@ -31,16 +38,22 @@ export const getTableItemIds = (tableGroup) => {
 };
 
 /**
- * Obtiene todos los IDs de items de una orden (incluyendo hijos)
+ * Obtiene todos los IDs de items de una orden
  */
 export const getOrderItemIds = (order) => {
     const ids = new Set();
 
     order.items.forEach(item => {
+        if (item.isDisabled) return;
+
         ids.add(item.id);
-        if (item.isParent) {
-            const children = getAllChildren(item.uid, order.items);
-            children.forEach(child => ids.add(child.id));
+
+        if (item.additionalItems) {
+            item.additionalItems.forEach(child => {
+                if (!child.isDisabled) {
+                    ids.add(child.id);
+                }
+            });
         }
     });
 
@@ -48,14 +61,24 @@ export const getOrderItemIds = (order) => {
 };
 
 /**
- * Obtiene los IDs de un item individual (incluyendo sus hijos si es padre)
+ * Obtiene los IDs de un item individual (incluyendo sus hijos)
  */
-export const getItemIds = (item, orderItems) => {
+export const getItemIds = (item) => {
+    // Si está deshabilitado, retornar vacío
+    if (item.isDisabled) {
+        console.warn(`⚠️ Item deshabilitado: ${item.name}`);
+        return new Set();
+    }
+
     const ids = new Set([item.id]);
 
-    if (item.isParent) {
-        const children = getAllChildren(item.uid, orderItems);
-        children.forEach(child => ids.add(child.id));
+    // Si tiene hijos (additionalItems), agregarlos
+    if (item.additionalItems && Array.isArray(item.additionalItems)) {
+        item.additionalItems.forEach(child => {
+            if (!child.isDisabled) {
+                ids.add(child.id);
+            }
+        });
     }
 
     return ids;
@@ -65,6 +88,7 @@ export const getItemIds = (item, orderItems) => {
  * Verifica si todos los items están seleccionados
  */
 export const areAllItemsSelected = (itemIds, selectedItems) => {
+    if (itemIds.size === 0) return false;
     return Array.from(itemIds).every(id => selectedItems.has(id));
 };
 
@@ -72,16 +96,19 @@ export const areAllItemsSelected = (itemIds, selectedItems) => {
  * Alterna la selección de un conjunto de items
  */
 export const toggleItemSelection = (itemIds, selectedItems) => {
+    if (itemIds.size === 0) {
+        console.warn('⚠️ No hay items válidos para seleccionar');
+        return new Set(selectedItems);
+    }
+
     const newSelection = new Set(selectedItems);
     const allSelected = areAllItemsSelected(itemIds, selectedItems);
 
-    itemIds.forEach(id => {
-        if (allSelected) {
-            newSelection.delete(id);
-        } else {
-            newSelection.add(id);
-        }
-    });
+    if (allSelected) {
+        itemIds.forEach(id => newSelection.delete(id));
+    } else {
+        itemIds.forEach(id => newSelection.add(id));
+    }
 
     return newSelection;
 };

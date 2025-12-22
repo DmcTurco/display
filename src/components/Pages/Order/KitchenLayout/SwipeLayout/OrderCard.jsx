@@ -23,39 +23,6 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
     totalPages: 1,
   });
 
-  const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
-  const selectionMode = config.selectionMode || "1";
-  // Función para verificar si todos los items de una mesa están seleccionados
-  const areAllTableItemsSelected = () => {
-    // 🔥 MODIFICADO: Solo considerar items habilitados
-    const enabledItems = orders.flatMap(order =>
-      order.items.filter(item => !item.isDisabled)
-    );
-
-    if (enabledItems.length === 0) return false;
-    return enabledItems.every(item => {
-      const isMainItemSelected = selectedItems.has(item.id);
-      const areChildrenSelected = item.additionalItems ?
-        item.additionalItems.every(child => selectedItems.has(child.id)) :
-        true;
-      return isMainItemSelected && areChildrenSelected;
-    });
-  };
-
-  // Función para verificar si todos los items de una orden están seleccionados
-  const areAllOrderItemsSelected = (order) => {
-    // 🔥 MODIFICADO: Solo considerar items habilitados
-    const enabledItems = order.items.filter(item => !item.isDisabled);
-    if (enabledItems.length === 0) return false;
-
-    return enabledItems.every(item => {
-      const isMainItemSelected = selectedItems.has(item.id);
-      const areChildrenSelected = item.additionalItems ?
-        item.additionalItems.every(child => selectedItems.has(child.id)) :
-        true;
-      return isMainItemSelected && areChildrenSelected;
-    });
-  };
 
 
   const getStatusColor = (status, type_display) => {
@@ -91,44 +58,17 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
         className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
         onClick={() => onToggleSelection(null, 'table', { orders }, null)}
         role="button"
-        aria-pressed={areAllTableItemsSelected()}
+      // aria-pressed={areAllTableItemsSelected()}// no se usa
       >
         <OrderHeader
           type={type}
-          customer={customer}
           total_people={total_people}
-          isSelected={areAllTableItemsSelected()}
+          customer={customer}
+
+        // isSelected={areAllTableItemsSelected()}// no se usa
         />
       </div>
     );
-
-    // if (selectionMode == 1) {
-    //   return (
-    //     <div
-    //       className="p-2 sm:p-2 cursor-pointer hover:bg-gray-300 transition-colors"
-    //       onClick={() => onToggleSelection(null, 'table', { orders }, null)}
-    //       role="button"
-    //       aria-pressed={areAllTableItemsSelected()}
-    //     >
-    //       <OrderHeader
-    //         type={type}
-    //         customer={customer}
-    //         total_people={total_people}
-    //         isSelected={areAllTableItemsSelected()}
-    //       />
-    //     </div>
-    //   );
-    // } else {
-    //   return (
-    //     <div className="p-2 sm:p-2">
-    //       <OrderHeader
-    //         type={type}
-    //         customer={customer}
-    //         total_people={total_people}
-    //       />
-    //     </div>
-    //   );
-    // }
   };
 
   // Renderizado condicional para el header de cada orden
@@ -158,56 +98,6 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
         </span>
       </div>
     );
-    // if (selectionMode == 1) {
-    //   return (
-    //     <div
-    //       className="flex justify-between items-center mb-2 cursor-pointer hover:bg-gray-50 rounded p-1"
-    //       onClick={() => onToggleSelection(null, 'order', null, order)}
-    //     >
-    //       <span className="inline-flex items-center gap-4 text-sm font-medium">
-    //         {order.formatted_time}
-    //         {order.status === 'urgente' ? (
-    //           <span className="ml-1 inline-flex items-center text-red-500">
-    //             <UrgentAlert className="w-5 h-5" />
-    //             <span>{order.elapsedTime}分経過 </span>
-    //           </span>
-    //         ) : (
-    //           <span className="ml-1 inline-flex items-center text-blue-700">
-    //             <Timer className="w-5 h-5" />
-    //             <span>{order.elapsedTime}分経過 </span>
-    //           </span>
-    //         )}
-    //       </span>
-
-    //       <span className="text-sm">
-    //         #{`${order.order_main_cd}-${order.order_count}`}
-    //       </span>
-    //     </div>
-    //   );
-    // } else {
-    //   return (
-    //     <div className="flex justify-between items-center mb-2">
-    //       <span className="inline-flex items-center gap-4 text-sm font-medium">
-    //         {order.formatted_time}
-    //         {order.status === 'urgente' ? (
-    //           <span className="ml-1 inline-flex items-center text-red-500">
-    //             <UrgentAlert className="w-5 h-5" />
-    //             <span>{order.elapsedTime}分経過 </span>
-    //           </span>
-    //         ) : (
-    //           <span className="ml-1 inline-flex items-center text-blue-700">
-    //             <Timer className="w-5 h-5" />
-    //             <span>{order.elapsedTime}分経過 </span>
-    //           </span>
-    //         )}
-    //       </span>
-
-    //       <span className="text-sm">
-    //         #{`${order.order_main_cd}-${order.order_count}`}
-    //       </span>
-    //     </div>
-    //   );
-    // }
   };
 
   const judgeLastOrders = (orders, index) => {
@@ -252,10 +142,10 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
                   expandedItemId={expandedItemId}
                   setExpandedItemId={setExpandedItemId}
                   updateKitchenStatus={updateKitchenStatus}
-                  type_display={order.type_display}  // Aquí está el error
+                  type_display={order.type_display}
                   selectedItems={selectedItems}
                   onToggleSelection={onToggleSelection}
-                  isOrderSelected={areAllOrderItemsSelected(order)}
+                  // isOrderSelected={areAllOrderItemsSelected(order)}// no se usa
                   onImageClick={onImageClick}
                   isLastOrderItems={judgeLastOrders(orders, index)}
                 />

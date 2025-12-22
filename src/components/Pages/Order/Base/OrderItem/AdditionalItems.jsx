@@ -14,33 +14,6 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
     if (!isServing && !isAdditionalCompleted) {
       onToggleSelection(additionalItem);
     }
-    // if (selectionMode === "1") {
-    //   if (!isServing && !isAdditionalCompleted) {
-    //     onToggleSelection(additionalItem);
-    //   }
-    // } else {
-    //   // Modo 2: Solo doble toque para marcar como completado
-    //   if (isServing) {
-    //     onItemClick(additionalItem, true, true, false, true);
-    //   } else {
-    //     onItemClick(additionalItem, true, true);
-    //   }
-    // }
-    //   const now = Date.now();
-    //   const DOUBLE_TAP_DELAY = 300;
-    //   const itemId = additionalItem.uid;
-
-    //   if (now - (lastTapsRef.current[itemId] || 0) < DOUBLE_TAP_DELAY) {
-    //     // Doble toque detectado - Marcar como completado
-    //     clearTimeout(tapTimeoutsRef.current[itemId]);
-    //     if (isServing) {
-    //       onItemClick(additionalItem, true, true, false, true);
-    //     } else {
-    //       onItemClick(additionalItem, true, true);
-    //     }
-    //   }
-    //   lastTapsRef.current[itemId] = now;
-    // }
 
   };
 
@@ -53,7 +26,7 @@ const AdditionalItems = ({ items, onItemClick, expandedItemId, type_display, get
 
         const isItemExpanded = expandedItemId === additionalItem.uid;
         const isSelected = selectedItems.has(additionalItem.id);
-        // console.log(isSelected);
+
         const itemClasses = `
           flex items-start justify-between gap-1 text-gray-600
           transition-all duration-300 p-1 rounded

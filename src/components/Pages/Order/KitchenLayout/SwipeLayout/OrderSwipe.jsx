@@ -3,7 +3,6 @@ import { useSwipe } from '../../../../../hooks/useSwipe';
 import OrderCard from './OrderCard';
 import _ from "lodash";
 import ImageModal from '@/components/ui/ImagenModal';
-import { getAllChildren } from '@/js/itemSelectionHelpers';
 import { useItemSelection } from '@/js/useItemSelection';
 
 const OrderSwipe = ({
@@ -16,7 +15,7 @@ const OrderSwipe = ({
 }) => {
     // ==================== CONFIGURACIÓN Y ESTADO ====================
     const config = useMemo(() => JSON.parse(localStorage.getItem('kitchenConfig')) || {}, []);
-    // console.log("Ordenes :", orders);
+    // console.log("ORdernes : ",orders);
     const {
         cd: kitchen_cd,
         cardQuantity: ordersPerPage = 6,
@@ -31,9 +30,6 @@ const OrderSwipe = ({
 
     const lastPageRef = useRef(currentPage);
 
-
-
-    // ==================== PROCESAMIENTO DE ÓRDENES ====================
     // ==================== PROCESAMIENTO DE ÓRDENES ====================
     const processedOrderGroups = useMemo(() => {
         return orders.map((tableGroup) => {
@@ -66,8 +62,8 @@ const OrderSwipe = ({
                 }) || [];
 
                 return {
-                    ...order, // ✅ Mantener todas las propiedades originales
-                    items: processedItems // ✅ Reemplazar solo los items
+                    ...order,
+                    items: processedItems
                 };
             }).filter(order => order.items.length > 0);
 
@@ -79,7 +75,18 @@ const OrderSwipe = ({
             };
         }).filter(group => group.orders.length > 0);
     }, [orders]);
+
     const totalPages = Math.max(1, Math.ceil(processedOrderGroups.length / ordersPerPage));
+
+    // 🔥 NUEVA FUNCIÓN HELPER LOCAL
+    const getAllChildren = (parentUid, items) => {
+        if (!Array.isArray(items)) {
+            console.warn('Items no es un array:', items);
+            return [];
+        }
+        return items.filter(item => item.pid === parentUid);
+    };
+
     // ==================== MANEJO DE ACTUALIZACIÓN ====================
     const handleUpdate = async (itemIdsToUpdate = null) => {
         if (!kitchen_cd) {
@@ -93,12 +100,12 @@ const OrderSwipe = ({
             const itemIds = itemIdsToUpdate || selectedItems;
             const updatePromises = [];
 
-            // ✅ Iterar sobre processedOrderGroups en lugar de orderItems
+            // Iterar sobre processedOrderGroups
             for (const tableGroup of processedOrderGroups) {
                 for (const order of tableGroup.orders) {
                     for (const item of order.items) {
                         if (itemIds.has(item.id)) {
-                            // 🔥 NUEVO: Saltar items deshabilitados (padres prestados)
+                            // Saltar items deshabilitados (padres prestados)
                             if (item.isDisabled) {
                                 console.log(`⚠️ Saltando padre prestado: ${item.name}`);
                                 continue;
@@ -109,9 +116,9 @@ const OrderSwipe = ({
                                 const children = getAllChildren(item.uid, order.items);
                                 updatePromises.push(
                                     updateKitchenStatus(item.id, 1, kitchen_cd),
-                                    ...children.map(child =>
-                                        updateKitchenStatus(child.id, 1, kitchen_cd)
-                                    )
+                                    ...children
+                                        .filter(child => !child.isDisabled) // 🔥 Filtrar hijos deshabilitados
+                                        .map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
                                 );
                             } else if (item.isChild) {
                                 // Hijo: verificar si actualizar padre también
@@ -126,7 +133,7 @@ const OrderSwipe = ({
 
                                 if (allSiblingsReady) {
                                     const parent = order.items.find(i => i.uid === item.pid);
-                                    // 🔥 NUEVO: Solo actualizar padre si NO está deshabilitado
+                                    // Solo actualizar padre si NO está deshabilitado
                                     if (parent && !parent.isDisabled) {
                                         updatePromises.push(
                                             updateKitchenStatus(parent.id, 1, kitchen_cd)
@@ -171,8 +178,7 @@ const OrderSwipe = ({
         if (currentPage > totalPages && totalPages > 0) {
             setCurrentPage(totalPages);
         }
-    }, [totalPages]);
-
+    }, [totalPages, currentPage]);
 
     const getPageOrders = (page) => {
         const start = (page - 1) * ordersPerPage;

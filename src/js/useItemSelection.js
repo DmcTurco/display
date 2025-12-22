@@ -1,147 +1,166 @@
 // hooks/useItemSelection.js
-import { useState, useCallback } from 'react';
-import { useDoubleTap } from './useDoubleTap';
-import { getItemIds, getOrderItemIds, getTableItemIds, toggleItemSelection } from './itemSelectionHelpers';
+import { useState, useRef } from 'react';
 
 export function useItemSelection(selectionMode, onUpdate) {
     const [selectedItems, setSelectedItems] = useState(new Set());
-    const { handleTap, cleanup } = useDoubleTap(300);
 
-    /**
-     * Obtiene los IDs relevantes según el tipo de selección
-     * 🔥 MODIFICADO: Excluye items deshabilitados
-     */
-    const getRelevantIds = useCallback((item, type, tableGroup, order) => {
-        let ids;
+    // Refs para double tap
+    const lastTapRef = useRef({});
+    const tapTimeoutRef = useRef({});
+    const DOUBLE_TAP_DELAY = 300;
 
+    const handleToggleSelection = (item, type = 'item', tableGroup = null, order = null) => {
+        const now = Date.now();
+
+        let tapId;
         switch (type) {
             case 'table':
-                ids = getTableItemIds(tableGroup);
+                tapId = `table-${tableGroup.tableName}`;
                 break;
             case 'order':
-                ids = getOrderItemIds(order);
+                tapId = `order-${order.record_date || order.formatted_time}`;
                 break;
             case 'item':
-                ids = getItemIds(item, order?.items || []);
+                tapId = `item-${item.id}`;
                 break;
-            default:
-                return new Set();
         }
 
-        // 🔥 NUEVO: Filtrar items deshabilitados
-        // Si el tipo es 'item' y está deshabilitado, retornar Set vacío
-        if (type === 'item' && item.isDisabled) {
-            return new Set();
-        }
+        // 🔥 LÓGICA DE TOGGLE COMÚN
+        const performToggle = () => {
+            setSelectedItems(prev => {
+                const newSet = new Set(prev);
 
-        // Para 'table' y 'order', filtrar los items deshabilitados de la lista
-        if (type === 'table' || type === 'order') {
-            const enabledIds = new Set();
-            const itemsToCheck = type === 'table'
-                ? tableGroup.orders.flatMap(o => o.items)
-                : order.items;
+                switch (type) {
+                    case 'table':
+                        const allTableItemsSelected = tableGroup.orders.every(order =>
+                            order.items.every(item => {
+                                if (item.isDisabled) return true;
+                                const hasItem = newSet.has(item.id);
+                                if (item.additionalItems) {
+                                    return hasItem && item.additionalItems.every(child =>
+                                        child.isDisabled || newSet.has(child.id)
+                                    );
+                                }
+                                return hasItem;
+                            })
+                        );
 
-            ids.forEach(id => {
-                const foundItem = itemsToCheck.find(i => i.id === id);
-                if (foundItem && !foundItem.isDisabled) {
-                    enabledIds.add(id);
+                        tableGroup.orders.forEach(order => {
+                            order.items.forEach(item => {
+                                if (item.isDisabled) return;
+
+                                if (allTableItemsSelected) {
+                                    newSet.delete(item.id);
+                                    if (item.additionalItems) {
+                                        item.additionalItems.forEach(child => newSet.delete(child.id));
+                                    }
+                                } else {
+                                    newSet.add(item.id);
+                                    if (item.additionalItems) {
+                                        item.additionalItems.forEach(child => {
+                                            if (!child.isDisabled) newSet.add(child.id);
+                                        });
+                                    }
+                                }
+                            });
+                        });
+                        break;
+
+                    case 'order':
+                        const allOrderItemsSelected = order.items.every(item => {
+                            if (item.isDisabled) return true;
+                            const hasItem = newSet.has(item.id);
+                            if (item.additionalItems) {
+                                return hasItem && item.additionalItems.every(child =>
+                                    child.isDisabled || newSet.has(child.id)
+                                );
+                            }
+                            return hasItem;
+                        });
+
+                        order.items.forEach(item => {
+                            if (item.isDisabled) return;
+
+                            if (allOrderItemsSelected) {
+                                newSet.delete(item.id);
+                                if (item.additionalItems) {
+                                    item.additionalItems.forEach(child => newSet.delete(child.id));
+                                }
+                            } else {
+                                newSet.add(item.id);
+                                if (item.additionalItems) {
+                                    item.additionalItems.forEach(child => {
+                                        if (!child.isDisabled) newSet.add(child.id);
+                                    });
+                                }
+                            }
+                        });
+                        break;
+
+                    case 'item':
+                        if (item.isDisabled) {
+                            console.warn('⚠️ Item deshabilitado:', item.name);
+                            return prev;
+                        }
+
+                        if (item.additionalItems && item.additionalItems.length > 0) {
+                            if (newSet.has(item.id)) {
+                                newSet.delete(item.id);
+                                item.additionalItems.forEach(childItem => {
+                                    newSet.delete(childItem.id);
+                                });
+                            } else {
+                                newSet.add(item.id);
+                                item.additionalItems.forEach(childItem => {
+                                    if (!childItem.isDisabled) {
+                                        newSet.add(childItem.id);
+                                    }
+                                });
+                            }
+                        } else {
+                            if (newSet.has(item.id)) {
+                                newSet.delete(item.id);
+                            } else {
+                                newSet.add(item.id);
+                            }
+                        }
+                        break;
                 }
+
+                return newSet;
             });
-            return enabledIds;
-        }
+        };
 
-        return ids;
-    }, []);
-
-    /**
-     * Genera un ID único para el tap según el tipo
-     */
-    const getTapId = useCallback((item, type, tableGroup, order) => {
-        switch (type) {
-            case 'table':
-                return `table-${tableGroup.tableName}`;
-            case 'order':
-                return `order-${order.orderTime}-${order.table}`;
-            case 'item':
-                return `item-${item.id}`;
-            default:
-                return `unknown-${Date.now()}`;
-        }
-    }, []);
-
-    /**
-     * Maneja la selección en modo single-tap (modo 1)
-     */
-    const handleSingleTapSelection = useCallback((itemIds) => {
-        // 🔥 NUEVO: No hacer nada si no hay items válidos
-        if (itemIds.size === 0) return;
-        setSelectedItems(prev => toggleItemSelection(itemIds, prev));
-    }, []);
-
-    /**
-     * Maneja la selección en modo double-tap (modo 2)
-     */
-    const handleDoubleTapSelection = useCallback((itemIds, shouldUpdate = false) => {
-        // 🔥 NUEVO: No hacer nada si no hay items válidos
-        if (itemIds.size === 0) return;
-
-        if (shouldUpdate) {
-            // Double tap - actualizar inmediatamente
-            onUpdate?.(itemIds);
-            setSelectedItems(new Set()); // Limpiar selección
-        } else {
-            // Single tap - solo marcar visualmente
-            setSelectedItems(itemIds);
-        }
-    }, [onUpdate]);
-
-    /**
-     * Función principal de manejo de selección
-     * 🔥 MODIFICADO: Prevenir selección de items deshabilitados
-     */
-    const handleToggleSelection = useCallback((item, type = 'item', tableGroup = null, order = null) => {
-        // 🔥 NUEVO: Verificar si es un item deshabilitado antes de continuar
-        if (type === 'item' && item?.isDisabled) {
-            console.log('❌ Item deshabilitado, no se puede seleccionar:', item.name);
-            return;
-        }
-
-        const itemIds = getRelevantIds(item, type, tableGroup, order);
-
-        // Si no hay IDs válidos (todos deshabilitados), no hacer nada
-        if (itemIds.size === 0) {
-            console.log('❌ No hay items válidos para seleccionar');
-            return;
-        }
-
-        const tapId = getTapId(item, type, tableGroup, order);
-
+        // 🔥 DIFERENCIA ENTRE MODOS
         if (selectionMode === "2") {
-            // Modo double-tap
-            handleTap(
-                tapId,
-                // Single tap - solo selección visual
-                () => handleDoubleTapSelection(itemIds, false),
-                // Double tap - actualizar
-                () => handleDoubleTapSelection(itemIds, true)
-            );
-        } else {
-            // Modo single-tap - toggle normal
-            handleSingleTapSelection(itemIds);
-        }
-    }, [
-        selectionMode,
-        getRelevantIds,
-        getTapId,
-        handleTap,
-        handleSingleTapSelection,
-        handleDoubleTapSelection
-    ]);
+            // MODO 2: Double-Tap
+            if (now - (lastTapRef.current[tapId] || 0) < DOUBLE_TAP_DELAY) {
+                // Segundo tap - Confirmar
+                clearTimeout(tapTimeoutRef.current[tapId]);
 
-    const clearSelection = useCallback(() => {
+                if (selectedItems.size > 0) {
+                    onUpdate?.(selectedItems);
+                }
+                setSelectedItems(new Set());
+            } else {
+                // Primer tap - Toggle
+                performToggle();
+            }
+
+            lastTapRef.current[tapId] = now;
+        } else {
+            // MODO 1: Single-Tap con botón
+            performToggle();
+        }
+    };
+
+    const clearSelection = () => {
         setSelectedItems(new Set());
-        cleanup();
-    }, [cleanup]);
+        // Limpiar timeouts
+        Object.values(tapTimeoutRef.current).forEach(clearTimeout);
+        lastTapRef.current = {};
+        tapTimeoutRef.current = {};
+    };
 
     return {
         selectedItems,
