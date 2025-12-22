@@ -32,49 +32,66 @@ const OrderSwipe = ({
 
     // ==================== PROCESAMIENTO DE ÓRDENES ====================
     const processedOrderGroups = useMemo(() => {
-        return orders.map((tableGroup) => {
-            const processedOrders = tableGroup.orders.map(order => {
-                const itemsWithPid = order.items?.filter(item => item.pid) || [];
-                const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+        return orders
+            .map((tableGroup) => {
+                const processedOrders = tableGroup.orders
+                    .map(order => {
+                        if (!Array.isArray(order.items) || order.items.length === 0) {
+                            return null;
+                        }
 
-                const activeParentUids = parentUids.filter(parentUid => {
-                    const children = order.items?.filter(item =>
-                        item.pid === parentUid && item.kitchen_status !== 1
-                    );
-                    return children.length > 0;
-                });
+                        // 🔥 Regla principal:
+                        // La orden sigue viva si al menos 1 item NO está preparado
+                        const hasPendingItems = order.items.some(item =>
+                            !item.isDisabled &&
+                            item.belongs_to_kitchen !== false &&
+                            item.kitchen_status !== 1
+                        );
 
-                const processedItems = order.items?.filter(item =>
-                    (activeParentUids.includes(item.uid)) ||
-                    (!item.pid && item.kitchen_status !== 1) ||
-                    (item.pid && item.kitchen_status !== 1)
-                ).map(item => {
-                    const isParent = parentUids.includes(item.uid);
-                    const isBorrowedParent = isParent && item.belongs_to_kitchen === false;
+                        if (!hasPendingItems) {
+                            return null; // ⛔ Orden terminada → no se muestra
+                        }
 
-                    return {
-                        ...item,
-                        isParent,
-                        isChild: Boolean(item.pid),
-                        isBorrowedParent,
-                        isDisabled: isBorrowedParent
-                    };
-                }) || [];
+                        // Detectar padres (por pid)
+                        const itemsWithPid = order.items.filter(item => item.pid);
+                        const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+
+                        // 🔥 NO se filtran items
+                        const processedItems = order.items.map(item => {
+                            const isParent = parentUids.includes(item.uid);
+                            const isBorrowedParent = isParent && item.belongs_to_kitchen === false;
+
+                            return {
+                                ...item,
+                                isParent,
+                                isChild: Boolean(item.pid),
+                                isBorrowedParent,
+                                isDisabled: isBorrowedParent,
+                                isReady: item.kitchen_status === 1 // ⭐ solo marcar
+                            };
+                        });
+
+                        return {
+                            ...order,
+                            items: processedItems
+                        };
+                    })
+                    .filter(Boolean); // elimina órdenes cerradas
+
+                if (processedOrders.length === 0) {
+                    return null; // ⛔ Mesa sin órdenes vivas
+                }
 
                 return {
-                    ...order,
-                    items: processedItems
+                    tableName: tableGroup.tableName,
+                    type: tableGroup.type,
+                    total_people: tableGroup.total_people,
+                    orders: processedOrders
                 };
-            }).filter(order => order.items.length > 0);
-
-            return {
-                tableName: tableGroup.tableName,
-                type: tableGroup.type,
-                total_people: tableGroup.total_people,
-                orders: processedOrders
-            };
-        }).filter(group => group.orders.length > 0);
+            })
+            .filter(Boolean); // elimina mesas vacías
     }, [orders]);
+
 
     const totalPages = Math.max(1, Math.ceil(processedOrderGroups.length / ordersPerPage));
 
