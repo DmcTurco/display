@@ -140,8 +140,8 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                             </td>
                                             <td
                                                 className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected
-                                                        ? 'bg-yellow-200 hover:bg-yellow-200'
-                                                        : 'hover:bg-gray-50'
+                                                    ? 'bg-yellow-200 hover:bg-yellow-200'
+                                                    : 'hover:bg-gray-50'
                                                     }`}
                                                 onClick={() => handleToggleTableSelection(order)}
                                             >
@@ -154,8 +154,8 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                             key={itemIndex}
                                                             onClick={() => !item.isDisabled && toggleRowSelection(item)}
                                                             className={`flex items-center px-4 py-2 ${item.isDisabled
-                                                                    ? 'cursor-not-allowed opacity-50'
-                                                                    : 'cursor-pointer'
+                                                                ? 'cursor-not-allowed opacity-50'
+                                                                : 'cursor-pointer'
                                                                 } ${selectedRows.has(item.id)
                                                                     ? "bg-yellow-200 hover:bg-yellow-200"
                                                                     : "hover:bg-gray-50"
@@ -165,10 +165,10 @@ const ServingCompleted = ({ completedOrders, updateKitchenStatus }) => {
                                                                 {item.isChild && (
                                                                     <div className="w-2 h-px bg-gray-300 mr-3"></div>
                                                                 )}
+                                                                <span className="text-3xl">{item.name}</span>
                                                                 {item.isDisabled && (
                                                                     <Lock className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2" />
                                                                 )}
-                                                                <span className="text-3xl">{item.name}</span>
                                                             </div>
 
                                                             <div className="w-[100px] flex justify-end">

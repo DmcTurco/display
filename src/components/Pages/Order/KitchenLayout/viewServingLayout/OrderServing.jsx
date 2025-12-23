@@ -160,9 +160,6 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                               {item.isChild && (
                                 <div className="w-2 h-px bg-gray-300 mr-3"></div>
                               )}
-                              {item.isDisabled && (
-                                <Lock className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2" />
-                              )}
                               <span className="text-3xl">
                                 {item.name}
                                 {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
@@ -171,6 +168,9 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                                   </span>
                                 )}
                               </span>
+                              {item.isDisabled && (
+                                <Lock className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2" />
+                              )}
                             </div>
 
                             <div className="w-[200px] flex justify-end">

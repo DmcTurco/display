@@ -235,6 +235,22 @@ export const updateSelectedItems = async ({
         const orders = orderGroup.orders || [orderGroup];
 
         for (const order of orders) {
+            // 🔥 Crear un mapa de todos los items disponibles (incluyendo additionalItems)
+            const allItemsMap = new Map();
+
+            order.items.forEach(item => {
+                allItemsMap.set(item.id, item);
+
+                // Agregar también los additionalItems si existen
+                if (item.additionalItems && Array.isArray(item.additionalItems)) {
+                    item.additionalItems.forEach(child => {
+                        allItemsMap.set(child.id, child);
+                    });
+                }
+            });
+
+            const allItemsArray = Array.from(allItemsMap.values());
+
             for (const item of order.items) {
                 if (!selectedItemIds.has(item.id)) continue;
 
@@ -247,64 +263,144 @@ export const updateSelectedItems = async ({
                 if (item.isParent) {
                     // ============ PADRE ============
                     // Actualizar padre + todos sus hijos
-                    const children = useAdditionalItems ? getAllChildren(item) : getAllChildrenByPid(item.uid, order.items);
+                    const children = useAdditionalItems
+                        ? getAllChildren(item)
+                        : getAllChildrenByPid(item.uid, allItemsArray);
 
                     // Actualizar padre
-                    const updateArgs = extraParam !== null ? [item.id, targetStatus, kitchen_cd, extraParam] : [item.id, targetStatus, kitchen_cd];
+                    const updateArgs = extraParam !== null
+                        ? [item.id, targetStatus, kitchen_cd, extraParam]
+                        : [item.id, targetStatus, kitchen_cd];
                     updatePromises.push(updateKitchenStatus(...updateArgs));
 
                     // Actualizar hijos
                     children.forEach(child => {
-                        const childArgs = extraParam !== null ? [child.id, targetStatus, kitchen_cd, extraParam] : [child.id, targetStatus, kitchen_cd];
+                        const childArgs = extraParam !== null
+                            ? [child.id, targetStatus, kitchen_cd, extraParam]
+                            : [child.id, targetStatus, kitchen_cd];
                         updatePromises.push(updateKitchenStatus(...childArgs));
                     });
 
                 } else if (item.isChild) {
                     // ============ HIJO ============
                     // Actualizar hijo primero
-                    const updateArgs = extraParam !== null ? [item.id, targetStatus, kitchen_cd, extraParam] : [item.id, targetStatus, kitchen_cd];
+                    const updateArgs = extraParam !== null
+                        ? [item.id, targetStatus, kitchen_cd, extraParam]
+                        : [item.id, targetStatus, kitchen_cd];
                     updatePromises.push(updateKitchenStatus(...updateArgs));
 
+                    // 🔥 Buscar padre en todos los items disponibles
+                    const parent = allItemsArray.find(i => i.uid === item.pid);
+
+                    // 🔥 Si el padre NO existe o está deshabilitado, ya terminamos con este hijo
+                    if (!parent || parent.isDisabled || parent.isBorrowedParent) {
+                        console.log(`ℹ️ Hijo sin padre válido (padre prestado o no existe): ${item.name}`);
+                        continue; // No intentar actualizar el padre
+                    }
+
                     // Determinar si actualizar padre según la estrategia
-                    const parent = order.items.find(i => i.uid === item.pid);
+                    let shouldUpdateParent = false;
 
-                    // Solo actualizar padre si NO está deshabilitado (no es prestado)
-                    if (parent && !parent.isDisabled && !parent.isBorrowedParent) {
-                        let shouldUpdateParent = false;
+                    switch (parentUpdateStrategy) {
+                        case 'check-all-siblings': {
+                            // ServingTimeline handleUpdate, OrderSwipe targetStatus=1
+                            // Actualizar padre solo si TODOS los hermanos están listos
+                            const siblings = allItemsArray.filter(i => i.pid === item.pid);
 
-                        switch (parentUpdateStrategy) {
-                            case 'check-all-siblings':{
-                                // ServingTimeline handleUpdate, OrderSwipe targetStatus=1
-                                // Actualizar padre solo si TODOS los hermanos están listos
-                                const siblings = useAdditionalItems ? order.items.filter(i => i.pid === item.pid) : getAllChildrenByPid(item.pid, order.items);
-
-                                shouldUpdateParent = siblings.every(sibling => sibling.kitchen_status === 1 || selectedItemIds.has(sibling.id));
-                                break;}
-
-                            case 'check-selected-siblings':{
-                                // OrderServing, ServingTimeline handleCancel
-                                // Actualizar padre solo si TODOS los hermanos están siendo seleccionados
-                                const allSiblings = useAdditionalItems ? order.items.filter(i => i.pid === item.pid) : getAllChildrenByPid(item.pid, order.items);
-
-                                shouldUpdateParent = allSiblings.every(sibling => selectedItemIds.has(sibling.id));
-                                break;}
-
-                            case 'never':
-                                shouldUpdateParent = false;
-                                break;
+                            shouldUpdateParent = siblings.every(sibling =>
+                                sibling.kitchen_status === 1 || selectedItemIds.has(sibling.id)
+                            );
+                            break;
                         }
 
-                        if (shouldUpdateParent) {
-                            const parentArgs = extraParam !== null ? [parent.id, targetStatus, kitchen_cd, extraParam] : [parent.id, targetStatus, kitchen_cd];
+                        case 'check-selected-siblings': {
+                            // OrderServing, ServingTimeline handleCancel
+                            // Actualizar padre solo si TODOS los hermanos están siendo seleccionados
+                            const allSiblings = allItemsArray.filter(i => i.pid === item.pid);
 
-                            updatePromises.push(updateKitchenStatus(...parentArgs));
+                            shouldUpdateParent = allSiblings.every(sibling =>
+                                selectedItemIds.has(sibling.id)
+                            );
+                            break;
                         }
+
+                        case 'never':
+                            shouldUpdateParent = false;
+                            break;
+                    }
+
+                    if (shouldUpdateParent) {
+                        const parentArgs = extraParam !== null
+                            ? [parent.id, targetStatus, kitchen_cd, extraParam]
+                            : [parent.id, targetStatus, kitchen_cd];
+
+                        updatePromises.push(updateKitchenStatus(...parentArgs));
                     }
 
                 } else {
                     // ============ ITEM NORMAL ============
-                    const updateArgs = extraParam !== null ? [item.id, targetStatus, kitchen_cd, extraParam] : [item.id, targetStatus, kitchen_cd];
+                    const updateArgs = extraParam !== null
+                        ? [item.id, targetStatus, kitchen_cd, extraParam]
+                        : [item.id, targetStatus, kitchen_cd];
                     updatePromises.push(updateKitchenStatus(...updateArgs));
+                }
+            }
+
+            // 🔥 También procesar items en additionalItems que fueron seleccionados
+            for (const item of order.items) {
+                if (item.additionalItems && Array.isArray(item.additionalItems)) {
+                    for (const child of item.additionalItems) {
+                        if (!selectedItemIds.has(child.id)) continue;
+                        if (child.isDisabled) continue;
+
+                        // El hijo ya fue procesado arriba si estaba en order.items
+                        // Pero si SOLO está en additionalItems, procesarlo aquí
+                        const alreadyProcessed = order.items.some(i => i.id === child.id);
+                        if (alreadyProcessed) continue;
+
+                        // Actualizar hijo
+                        const updateArgs = extraParam !== null
+                            ? [child.id, targetStatus, kitchen_cd, extraParam]
+                            : [child.id, targetStatus, kitchen_cd];
+                        updatePromises.push(updateKitchenStatus(...updateArgs));
+
+                        // Verificar si actualizar padre
+                        const parent = item; // El padre es el item actual
+
+                        if (!parent.isDisabled && !parent.isBorrowedParent) {
+                            let shouldUpdateParent = false;
+
+                            switch (parentUpdateStrategy) {
+                                case 'check-all-siblings': {
+                                    const siblings = allItemsArray.filter(i => i.pid === parent.uid);
+                                    shouldUpdateParent = siblings.every(sibling =>
+                                        sibling.kitchen_status === 1 || selectedItemIds.has(sibling.id)
+                                    );
+                                    break;
+                                }
+
+                                case 'check-selected-siblings': {
+                                    const siblings = allItemsArray.filter(i => i.pid === parent.uid);
+                                    shouldUpdateParent = siblings.every(sibling =>
+                                        selectedItemIds.has(sibling.id)
+                                    );
+                                    break;
+                                }
+
+                                case 'never':
+                                    shouldUpdateParent = false;
+                                    break;
+                            }
+
+                            if (shouldUpdateParent) {
+                                const parentArgs = extraParam !== null
+                                    ? [parent.id, targetStatus, kitchen_cd, extraParam]
+                                    : [parent.id, targetStatus, kitchen_cd];
+
+                                updatePromises.push(updateKitchenStatus(...parentArgs));
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -312,8 +408,6 @@ export const updateSelectedItems = async ({
 
     await Promise.all(updatePromises);
 };
-
-// utils/itemSelectionHelpers.js
 
 /**
  * 🔥 Procesa y filtra órdenes con detección de padres/hijos y padres prestados
