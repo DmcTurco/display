@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import _, { filter } from 'lodash';
 import { FaClipboardList, FaAngleUp, FaAngleDown } from 'react-icons/fa';
-import { getAllChildren, getItemIds, toggleItemSelection } from '@/js/itemSelectionHelpers';
+import { getAllChildren, getItemIds, toggleItemSelection, updateSelectedItems } from '@/js/itemSelectionHelpers';
 import { Lock } from 'lucide-react';
 
 
@@ -110,57 +110,18 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   };
 
   const handleUpdate = async () => {
-    if (!kitchen_cd) {
-      console.error('No se encontro kitchen_cd en la configuracion');
-      return;
-    }
-
     try {
-      const updatePromises = [];
+      await updateSelectedItems({
+        selectedItemIds: selectedRows,
+        orderGroups: orderItems,
+        updateKitchenStatus,
+        kitchen_cd,
+        targetStatus: 0,
+        useAdditionalItems: true, // Usa additionalItems
+        extraParam: 1,
+        parentUpdateStrategy: 'check-selected-siblings'
+      });
 
-      for (const completedOrders of orderItems) {
-        for (const item of completedOrders.items) {
-          if (selectedRows.has(item.id)) {
-            // 🔥 Saltar items deshabilitados (padres prestados)
-            if (item.isDisabled) {
-              console.log(`⚠️ Saltando padre prestado: ${item.name}`);
-              continue;
-            }
-
-            if (item.isParent) {
-              // Padre: actualizar padre + hijos
-              const children = getAllChildren(item);
-              updatePromises.push(
-                updateKitchenStatus(item.id, 0, kitchen_cd, 1),
-                ...children.map(child =>
-                  updateKitchenStatus(child.id, 0, kitchen_cd, 1)
-                )
-              );
-            } else if (item.isChild) {
-              // Hijo: actualizar hijo + verificar si actualizar padre
-              const parent = completedOrders.items.find(i => i.uid === item.pid);
-
-              updatePromises.push(
-                updateKitchenStatus(item.id, 0, kitchen_cd, 1)
-              );
-
-              // Solo actualizar padre si NO está deshabilitado
-              if (parent && !parent.isDisabled && !parent.isBorrowedParent) {
-                updatePromises.push(
-                  updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
-                );
-              }
-            } else {
-              // Item normal
-              updatePromises.push(
-                updateKitchenStatus(item.id, 0, kitchen_cd, 1)
-              );
-            }
-          }
-        }
-      }
-
-      await Promise.all(updatePromises);
       setSelectedRows(new Set());
       setShowConfirmDialog(false);
     } catch (error) {
@@ -261,8 +222,8 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                             key={itemIndex}
                             onClick={() => toggleRowSelection(item)}
                             className={`flex items-center px-4 py-2 ${item.isDisabled
-                                ? 'cursor-not-allowed opacity-50'
-                                : 'cursor-pointer'
+                              ? 'cursor-not-allowed opacity-50'
+                              : 'cursor-pointer'
                               } ${selectedRows.has(item.id)
                                 ? "bg-yellow-200 hover:bg-yellow-200"
                                 : "hover:bg-gray-50"

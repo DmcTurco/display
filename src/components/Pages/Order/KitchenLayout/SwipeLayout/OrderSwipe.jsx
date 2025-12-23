@@ -4,6 +4,7 @@ import OrderCard from './OrderCard';
 import _ from "lodash";
 import ImageModal from '@/components/ui/ImagenModal';
 import { useItemSelection } from '@/js/useItemSelection';
+import { getAllChildrenByPid, updateSelectedItems } from '@/js/itemSelectionHelpers';
 
 const OrderSwipe = ({
     orders,
@@ -97,76 +98,27 @@ const OrderSwipe = ({
 
     // 🔥 NUEVA FUNCIÓN HELPER LOCAL
     const getAllChildren = (parentUid, items) => {
-        if (!Array.isArray(items)) {
-            console.warn('Items no es un array:', items);
-            return [];
-        }
-        return items.filter(item => item.pid === parentUid);
+        return getAllChildrenByPid(parentUid, items);
     };
 
     // ==================== MANEJO DE ACTUALIZACIÓN ====================
     const handleUpdate = async (itemIdsToUpdate = null) => {
-        if (!kitchen_cd) {
-            console.error('No se encontró kitchen_cd en la configuración');
-            return;
-        }
-
         setIsUpdating(true);
 
         try {
             const itemIds = itemIdsToUpdate || selectedItems;
-            const updatePromises = [];
 
-            // Iterar sobre processedOrderGroups
-            for (const tableGroup of processedOrderGroups) {
-                for (const order of tableGroup.orders) {
-                    for (const item of order.items) {
-                        if (itemIds.has(item.id)) {
-                            // Saltar items deshabilitados (padres prestados)
-                            if (item.isDisabled) {
-                                console.log(`⚠️ Saltando padre prestado: ${item.name}`);
-                                continue;
-                            }
+            await updateSelectedItems({
+                selectedItemIds: itemIds,
+                orderGroups: processedOrderGroups,
+                updateKitchenStatus,
+                kitchen_cd,
+                targetStatus: 1,
+                useAdditionalItems: false, // Usa pid/uid
+                extraParam: null,
+                parentUpdateStrategy: 'check-all-siblings'
+            });
 
-                            if (item.isParent) {
-                                // Padre: actualizar padre e hijos
-                                const children = getAllChildren(item.uid, order.items);
-                                updatePromises.push(
-                                    updateKitchenStatus(item.id, 1, kitchen_cd),
-                                    ...children
-                                        .filter(child => !child.isDisabled) // 🔥 Filtrar hijos deshabilitados
-                                        .map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
-                                );
-                            } else if (item.isChild) {
-                                // Hijo: verificar si actualizar padre también
-                                const siblings = getAllChildren(item.pid, order.items);
-                                const allSiblingsReady = siblings.every(sibling => sibling.kitchen_status === 1 || itemIds.has(sibling.id));
-
-                                updatePromises.push(
-                                    updateKitchenStatus(item.id, 1, kitchen_cd)
-                                );
-
-                                if (allSiblingsReady) {
-                                    const parent = order.items.find(i => i.uid === item.pid);
-                                    // Solo actualizar padre si NO está deshabilitado
-                                    if (parent && !parent.isDisabled && !parent.isBorrowedParent) {
-                                        updatePromises.push(
-                                            updateKitchenStatus(parent.id, 1, kitchen_cd)
-                                        );
-                                    }
-                                }
-                            } else {
-                                // Item normal
-                                updatePromises.push(
-                                    updateKitchenStatus(item.id, 1, kitchen_cd)
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-
-            await Promise.all(updatePromises);
             clearSelection();
             setShowConfirmDialog(false);
         } catch (error) {
