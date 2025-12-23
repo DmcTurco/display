@@ -20,7 +20,7 @@ const MainItem = ({
   isLastOrderItems
 }) => {
 
-    // 🔍 DEBUG: Ver qué llega a MainItem
+  // 🔍 DEBUG: Ver qué llega a MainItem
   // console.log(`🎯 MainItem renderizando "${item.name}":`, {
   //   isBorrowedParent: item.isBorrowedParent,
   //   isDisabled: item.isDisabled,
@@ -33,6 +33,7 @@ const MainItem = ({
   const isServing = type_display == 2;
   const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
   const selectionMode = config.selectionMode || "1";
+  // console.log("#",item);
 
   // 🔥 NUEVO: Verificar si el item está deshabilitado
   const isDisabled = item.isDisabled === true;
@@ -60,6 +61,16 @@ const MainItem = ({
     }
   };
 
+  const isCompletedHere =
+    !isBorrowedParent && item.kitchen_status === 1;
+
+  const isCompletedElsewhere =
+    isBorrowedParent && item.kitchen_status === 1;
+
+  const isParentCompletedByChildren =
+    !isBorrowedParent &&
+    item.isParent &&
+    allAdditionalsComplete;
   // 🔥 MODIFICADO: Items deshabilitados no son clickeables
   const isClickable = isDisabled ? false : (isServing ? (isCompleted && !isServed) : !isCompleted);
   const isSelected = selectedItems.has(item.id);
@@ -182,13 +193,21 @@ const MainItem = ({
           )}
 
           {/* Checkmarks originales */}
-          {isServing ? (
-            isServed && <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-blue-500" />
-          ) : (
-            (isCompleted || allAdditionalsComplete) && (
-              <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-green-500" />
-            )
+          {/* Checkmarks */}
+          {!isServing && (
+            <>
+              {/* ✔ Preparado aquí */}
+              {(isCompletedHere || isParentCompletedByChildren) && (
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-green-500" />
+              )}
+
+              {/* ✔ Preparado en otro terminal */}
+              {isCompletedElsewhere && (
+                <CheckCircle2 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              )}
+            </>
           )}
+
         </div>
       </div>
 

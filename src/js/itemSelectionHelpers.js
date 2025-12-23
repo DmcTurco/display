@@ -65,8 +65,7 @@ export const getOrderItemIds = (order) => {
  */
 export const getItemIds = (item) => {
     // Si está deshabilitado, retornar vacío
-    if (item.isDisabled) {
-        console.warn(`⚠️ Item deshabilitado: ${item.name}`);
+    if (!item || item.isDisabled) {
         return new Set();
     }
 
@@ -96,10 +95,8 @@ export const areAllItemsSelected = (itemIds, selectedItems) => {
  * Alterna la selección de un conjunto de items
  */
 export const toggleItemSelection = (itemIds, selectedItems) => {
-    if (itemIds.size === 0) {
-        console.warn('⚠️ No hay items válidos para seleccionar');
-        return new Set(selectedItems);
-    }
+    // Aquí ya no necesitamos verificar size === 0
+    // porque lo hacemos antes de llamar esta función
 
     const newSelection = new Set(selectedItems);
     const allSelected = areAllItemsSelected(itemIds, selectedItems);

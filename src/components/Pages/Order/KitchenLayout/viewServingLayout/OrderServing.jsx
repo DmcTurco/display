@@ -1,54 +1,78 @@
 import React, { useMemo, useState } from 'react'
 import _, { filter } from 'lodash';
 import { FaClipboardList, FaAngleUp, FaAngleDown } from 'react-icons/fa';
+import { getAllChildren, getItemIds, toggleItemSelection } from '@/js/itemSelectionHelpers';
+import { Lock } from 'lucide-react';
+
 
 const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   const config = JSON.parse(localStorage.getItem("kitchenConfig")) || {};
   const kitchen_cd = config.cd;
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
-  const [sortElapsedTime, setSortElapsedTime] = useState("desc"); //ascかdescのみ
+  const [sortElapsedTime, setSortElapsedTime] = useState("desc");
 
   const { orderItems } = useMemo(() => {
     const orderItems = completedOrders.map((order) => {
-        // Encontrar items que tienen pid
-        const itemsWithPid = order.items?.filter(item => item.pid) || [];
-        const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+      // Encontrar items que tienen pid
+      const itemsWithPid = order.items?.filter(item => item.pid) || [];
+      const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
 
-        // Encontrar padres que tienen al menos un hijo cocinado (kitchen_status = 1)
-        const activeParentUids = parentUids.filter(parentUid => {
-            const children = order.items?.filter(item =>
-                item.pid === parentUid &&
-                item.kitchen_status === 1  // Solo verificamos kitchen_status
-            );
-            return children.length > 0;
-        });
+      // Encontrar padres que tienen al menos un hijo cocinado
+      const activeParentUids = parentUids.filter(parentUid => {
+        const children = order.items?.filter(item =>
+          item.pid === parentUid &&
+          item.kitchen_status === 1
+        );
+        return children.length > 0;
+      });
 
-        // Procesar todos los items
-        const processedItems = order.items?.filter(item => {
-            if (activeParentUids.includes(item.uid)) {
-                // Es un padre con hijos cocinados
-                return true;
-            }
-            if (item.pid) {
-                // Es un hijo, solo verificamos kitchen_status
-                return item.kitchen_status === 1;
-            }
-            // Es un item normal, solo verificamos kitchen_status
-            return item.kitchen_status === 1;
-        }).map(item => ({
-            ...item,
-            isParent: parentUids.includes(item.uid),
-            isChild: Boolean(item.pid)
-        })) || [];
+      // 🔥 Detectar padres prestados
+      const borrowedParentUids = parentUids.filter(parentUid => {
+        const parent = order.items?.find(item => item.uid === parentUid);
+        return parent?.belongs_to_kitchen === false;
+      });
+
+      // Procesar todos los items
+      const processedItems = order.items?.filter(item => {
+        if (activeParentUids.includes(item.uid)) {
+          return true;
+        }
+        if (item.pid) {
+          return item.kitchen_status === 1;
+        }
+        return item.kitchen_status === 1;
+      }).map(item => {
+        const isParent = parentUids.includes(item.uid);
+        const isBorrowedParent = borrowedParentUids.includes(item.uid);
 
         return {
-            orderTime: order.formatted_time_update,
-            elapsedTime: order.elapsedTime,
-            table: order.table_name || "Sin Mesa",
-            items: processedItems,
-            originalOrder: order,
+          ...item,
+          isParent,
+          isChild: Boolean(item.pid),
+          isBorrowedParent,
+          isDisabled: isBorrowedParent, // 🔥 Marcar como deshabilitado
+          // Agregar additionalItems para compatibilidad con helper
+          additionalItems: isParent
+            ? order.items?.filter(child =>
+              child.pid === item.uid &&
+              child.kitchen_status === 1
+            ).map(child => ({
+              ...child,
+              isChild: true,
+              isDisabled: false
+            }))
+            : []
         };
+      }) || [];
+
+      return {
+        orderTime: order.formatted_time_update,
+        elapsedTime: order.elapsedTime,
+        table: order.table_name || "Sin Mesa",
+        items: processedItems,
+        originalOrder: order,
+      };
     }).filter((order) => order.items.length > 0);
 
     const sorted = _.orderBy(
@@ -58,42 +82,26 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
     );
 
     return { orderItems: sorted };
-}, [completedOrders, sortElapsedTime]);
+  }, [completedOrders, sortElapsedTime]);
 
-  // console.log(orderItems);
-
-  const getAllChildren = (parentId, items) => {
-    if (!Array.isArray(items)) {
-      console.warn('Items no es un array:', items);
-      return [];
+  const toggleRowSelection = (item) => {
+    if (!item) {
+      console.warn('❌ Item no definido en toggleRowSelection');
+      return;
     }
-    return items.filter(item => item.pid === parentId);
-  };
 
-  const toggleRowSelection = (item, allItems) => {
-    setSelectedRows(prev => {
-      const newSet = new Set(prev);
+    // Obtener IDs del item (incluye hijos si es padre)
+    const itemIds = getItemIds(item);
 
-      if (item.isParent) {
-        const children = getAllChildren(item.uid, allItems);
+    // Validación: Si no hay IDs, no hacer nada
+    if (itemIds.size === 0) {
+      // console.warn(`⚠️ No se puede seleccionar item: ${item.name || item.id}`);
+      return;
+    }
 
-        if (newSet.has(item.id)) {
-          newSet.delete(item.id);
-          children.forEach(child => newSet.delete(child.id));
-        } else {
-          newSet.add(item.id);
-          children.forEach(child => newSet.add(child.id));
-        }
-      } else {
-        if (newSet.has(item.id)) {
-          newSet.delete(item.id);
-        } else {
-          newSet.add(item.id);
-        }
-      }
-
-      return newSet;
-    });
+    // Toggle usando el helper (ahora sabemos que itemIds no está vacío)
+    const newSelection = toggleItemSelection(itemIds, selectedRows);
+    setSelectedRows(newSelection);
   };
 
   const handleConfirm = () => {
@@ -108,42 +116,57 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
     }
 
     try {
+      const updatePromises = [];
+
       for (const completedOrders of orderItems) {
         for (const item of completedOrders.items) {
           if (selectedRows.has(item.id)) {
+            // 🔥 Saltar items deshabilitados (padres prestados)
+            if (item.isDisabled) {
+              console.log(`⚠️ Saltando padre prestado: ${item.name}`);
+              continue;
+            }
+
             if (item.isParent) {
-              // Si es padre, actualizar tanto al padre como a todos sus hijos
-              const children = getAllChildren(item.uid, completedOrders.items);
-              await Promise.all([
+              // Padre: actualizar padre + hijos
+              const children = getAllChildren(item);
+              updatePromises.push(
                 updateKitchenStatus(item.id, 0, kitchen_cd, 1),
-                ...children.map(child => updateKitchenStatus(child.id, 0, kitchen_cd, 1))
-              ]);
+                ...children.map(child =>
+                  updateKitchenStatus(child.id, 0, kitchen_cd, 1)
+                )
+              );
             } else if (item.isChild) {
-              // Si es hijo, siempre actualizar al padre también
+              // Hijo: actualizar hijo + verificar si actualizar padre
               const parent = completedOrders.items.find(i => i.uid === item.pid);
-              if (parent) {
-                await Promise.all([
-                  updateKitchenStatus(item.id, 0, kitchen_cd, 1),
+
+              updatePromises.push(
+                updateKitchenStatus(item.id, 0, kitchen_cd, 1)
+              );
+
+              // Solo actualizar padre si NO está deshabilitado
+              if (parent && !parent.isDisabled && !parent.isBorrowedParent) {
+                updatePromises.push(
                   updateKitchenStatus(parent.id, 0, kitchen_cd, 1)
-                ]);
-              } else {
-                await updateKitchenStatus(item.id, 0, kitchen_cd, 1);
+                );
               }
             } else {
-              // Si no es ni padre ni hijo, actualizar normalmente
-              await updateKitchenStatus(item.id, 0, kitchen_cd, 1);
+              // Item normal
+              updatePromises.push(
+                updateKitchenStatus(item.id, 0, kitchen_cd, 1)
+              );
             }
           }
         }
       }
 
+      await Promise.all(updatePromises);
       setSelectedRows(new Set());
       setShowConfirmDialog(false);
     } catch (error) {
       console.error('Error al cancelar el estado:', error);
     }
   };
-
 
   const getTimeStyle = (elapsedTime, configTime) => {
     const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
@@ -152,29 +175,28 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
       }`;
   };
 
-      const getDisplayItems = (items) => {
-        const result = [];
-        const itemMap = new Map(items.map(item => [item.uid, item]));
+  const getDisplayItems = (items) => {
+    const result = [];
 
-        items.forEach(item => {
-            if (!item.isChild) {
-                result.push(item); // 親を追加
-                const children = getAllChildren(item.uid, items); // 親に対応する子を取得
-                result.push(...children); // 子も追加
-            }
-        });
+    items.forEach(item => {
+      if (!item.isChild) {
+        result.push(item); // Padre
+        const children = getAllChildren(item);
+        result.push(...children); // Hijos
+      }
+    });
 
-        return result;
-    };
+    return result;
+  };
 
   if (!orderItems?.length) {
     return (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-center animate-bounce">
-            <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
-            <p className="text-2xl font-semibold text-gray-700">注文データがありません</p>
-          </div>
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center animate-bounce">
+          <FaClipboardList className="text-blue-500 text-6xl mx-auto mb-4" />
+          <p className="text-2xl font-semibold text-gray-700">注文データがありません</p>
         </div>
+      </div>
     );
   }
 
@@ -186,16 +208,13 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
     <div className="flex flex-col h-full">
       {selectedRows.size > 0 && (
         <div className="sticky top-0 z-40 mb-2">
-
           <button
             onClick={() => setShowConfirmDialog(true)}
             className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors text-3xl"
           >
-            {/* 更新 ({getSelectedItemsCount()}イヤリング) */}
             戻す
           </button>
         </div>
-
       )}
 
       <div className="m-2 bg-white rounded-lg shadow-lg overflow-hidden">
@@ -240,37 +259,40 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                         {getDisplayItems(order.items).map((item, itemIndex) => (
                           <div
                             key={itemIndex}
-                            onClick={() => toggleRowSelection(item, order.items)}
-                            className={`flex items-center px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
-                              ? "bg-yellow-200 hover:bg-yellow-200"
-                              : "hover:bg-gray-50"
+                            onClick={() => toggleRowSelection(item)}
+                            className={`flex items-center px-4 py-2 ${item.isDisabled
+                                ? 'cursor-not-allowed opacity-50'
+                                : 'cursor-pointer'
+                              } ${selectedRows.has(item.id)
+                                ? "bg-yellow-200 hover:bg-yellow-200"
+                                : "hover:bg-gray-50"
                               }`}
                           >
                             <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
                               {item.isChild && (
                                 <div className="w-2 h-px bg-gray-300 mr-3"></div>
                               )}
-                              <span className="text-3xl">{item.name}
+                              {item.isDisabled && (
+                                <Lock className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2" />
+                              )}
+                              <span className="text-3xl">
+                                {item.name}
                                 {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
                                   <span className={`text-3xl text-red-500`}>
-                                      {"　"}@{item.price}
+                                    {"　"}@{item.price}
                                   </span>
-                              )}
+                                )}
                               </span>
                             </div>
 
                             <div className="w-[200px] flex justify-end">
-                              {/* {!item.isParent && ( */}
                               <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
                                 {item.quantity}
                               </span>
-                              {/* )} */}
                             </div>
 
                             <div className="w-[50px] flex justify-end px-4">
-
                             </div>
-
                           </div>
                         ))}
                       </div>
@@ -283,16 +305,13 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
         </div>
       </div>
 
-
       <div
         className={`fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 ${showConfirmDialog ? "" : "hidden"
           }`}
       >
-
         <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
           <h3 className="text-lg font-medium mb-2">確認</h3>
           <p className="text-gray-500 mb-4">
-            {/* 選択したアイテム ({getSelectedItemsCount()} 点) を更新してもよろしいですか？ */}
             キャンセル
           </p>
           <div className="flex justify-end gap-2">
@@ -310,10 +329,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
             </button>
           </div>
         </div>
-
       </div>
-
-
     </div>
   )
 }

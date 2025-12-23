@@ -67,7 +67,7 @@ const OrderSwipe = ({
                                 isChild: Boolean(item.pid),
                                 isBorrowedParent,
                                 isDisabled: isBorrowedParent,
-                                isReady: item.kitchen_status === 1 // ⭐ solo marcar
+                                // isReady: item.kitchen_status === 1 // ⭐ solo marcar
                             };
                         });
 
@@ -140,9 +140,7 @@ const OrderSwipe = ({
                             } else if (item.isChild) {
                                 // Hijo: verificar si actualizar padre también
                                 const siblings = getAllChildren(item.pid, order.items);
-                                const allSiblingsReady = siblings.every(sibling =>
-                                    sibling.kitchen_status === 1 || itemIds.has(sibling.id)
-                                );
+                                const allSiblingsReady = siblings.every(sibling => sibling.kitchen_status === 1 || itemIds.has(sibling.id));
 
                                 updatePromises.push(
                                     updateKitchenStatus(item.id, 1, kitchen_cd)
@@ -151,7 +149,7 @@ const OrderSwipe = ({
                                 if (allSiblingsReady) {
                                     const parent = order.items.find(i => i.uid === item.pid);
                                     // Solo actualizar padre si NO está deshabilitado
-                                    if (parent && !parent.isDisabled) {
+                                    if (parent && !parent.isDisabled && !parent.isBorrowedParent) {
                                         updatePromises.push(
                                             updateKitchenStatus(parent.id, 1, kitchen_cd)
                                         );

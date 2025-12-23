@@ -23,8 +23,6 @@ function OrderCard({ orders = [], allorders, tableName, total_people, type, cust
     totalPages: 1,
   });
 
-
-
   const getStatusColor = (status, type_display) => {
     if (type_display == 2) {
       switch (status) {
