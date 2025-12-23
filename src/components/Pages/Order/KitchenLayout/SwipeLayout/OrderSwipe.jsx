@@ -4,7 +4,7 @@ import OrderCard from './OrderCard';
 import _ from "lodash";
 import ImageModal from '@/components/ui/ImagenModal';
 import { useItemSelection } from '@/js/useItemSelection';
-import { getAllChildrenByPid, updateSelectedItems } from '@/js/itemSelectionHelpers';
+import { getAllChildrenByPid, processTableGroupsWithHierarchy, updateSelectedItems } from '@/js/itemSelectionHelpers';
 
 const OrderSwipe = ({
     orders,
@@ -33,74 +33,14 @@ const OrderSwipe = ({
 
     // ==================== PROCESAMIENTO DE ÓRDENES ====================
     const processedOrderGroups = useMemo(() => {
-        return orders
-            .map((tableGroup) => {
-                const processedOrders = tableGroup.orders
-                    .map(order => {
-                        if (!Array.isArray(order.items) || order.items.length === 0) {
-                            return null;
-                        }
-
-                        // 🔥 Regla principal:
-                        // La orden sigue viva si al menos 1 item NO está preparado
-                        const hasPendingItems = order.items.some(item =>
-                            !item.isDisabled &&
-                            item.belongs_to_kitchen !== false &&
-                            item.kitchen_status !== 1
-                        );
-
-                        if (!hasPendingItems) {
-                            return null; // ⛔ Orden terminada → no se muestra
-                        }
-
-                        // Detectar padres (por pid)
-                        const itemsWithPid = order.items.filter(item => item.pid);
-                        const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
-
-                        // 🔥 NO se filtran items
-                        const processedItems = order.items.map(item => {
-                            const isParent = parentUids.includes(item.uid);
-                            const isBorrowedParent = isParent && item.belongs_to_kitchen === false;
-
-                            return {
-                                ...item,
-                                isParent,
-                                isChild: Boolean(item.pid),
-                                isBorrowedParent,
-                                isDisabled: isBorrowedParent,
-                                // isReady: item.kitchen_status === 1 // ⭐ solo marcar
-                            };
-                        });
-
-                        return {
-                            ...order,
-                            items: processedItems
-                        };
-                    })
-                    .filter(Boolean); // elimina órdenes cerradas
-
-                if (processedOrders.length === 0) {
-                    return null; // ⛔ Mesa sin órdenes vivas
-                }
-
-                return {
-                    tableName: tableGroup.tableName,
-                    type: tableGroup.type,
-                    total_people: tableGroup.total_people,
-                    orders: processedOrders
-                };
-            })
-            .filter(Boolean); // elimina mesas vacías
+        return processTableGroupsWithHierarchy(orders, {
+            filterByKitchenStatus: false, // NO filtrar, mostrar todos
+            checkPendingItems: true // Verificar items pendientes
+        });
     }, [orders]);
 
-
     const totalPages = Math.max(1, Math.ceil(processedOrderGroups.length / ordersPerPage));
-
-    // 🔥 NUEVA FUNCIÓN HELPER LOCAL
-    const getAllChildren = (parentUid, items) => {
-        return getAllChildrenByPid(parentUid, items);
-    };
-
+    
     // ==================== MANEJO DE ACTUALIZACIÓN ====================
     const handleUpdate = async (itemIdsToUpdate = null) => {
         setIsUpdating(true);

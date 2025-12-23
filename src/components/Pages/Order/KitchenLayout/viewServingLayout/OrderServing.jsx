@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import _, { filter } from 'lodash';
 import { FaClipboardList, FaAngleUp, FaAngleDown } from 'react-icons/fa';
-import { getAllChildren, getItemIds, toggleItemSelection, updateSelectedItems } from '@/js/itemSelectionHelpers';
+import { getAllChildren, getDisplayItemsHierarchy, getItemIds, processOrdersWithHierarchy, toggleItemSelection, updateSelectedItems } from '@/js/itemSelectionHelpers';
 import { Lock } from 'lucide-react';
 
 
@@ -12,76 +12,17 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [sortElapsedTime, setSortElapsedTime] = useState("desc");
 
-  const { orderItems } = useMemo(() => {
-    const orderItems = completedOrders.map((order) => {
-      // Encontrar items que tienen pid
-      const itemsWithPid = order.items?.filter(item => item.pid) || [];
-      const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
-
-      // Encontrar padres que tienen al menos un hijo cocinado
-      const activeParentUids = parentUids.filter(parentUid => {
-        const children = order.items?.filter(item =>
-          item.pid === parentUid &&
-          item.kitchen_status === 1
-        );
-        return children.length > 0;
-      });
-
-      // 🔥 Detectar padres prestados
-      const borrowedParentUids = parentUids.filter(parentUid => {
-        const parent = order.items?.find(item => item.uid === parentUid);
-        return parent?.belongs_to_kitchen === false;
-      });
-
-      // Procesar todos los items
-      const processedItems = order.items?.filter(item => {
-        if (activeParentUids.includes(item.uid)) {
-          return true;
-        }
-        if (item.pid) {
-          return item.kitchen_status === 1;
-        }
-        return item.kitchen_status === 1;
-      }).map(item => {
-        const isParent = parentUids.includes(item.uid);
-        const isBorrowedParent = borrowedParentUids.includes(item.uid);
-
-        return {
-          ...item,
-          isParent,
-          isChild: Boolean(item.pid),
-          isBorrowedParent,
-          isDisabled: isBorrowedParent, // 🔥 Marcar como deshabilitado
-          // Agregar additionalItems para compatibilidad con helper
-          additionalItems: isParent
-            ? order.items?.filter(child =>
-              child.pid === item.uid &&
-              child.kitchen_status === 1
-            ).map(child => ({
-              ...child,
-              isChild: true,
-              isDisabled: false
-            }))
-            : []
-        };
-      }) || [];
-
-      return {
+  const orderItems = useMemo(() => {
+    return processOrdersWithHierarchy(completedOrders, {
+      filterByKitchenStatus: true,
+      filterByServingStatus: false,
+      sortBy: 'elapsedTime',
+      sortOrder: sortElapsedTime,
+      mapOrderFields: (order) => ({
         orderTime: order.formatted_time_update,
         elapsedTime: order.elapsedTime,
-        table: order.table_name || "Sin Mesa",
-        items: processedItems,
-        originalOrder: order,
-      };
-    }).filter((order) => order.items.length > 0);
-
-    const sorted = _.orderBy(
-      orderItems,
-      ['elapsedTime'],
-      [sortElapsedTime]
-    );
-
-    return { orderItems: sorted };
+      })
+    });
   }, [completedOrders, sortElapsedTime]);
 
   const toggleRowSelection = (item) => {
@@ -134,20 +75,6 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
     const threshold = parseInt(configTime || 0);
     return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
       }`;
-  };
-
-  const getDisplayItems = (items) => {
-    const result = [];
-
-    items.forEach(item => {
-      if (!item.isChild) {
-        result.push(item); // Padre
-        const children = getAllChildren(item);
-        result.push(...children); // Hijos
-      }
-    });
-
-    return result;
   };
 
   if (!orderItems?.length) {
@@ -217,7 +144,7 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                     <td className="pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl">{order.table}</td>
                     <td colSpan="3" className="p-0">
                       <div className="divide-y divide-gray-100">
-                        {getDisplayItems(order.items).map((item, itemIndex) => (
+                        {getDisplayItemsHierarchy(order.items).map((item, itemIndex) => (
                           <div
                             key={itemIndex}
                             onClick={() => toggleRowSelection(item)}
