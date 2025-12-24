@@ -61,25 +61,21 @@ const MainItem = ({
     }
   };
 
-  const isCompletedHere =
-    !isBorrowedParent && item.kitchen_status === 1;
+  const isCompletedHere = !isBorrowedParent && item.kitchen_status === 1;
 
-  const isCompletedElsewhere =
-    isBorrowedParent && item.kitchen_status === 1;
+  const isCompletedElsewhere = isBorrowedParent && item.kitchen_status === 1;
 
-  const isParentCompletedByChildren =
-    !isBorrowedParent &&
-    item.isParent &&
-    allAdditionalsComplete;
+  const isParentCompletedByChildren = !isBorrowedParent && item.isParent && allAdditionalsComplete;
+  
   // 🔥 MODIFICADO: Items deshabilitados no son clickeables
   const isClickable = isDisabled ? false : (isServing ? (isCompleted && !isServed) : !isCompleted);
   const isSelected = selectedItems.has(item.id);
 
   const getBackgroundColor = () => {
     // 🔥 NUEVO: Color especial para items deshabilitados
-    if (isDisabled) {
-      return "bg-gray-100 border-2 border-dashed border-gray-300";
-    }
+    // if (isDisabled) {
+    //   return "bg-gray-100 border-2 border-dashed border-gray-300";
+    // }
 
     if (isSelected) return "bg-yellow-300";
 
@@ -90,7 +86,7 @@ const MainItem = ({
   };
 
   const handleClick = () => {
-    // 🔥 MODIFICADO: Prevenir clicks en items deshabilitados
+    // 🔥 MODIFICADO: Prevenir clicks en items deshabilitados         ${isDisabled ? "cursor-not-allowed opacity-60" : ""}
     if (isDisabled) {
       return;
     }
@@ -111,36 +107,39 @@ const MainItem = ({
         transition-all duration-300
         ${getBackgroundColor()}
         ${isClickable ? "cursor-pointer hover:shadow-md" : ""}
-        ${isDisabled ? "cursor-not-allowed opacity-60" : ""}
+
         ${isExpanded ? "border-b border-gray-200" : ""}
         ${isTouching && !isDisabled ? "bg-white" : ""}
       `}
     >
       {/* 🔥 NUEVO: Badge para padres prestados */}
-      {isBorrowedParent && (
+      {/* {isBorrowedParent && (
         <div className="mb-2 flex items-center gap-2">
           <span className="inline-flex items-center gap-1 text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded border border-yellow-300">
             <Lock className="h-3 w-3" />
             参照のみ（他の端末用）
           </span>
         </div>
-      )}
+      )} */}
 
       {/* Item principal */}
       <div className="flex items-start justify-between">
         <div className="flex items-center gap-4">
           {/* 🔥 MODIFICADO: Icono de candado para items deshabilitados */}
           <div className="flex items-center gap-2">
-            {isDisabled && (
-              <Lock className="h-4 w-4 text-gray-400 flex-shrink-0" />
+            {isDisabled ? (
+              // 🔥 Mostrar candado en lugar de cantidad
+              <Lock className="h-6 w-6 text-gray-400" />
+            ) : (
+              // Mostrar cantidad normal
+              <span className={`
+                  ${getQuantityFontSizeClass()} 
+                  text-gray-700 
+                  whitespace-nowrap font-medium
+                `}>
+                {item.quantity}
+              </span>
             )}
-            <span className={`
-              ${getQuantityFontSizeClass()} 
-              ${isDisabled ? 'text-gray-400' : 'text-gray-700'} 
-              whitespace-nowrap font-medium
-            `}>
-              {item.quantity}
-            </span>
           </div>
 
           {item.modification && item.modification !== "　" && (
@@ -156,7 +155,7 @@ const MainItem = ({
           <span className={`
             ${getFontSizeClass()} 
             text-left flex-1 break-words
-            ${isDisabled ? 'text-gray-400 line-through' : ''}
+            ${isDisabled ? 'text-gray-400' : ''}
           `}>
             {isLastOrderItems === "true" && !isDisabled && (
               <MdFiberNew className='text-red-500 inline' />

@@ -170,15 +170,18 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
                                   </span>
                                 )}
                               </span>
-                              {item.isDisabled && (
-                                <Lock className="h-4 w-4 text-gray-400 flex-shrink-0 mr-2" />
-                              )}
                             </div>
 
                             <div className="w-[200px] flex justify-end">
-                              <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
-                                {item.quantity}
-                              </span>
+                              {item.isDisabled ? (
+                                // 🔥 Mostrar candado en lugar de cantidad
+                                <Lock className="h-6 w-6 text-gray-400" />
+                              ) : (
+                                // Mostrar cantidad normal
+                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
+                                  {item.quantity}
+                                </span>
+                              )}
                             </div>
 
                             <div className="w-[50px] flex justify-end px-4">

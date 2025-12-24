@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Image } from 'lucide-react';
+import { Image, Lock } from 'lucide-react';
 import _ from 'lodash';
 import ImageModal from '@/components/ui/ImagenModal';
 import { getAllChildrenByPid, getDisplayItemsHierarchy, processOrdersWithHierarchy, updateSelectedItems } from '@/js/itemSelectionHelpers';
@@ -381,19 +381,27 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                                             )}
 
                                                             <div className="w-[120px] flex justify-end">
-                                                                <span className={`inline-flex items-center justify-center w-8 h-8 text-5xl font-medium ${item.isDisabled ? 'text-gray-400' : 'text-black-500'
-                                                                    }`}>
-                                                                    {item.quantity}
-                                                                </span>
+                                                                {item.isDisabled ? (
+                                                                    // 🔥 Mostrar candado en lugar de cantidad
+                                                                    <Lock className="h-6 w-6 text-gray-400" />
+                                                                ) : (
+                                                                    // Mostrar cantidad normal
+                                                                    <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
+                                                                        {item.quantity}
+                                                                    </span>
+                                                                )}
                                                             </div>
 
                                                             <div className="w-[120px] flex justify-end px-4">
                                                                 {/* 🔥 Solo mostrar total si NO es padre prestado */}
-                                                                {!item.isDisabled && (
-                                                                    <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500">
-                                                                        {itemTotals[item.name]?.total || 0}
-                                                                    </span>
-                                                                )}
+                                                                {item.isDisabled ?
+                                                                    (
+                                                                        <Lock className="h-6 w-6 text-gray-400" />
+                                                                    ) : (
+                                                                        <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500">
+                                                                            {itemTotals[item.name]?.total || 0}
+                                                                        </span>
+                                                                    )}
                                                             </div>
                                                         </div>
                                                     ))}
