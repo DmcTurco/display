@@ -128,27 +128,21 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const toggleRowSelection = useCallback((item, allItems) => {
         setSelectedRows(prev => {
             const newSet = new Set(selectionMode === "2" ? [] : prev);
+            const isSelected = prev.has(item.id);
 
             if (item.isParent) {
                 const children = getAllChildrenByPid(item.uid, allItems);
-
-                if (selectionMode === "2" || !prev.has(item.id)) {
-                    // Seleccionar
-                    newSet.add(item.id);
-                    children.forEach(child => newSet.add(child.id));
-                } else {
-                    // Deseleccionar
+                if (isSelected) {
                     newSet.delete(item.id);
                     children.forEach(child => newSet.delete(child.id));
+                } else {
+                    newSet.add(item.id);
+                    children.forEach(child => newSet.add(child.id));
                 }
             } else {
-                if (selectionMode === "2" || !prev.has(item.id)) {
-                    newSet.add(item.id);
-                } else {
-                    newSet.delete(item.id);
-                }
+                isSelected ? newSet.delete(item.id) : newSet.add(item.id);
             }
-
+            
             return newSet;
         });
     }, [selectionMode]);
@@ -156,24 +150,28 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     // 🔥 MEJORADO: Simplificar toggleTableSelection usando helper
     const toggleTableSelection = useCallback((order) => {
         setSelectedRows(prev => {
+
+            const selectableItems = order.items.filter(item => !item.isDisabled);
+            const allItemsSelected = selectableItems.every(item => prev.has(item.id));
+
             const newSet = new Set(selectionMode === "2" ? [] : prev);
-            const allItemsSelected = order.items.every(item => prev.has(item.id));
 
             order.items.forEach(item => {
-                if (selectionMode === "2" || !allItemsSelected) {
-                    // Seleccionar
-                    newSet.add(item.id);
-                    if (item.isParent) {
-                        const children = getAllChildrenByPid(item.uid, order.items);
-                        children.forEach(child => newSet.add(child.id));
-                    }
-                } else {
+                if (allItemsSelected) {
                     // Deseleccionar
                     newSet.delete(item.id);
                     if (item.isParent) {
                         const children = getAllChildrenByPid(item.uid, order.items);
                         children.forEach(child => newSet.delete(child.id));
                     }
+                } else {
+                    // Seleccionar
+                    newSet.add(item.id);
+                    if (item.isParent) {
+                        const children = getAllChildrenByPid(item.uid, order.items);
+                        children.forEach(child => newSet.add(child.id));
+                    }
+
                 }
             });
 
