@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Image } from 'lucide-react';
 import _ from 'lodash';
 import ImageModal from '@/components/ui/ImagenModal';
-import { getAllChildrenByPid, getDisplayItemsHierarchy, updateSelectedItems } from '@/js/itemSelectionHelpers';
+import { getAllChildrenByPid, getDisplayItemsHierarchy, processOrdersWithHierarchy, updateSelectedItems } from '@/js/itemSelectionHelpers';
 import { useDoubleTap } from '@/js/useDoubleTap';
 
 
@@ -25,67 +25,22 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     }, [cleanup]);
 
     const { orderItems, itemTotals } = useMemo(() => {
-        const orderItems = orders.map((order) => {
-            const itemsWithPid = order.items?.filter(item => item.pid) || [];
-            const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
-
-            // Detectar padres prestados
-            const borrowedParentUids = parentUids.filter(parentUid => {
-                const parent = order.items?.find(item => item.uid === parentUid);
-                return parent?.belongs_to_kitchen === false;
-            });
-
-            // Identificar padres activos (con hijos sin cocinar)
-            const activeParentUids = parentUids.filter(parentUid => {
-                const children = order.items?.filter(item =>
-                    item.pid === parentUid && item.kitchen_status !== 1
-                );
-                return children.length > 0;
-            });
-
-            // Filtrar ítems relevantes
-            const processedItems = order.items?.filter(item =>
-                (activeParentUids.includes(item.uid)) ||
-                (!item.pid && item.kitchen_status !== 1) ||
-                (item.pid && item.kitchen_status !== 1)
-            ).map(item => {
-                const isParent = parentUids.includes(item.uid);
-                const isBorrowedParent = borrowedParentUids.includes(item.uid);
-
-                return {
-                    ...item,
-                    isParent,
-                    isChild: Boolean(item.pid),
-                    isBorrowedParent,
-                    isDisabled: isBorrowedParent
-                };
-            }) || [];
-
-            // 🔥 POST-FILTRADO: Eliminar padres prestados sin hijos visibles
-            const finalItems = processedItems.filter(item => {
-                // Si es un padre prestado, verificar que tenga hijos en la lista
-                if (item.isDisabled && item.isParent) {
-                    const hasVisibleChildren = processedItems.some(child =>
-                        child.pid === item.uid && !child.isDisabled
-                    );
-                    return hasVisibleChildren; // Solo incluir si tiene hijos visibles
-                }
-                return true; // Incluir todos los demás items
-            });
-
-            return {
+        // 🔥 USAR HELPER
+        const processedOrders = processOrdersWithHierarchy(orders, {
+            filterPendingOnly: true,  // Solo items pendientes (kitchen_status !== 1)
+            sortBy: 'record_date',
+            sortOrder: 'asc',
+            mapOrderFields: (order) => ({
                 orderTime: order.formatted_time,
-                elapsedTime: `${order.elapsedTime}分`,
-                table: order.table_name || 'Sin Mesa',
-                items: finalItems, // 🔥 Usar finalItems en vez de processedItems
-                originalOrder: order
-            };
-        }).filter(order => order.items.length > 0);
+                elapsedTime: `${order.elapsedTime}分`
+            })
+        });
 
         // Calcular totales
         const itemTotals = {};
-        orderItems.forEach(order => {
+        processedOrders.forEach(order => {
             order.items.forEach(item => {
+                // No contar padres prestados
                 if (item.isDisabled) return;
 
                 if (!itemTotals[item.name]) {
@@ -93,13 +48,23 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 }
                 itemTotals[item.name].total += item.quantity;
                 itemTotals[item.name].occurrences += 1;
+
+                // 🔥 También contar hijos en additionalItems
+                if (item.additionalItems?.length > 0) {
+                    item.additionalItems.forEach(child => {
+                        if (child.isDisabled) return;
+
+                        if (!itemTotals[child.name]) {
+                            itemTotals[child.name] = { total: 0, occurrences: 0 };
+                        }
+                        itemTotals[child.name].total += child.quantity;
+                        itemTotals[child.name].occurrences += 1;
+                    });
+                }
             });
         });
 
-        return {
-            orderItems: _.sortBy(orderItems, (item) => new Date(item.originalOrder.record_date)),
-            itemTotals
-        };
+        return { orderItems: processedOrders, itemTotals };
     }, [orders]);
 
     // 🔥 NUEVO: Usar updateSelectedItems del helper
@@ -116,7 +81,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 updateKitchenStatus,
                 kitchen_cd,
                 targetStatus: 1,
-                useAdditionalItems: false, // OrderTimeline usa pid/uid directamente
+                useAdditionalItems: true,  // 🔥 CAMBIO: Ahora usa additionalItems
                 parentUpdateStrategy: 'check-all-siblings'
             });
         } catch (error) {
@@ -131,7 +96,9 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             const isSelected = prev.has(item.id);
 
             if (item.isParent) {
-                const children = getAllChildrenByPid(item.uid, allItems);
+                // 🔥 CAMBIO: Usar additionalItems en lugar de getAllChildrenByPid
+                const children = item.additionalItems || [];
+
                 if (isSelected) {
                     newSet.delete(item.id);
                     children.forEach(child => newSet.delete(child.id));
@@ -142,7 +109,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             } else {
                 isSelected ? newSet.delete(item.id) : newSet.add(item.id);
             }
-            
+
             return newSet;
         });
     }, [selectionMode]);
@@ -150,28 +117,18 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     // 🔥 MEJORADO: Simplificar toggleTableSelection usando helper
     const toggleTableSelection = useCallback((order) => {
         setSelectedRows(prev => {
-
-            const selectableItems = order.items.filter(item => !item.isDisabled);
+            // 🔥 CAMBIO: Obtener todos los items con getDisplayItemsHierarchy
+            const displayItems = getDisplayItemsHierarchy(order.items, true);
+            const selectableItems = displayItems.filter(item => !item.isDisabled);
             const allItemsSelected = selectableItems.every(item => prev.has(item.id));
 
             const newSet = new Set(selectionMode === "2" ? [] : prev);
 
-            order.items.forEach(item => {
+            selectableItems.forEach(item => {
                 if (allItemsSelected) {
-                    // Deseleccionar
                     newSet.delete(item.id);
-                    if (item.isParent) {
-                        const children = getAllChildrenByPid(item.uid, order.items);
-                        children.forEach(child => newSet.delete(child.id));
-                    }
                 } else {
-                    // Seleccionar
                     newSet.add(item.id);
-                    if (item.isParent) {
-                        const children = getAllChildrenByPid(item.uid, order.items);
-                        children.forEach(child => newSet.add(child.id));
-                    }
-
                 }
             });
 
@@ -184,28 +141,29 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         if (item.isDisabled) return;
 
         if (selectionMode === "2") {
-            // MODO 2: Double tap
             handleTap(
                 `item-${item.id}`,
-                // Single tap: Seleccionar
                 () => toggleRowSelection(item, allItems),
-                // Double tap: Actualizar
                 () => {
                     const itemIds = new Set();
                     itemIds.add(item.id);
 
                     if (item.isParent) {
-                        const children = getAllChildrenByPid(item.uid, allItems);
+                        // 🔥 CAMBIO: Usar additionalItems
+                        const children = item.additionalItems || [];
                         children.forEach(child => itemIds.add(child.id));
                     } else if (item.isChild) {
-                        const siblings = getAllChildrenByPid(item.pid, allItems);
-                        const allSiblingsWillBeReady = siblings.every(sibling =>
-                            sibling.kitchen_status === 1 || sibling.id === item.id
-                        );
+                        // 🔥 CAMBIO: Buscar padre en order.items
+                        const parent = allItems.find(i => i.uid === item.pid);
+                        if (parent && parent.additionalItems) {
+                            const siblings = parent.additionalItems;
+                            const allSiblingsWillBeReady = siblings.every(sibling =>
+                                sibling.kitchen_status === 1 || sibling.id === item.id
+                            );
 
-                        if (allSiblingsWillBeReady) {
-                            const parent = allItems.find(i => i.uid === item.pid);
-                            if (parent) itemIds.add(parent.id);
+                            if (allSiblingsWillBeReady && parent) {
+                                itemIds.add(parent.id);
+                            }
                         }
                     }
 
@@ -214,7 +172,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 }
             );
         } else {
-            // MODO 1: Single tap directo
             toggleRowSelection(item, allItems);
         }
     }, [selectionMode, handleTap, toggleRowSelection, handleItemsUpdate]);
@@ -223,21 +180,18 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     // 🔥 NUEVO: Handler unificado para mesas
     const handleTableTouch = useCallback((order) => {
         if (selectionMode === "2") {
-            // MODO 2: Double tap
             handleTap(
                 `table-${order.orderTime}-${order.table}`,
-                // Single tap: Seleccionar
                 () => toggleTableSelection(order),
-                // Double tap: Actualizar
                 () => {
                     const itemIds = new Set();
-                    order.items.forEach(item => {
+
+                    // 🔥 CAMBIO: Usar getDisplayItemsHierarchy para obtener todos los items
+                    const displayItems = getDisplayItemsHierarchy(order.items, true);
+
+                    displayItems.forEach(item => {
                         if (!item.isDisabled) {
                             itemIds.add(item.id);
-                            if (item.isParent) {
-                                const children = getAllChildrenByPid(item.uid, order.items);
-                                children.forEach(child => itemIds.add(child.id));
-                            }
                         }
                     });
 
@@ -246,7 +200,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 }
             );
         } else {
-            // MODO 1: Single tap directo
             toggleTableSelection(order);
         }
     }, [selectionMode, handleTap, toggleTableSelection, handleItemsUpdate]);
@@ -255,7 +208,6 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         handleUpdate();
     };
 
-    // 🔥 NUEVO: Actualizar usando helper
     const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
@@ -269,7 +221,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                 updateKitchenStatus,
                 kitchen_cd,
                 targetStatus: 1,
-                useAdditionalItems: false, // OrderTimeline usa pid/uid
+                useAdditionalItems: true,  // 🔥 CAMBIO: Ahora usa additionalItems
                 parentUpdateStrategy: 'check-selected-siblings'
             });
 
@@ -352,7 +304,12 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                             </thead>
                             <tbody className="divide-y divide-gray-200">
                                 {orderItems.map((order, orderIndex) => {
-                                    const isTableSelected = order.items.every(item => selectedRows.has(item.id));
+                                    const selectableItems = getDisplayItemsHierarchy(order.items, true)
+                                        .filter(item => !item.isDisabled);
+
+                                    const isTableSelected = selectableItems.length > 0 &&
+                                        selectableItems.every(item => selectedRows.has(item.id));
+
                                     return (
                                         <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
                                             <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">
@@ -370,7 +327,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                             </td>
                                             <td colSpan="3" className="p-0">
                                                 <div className="divide-y divide-gray-200">
-                                                    {getDisplayItemsHierarchy(order.items, false).map((item, itemIndex) => (
+                                                    {getDisplayItemsHierarchy(order.items, true).map((item, itemIndex) => (
                                                         <div
                                                             key={itemIndex}
                                                             onClick={() => {
