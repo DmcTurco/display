@@ -437,14 +437,14 @@ export const updateSelectedItems = async ({
  */
 export const processOrdersWithHierarchy = (orders, options = {}) => {
     const {
-        filterByKitchenStatus = true,
+        filterByKitchenStatus = false,
         filterByServingStatus = false,
-        filterByServingCompleted = false, // 🔥 Nueva opción
+        filterByServingCompleted = false,
+        filterPendingOnly = false,
         sortBy = 'record_date',
         sortOrder = 'asc',
         mapOrderFields = null
     } = options;
-
 
     if (!Array.isArray(orders)) {
         console.warn('⚠️ Orders no es un array:', orders);
@@ -452,17 +452,14 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
     }
 
     const processedOrders = orders.map((order) => {
-        // Encontrar items que tienen pid
         const itemsWithPid = order.items?.filter(item => item.pid) || [];
         const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
 
-        // 🔥 Detectar padres prestados
         const borrowedParentUids = parentUids.filter(parentUid => {
             const parent = order.items?.find(item => item.uid === parentUid);
             return parent?.belongs_to_kitchen === false;
         });
 
-        // 🔥 PASO 1: Determinar qué padres están activos según los filtros
         const activeParentUids = parentUids.filter(parentUid => {
             const children = order.items?.filter(item => {
                 if (item.pid !== parentUid) return false;
@@ -477,9 +474,12 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
                     isActive = isActive && !(item.kitchen_status === 1 && item.serving_status === 1);
                 }
 
-                // 🔥 Nuevo filtro para ServingCompleted
                 if (filterByServingCompleted) {
                     isActive = isActive && item.serving_status === 1;
+                }
+
+                if (filterPendingOnly) {
+                    isActive = isActive && item.kitchen_status !== 1;
                 }
 
                 return isActive;
@@ -488,7 +488,6 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
             return children.length > 0;
         });
 
-        // 🔥 PASO 2: Procesar TODOS los items primero
         const allProcessedItems = order.items?.map(item => {
             const isParent = parentUids.includes(item.uid);
             const isBorrowedParent = borrowedParentUids.includes(item.uid);
@@ -502,15 +501,30 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
             };
         }) || [];
 
-        // 🔥 PASO 3: Filtrar items para la lista principal
         const processedItems = allProcessedItems
             .filter(item => {
-                // Incluir padres activos
+                // 🔥 REGLA: Items que no pertenecen a la cocina
+                if (item.belongs_to_kitchen === false) {
+                    // Solo permitir si es padre prestado con hijos activos
+                    if (activeParentUids.includes(item.uid)) {
+                        return true;  // ✅ Padre prestado con hijos → permitir sin más filtros
+                    } else {
+                        return false;  // ❌ Item suelto → excluir
+                    }
+                }
+
+                // Padres activos que SÍ pertenecen a la cocina
                 if (activeParentUids.includes(item.uid)) {
+                    if (filterPendingOnly) {
+                        return item.kitchen_status !== 1;
+                    }
+                    if (filterByKitchenStatus) {
+                        return item.kitchen_status === 1;
+                    }
                     return true;
                 }
 
-                // Aplicar filtros
+                // Items normales
                 let include = true;
 
                 if (filterByKitchenStatus) {
@@ -521,14 +535,16 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
                     include = include && item.serving_status === 0;
                 }
 
-                // 🔥 Nuevo filtro para ServingCompleted
                 if (filterByServingCompleted) {
                     include = include && item.serving_status === 1;
                 }
 
+                if (filterPendingOnly) {
+                    include = include && item.kitchen_status !== 1;
+                }
+
                 if (!include) return false;
 
-                // Si es un hijo, verificar si su padre está presente
                 if (item.isChild) {
                     const parentIsPresent = activeParentUids.includes(item.pid);
                     return !parentIsPresent;
@@ -537,7 +553,6 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
                 return true;
             })
             .map(item => {
-                // 🔥 PASO 4: Agregar additionalItems con el nuevo filtro
                 if (item.isParent) {
                     const children = allProcessedItems.filter(child => {
                         if (child.pid !== item.uid) return false;
@@ -552,9 +567,12 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
                             include = include && !(child.kitchen_status === 1 && child.serving_status === 1);
                         }
 
-                        // 🔥 Nuevo filtro para ServingCompleted
                         if (filterByServingCompleted) {
                             include = include && child.serving_status === 1;
+                        }
+
+                        if (filterPendingOnly) {
+                            include = include && child.kitchen_status !== 1;
                         }
 
                         return include;
@@ -575,14 +593,20 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
                 };
             });
 
-        // Construir objeto de orden con campos mapeados
+        const finalItems = processedItems.filter(item => {
+            if (item.isDisabled && item.isParent) {
+                const hasVisibleChildren = item.additionalItems && item.additionalItems.length > 0;
+                return hasVisibleChildren;
+            }
+            return true;
+        });
+
         const baseOrderData = {
             table: order.table_name || "Sin Mesa",
-            items: processedItems,
+            items: finalItems,
             originalOrder: order,
         };
 
-        // Aplicar mapeo personalizado de campos si existe
         const mappedFields = mapOrderFields ? mapOrderFields(order) : {};
 
         return {
@@ -591,7 +615,6 @@ export const processOrdersWithHierarchy = (orders, options = {}) => {
         };
     }).filter((order) => order.items.length > 0);
 
-    // Ordenar según configuración
     const sorted = _.orderBy(
         processedOrders,
         [sortBy === 'record_date'

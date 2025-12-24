@@ -12,6 +12,8 @@ const OrderServing = ({ completedOrders, updateKitchenStatus }) => {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [sortElapsedTime, setSortElapsedTime] = useState("desc");
 
+  // console.log(completedOrders);
+
   const orderItems = useMemo(() => {
     return processOrdersWithHierarchy(completedOrders, {
       filterByKitchenStatus: true,
