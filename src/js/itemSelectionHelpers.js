@@ -772,3 +772,214 @@ export const processTableGroupsWithHierarchy = (tableGroups, options = {}) => {
         })
         .filter(Boolean); // elimina mesas vacías
 };
+
+/**
+ * Procesa órdenes en formato matriz (items × mesas) para OrderTablet
+ * Incluye filtrado de padres prestados y agrupación por tipo de item
+ */
+export const processOrdersAsMatrix = (orders) => {
+    const items = new Set();
+    const tables = new Set();
+    const matrix = {};
+    const itemsMap = {};
+    const parentChildRelations = {};
+    const itemTypeToGroupKey = {};
+
+    // Primera pasada: identificar relaciones padre-hijo
+    orders.forEach(order => {
+        const itemsWithPid = order.items?.filter(item => item.pid) || [];
+
+        itemsWithPid.forEach(childItem => {
+            if (!parentChildRelations[childItem.pid]) {
+                parentChildRelations[childItem.pid] = new Set();
+            }
+            parentChildRelations[childItem.pid].add(childItem.uid);
+        });
+    });
+
+    // Segunda pasada: procesar los ítems
+    orders.forEach(order => {
+        const tableName = order.table_name || 'Sin Mesa';
+        tables.add(tableName);
+
+        // Identificar relaciones padre-hijo
+        const itemsWithPid = order.items?.filter(item => item.pid) || [];
+        const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+
+        // 🔥 Detectar padres prestados
+        const borrowedParentUids = parentUids.filter(parentUid => {
+            const parent = order.items?.find(item => item.uid === parentUid);
+            return parent?.belongs_to_kitchen === false;
+        });
+
+        // Identificar padres activos (con hijos sin cocinar)
+        const activeParentUids = parentUids.filter(parentUid => {
+            const children = order.items?.filter(item =>
+                item.pid === parentUid && item.kitchen_status !== 1
+            );
+            return children.length > 0;
+        });
+
+        order.items?.forEach(item => {
+            // 🔥 FILTRADO: Excluir items que no pertenecen a la cocina
+            if (item.belongs_to_kitchen === false) {
+                // Solo permitir si es padre prestado con hijos activos
+                if (!activeParentUids.includes(item.uid)) {
+                    return; // Excluir item suelto que no pertenece
+                }
+            }
+
+            // Aplicar lógica de filtrado original
+            const shouldProcess =
+                (activeParentUids.includes(item.uid)) ||
+                (!item.pid && item.kitchen_status !== 1) ||
+                (item.pid && item.kitchen_status !== 1);
+
+            if (shouldProcess) {
+                const isParent = parentUids.includes(item.uid);
+                const isChild = Boolean(item.pid);
+                const isBorrowedParent = borrowedParentUids.includes(item.uid);
+
+                // Determinar itemTypeKey
+                let itemTypeKey;
+                if (isParent) {
+                    itemTypeKey = `PARENT_${item.code || item.menu_id || item.name}`;
+                } else if (isChild) {
+                    const parentItem = order.items?.find(p => p.uid === item.pid);
+                    const parentCode = parentItem ? (parentItem.code || parentItem.menu_id || parentItem.name) : 'unknown';
+                    itemTypeKey = `CHILD_${item.code || item.menu_id || item.name}_OF_${parentCode}`;
+                } else {
+                    itemTypeKey = `NORMAL_${item.code || item.menu_id || item.name}`;
+                }
+
+                // Crear clave de grupo
+                if (!itemTypeToGroupKey[itemTypeKey]) {
+                    itemTypeToGroupKey[itemTypeKey] = item.uid;
+                }
+
+                const groupKey = itemTypeToGroupKey[itemTypeKey];
+                items.add(groupKey);
+
+                // Enriquecer el ítem
+                const enrichedItem = {
+                    ...item,
+                    isParent,
+                    isChild,
+                    isBorrowedParent,
+                    isDisabled: isBorrowedParent, // 🔥 Marcar padres prestados como deshabilitados
+                    groupKey,
+                    parentUid: isChild ? item.pid : null,
+                    itemTypeKey
+                };
+
+                // Almacenar en itemsMap
+                if (!itemsMap[groupKey]) {
+                    itemsMap[groupKey] = {};
+                }
+                if (!itemsMap[groupKey][tableName]) {
+                    itemsMap[groupKey][tableName] = [];
+                }
+                itemsMap[groupKey][tableName].push(enrichedItem);
+
+                // Crear o actualizar la matriz
+                if (!matrix[groupKey]) {
+                    matrix[groupKey] = {
+                        totals: 0,
+                        byTable: {},
+                        pendingByTable: {},
+                        isParent,
+                        isChild,
+                        isBorrowedParent,
+                        isDisabled: isBorrowedParent, // 🔥 Marcar en matriz
+                        displayName: item.name,
+                        uid: item.uid,
+                        originalUids: new Set([item.uid]),
+                        parentUid: isChild ? item.pid : null,
+                        itemTypeKey
+                    };
+                } else {
+                    matrix[groupKey].originalUids.add(item.uid);
+                }
+
+                if (!matrix[groupKey].byTable[tableName]) {
+                    matrix[groupKey].byTable[tableName] = 0;
+                    matrix[groupKey].pendingByTable[tableName] = 0;
+                }
+
+                // 🔥 CORREGIDO: Solo contar si NO es padre prestado
+                if (!isBorrowedParent) {
+                    matrix[groupKey].byTable[tableName] += item.quantity;
+                    matrix[groupKey].pendingByTable[tableName] += item.quantity;
+                    matrix[groupKey].totals += item.quantity;
+                }
+            }
+        });
+    });
+
+    // Filtrar ítems sin pendientes
+    const filteredItems = Array.from(items).filter(item =>
+        matrix[item] && matrix[item].totals >= 0 // 🔥 Cambio: >= 0 para incluir padres prestados con total 0
+    );
+
+    // 🔥 POST-FILTRADO: Eliminar padres prestados sin hijos visibles
+    const finalFilteredItems = filteredItems.filter(groupKey => {
+        const item = matrix[groupKey];
+
+        // Si es un padre prestado, verificar que tenga hijos en la lista
+        if (item.isDisabled && item.isParent) {
+            const hasVisibleChildren = filteredItems.some(childKey => {
+                const child = matrix[childKey];
+                return child.isChild &&
+                    child.parentUid &&
+                    item.originalUids.has(child.parentUid) &&
+                    !child.isDisabled;
+            });
+            return hasVisibleChildren;
+        }
+
+        return true;
+    });
+
+    // Construir mapa de relaciones
+    const parentToChildrenMap = {};
+    finalFilteredItems.forEach(groupKey => {
+        if (matrix[groupKey].isParent) {
+            parentToChildrenMap[groupKey] = finalFilteredItems.filter(childKey =>
+                matrix[childKey].isChild &&
+                matrix[childKey].parentUid &&
+                matrix[groupKey].originalUids.has(matrix[childKey].parentUid)
+            );
+        }
+    });
+
+    // Ordenar jerárquicamente
+    const sortedItems = [];
+    const parentItems = finalFilteredItems.filter(item => matrix[item].isParent);
+    const standaloneItems = finalFilteredItems.filter(item => !matrix[item].isParent && !matrix[item].isChild);
+
+    // Padres con sus hijos
+    parentItems.forEach(parentKey => {
+        sortedItems.push(parentKey);
+        if (parentToChildrenMap[parentKey]) {
+            parentToChildrenMap[parentKey].forEach(childKey => {
+                sortedItems.push(childKey);
+            });
+        }
+    });
+
+    // Ítems independientes
+    standaloneItems.forEach(itemKey => {
+        if (!sortedItems.includes(itemKey)) {
+            sortedItems.push(itemKey);
+        }
+    });
+
+    return {
+        uniqueItems: sortedItems,
+        uniqueTables: Array.from(tables).sort(),
+        orderMatrix: matrix,
+        itemsMap,
+        parentToChildrenMap,
+        parentChildRelations
+    };
+};
