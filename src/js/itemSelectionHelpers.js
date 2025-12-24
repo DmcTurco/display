@@ -2,10 +2,11 @@ import _ from 'lodash';
 
 /**
  * 🔥 Ordena items en jerarquía padre-hijo
- * @param {Array} items - Items procesados con isParent, isChild, additionalItems
+ * @param {Array} items - Items procesados con isParent, isChild
+ * @param {boolean} useAdditionalItems - Si usa additionalItems (true) o pid/uid (false)
  * @returns {Array} Items ordenados jerárquicamente
  */
-export const getDisplayItemsHierarchy = (items) => {
+export const getDisplayItemsHierarchy = (items, useAdditionalItems = true) => {
     if (!Array.isArray(items)) {
         console.warn('Items no es un array:', items);
         return [];
@@ -17,12 +18,25 @@ export const getDisplayItemsHierarchy = (items) => {
     items.forEach(item => {
         // Solo procesar items que no son hijos (padres o items normales)
         if (!item.isChild && !processedIds.has(item.id)) {
+
+            // 🔥 SIEMPRE agregar el item (sea padre prestado o no)
             result.push(item);
             processedIds.add(item.id);
 
-            // Si tiene hijos en additionalItems, agregarlos
-            if (item.additionalItems && Array.isArray(item.additionalItems)) {
-                item.additionalItems.forEach(child => {
+            // Agregar hijos según el modo
+            if (useAdditionalItems) {
+                if (item.additionalItems && Array.isArray(item.additionalItems)) {
+                    item.additionalItems.forEach(child => {
+                        if (!processedIds.has(child.id)) {
+                            result.push(child);
+                            processedIds.add(child.id);
+                        }
+                    });
+                }
+            } else {
+                // Filtrar hijos que NO estén deshabilitados
+                const children = items.filter(i => i.pid === item.uid);
+                children.forEach(child => {
                     if (!processedIds.has(child.id)) {
                         result.push(child);
                         processedIds.add(child.id);

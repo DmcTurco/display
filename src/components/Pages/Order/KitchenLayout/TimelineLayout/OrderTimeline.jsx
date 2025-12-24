@@ -1,28 +1,39 @@
-import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { CheckCircle2, Image, X } from 'lucide-react';
-import _, { filter, update } from 'lodash';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Image } from 'lucide-react';
+import _ from 'lodash';
 import ImageModal from '@/components/ui/ImagenModal';
+import { getAllChildrenByPid, getDisplayItemsHierarchy, updateSelectedItems } from '@/js/itemSelectionHelpers';
+import { useDoubleTap } from '@/js/useDoubleTap';
+
 
 const OrderTimeline = ({ orders, updateKitchenStatus }) => {
     const config = JSON.parse(localStorage.getItem('kitchenConfig')) || {};
     const kitchen_cd = config.cd;
-    const selectionMode = config.selectionMode || "1"; // Modo por defecto: botones
+    const selectionMode = config.selectionMode || "1";
     const [showConfirmDialog, setShowConfirmDialog] = useState(false);
     const [selectedRows, setSelectedRows] = useState(new Set());
 
     // Estado para el modal de imagen
     const [imageModalOpen, setImageModalOpen] = useState(false);
     const [selectedImage, setSelectedImage] = useState(null);
+    const { handleTap, cleanup } = useDoubleTap(250);
 
-    const lastTouchRef = useRef({});
-    const touchTimeoutRef = useRef({});
-    const DOUBLE_TAP_DELAY = 300;
+    useEffect(() => {
+        return () => {
+            cleanup();
+        };
+    }, [cleanup]);
 
-    // Procesamiento inicial de las órdenes
     const { orderItems, itemTotals } = useMemo(() => {
         const orderItems = orders.map((order) => {
             const itemsWithPid = order.items?.filter(item => item.pid) || [];
             const parentUids = [...new Set(itemsWithPid.map(item => item.pid))];
+
+            // Detectar padres prestados
+            const borrowedParentUids = parentUids.filter(parentUid => {
+                const parent = order.items?.find(item => item.uid === parentUid);
+                return parent?.belongs_to_kitchen === false;
+            });
 
             // Identificar padres activos (con hijos sin cocinar)
             const activeParentUids = parentUids.filter(parentUid => {
@@ -34,20 +45,39 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
 
             // Filtrar ítems relevantes
             const processedItems = order.items?.filter(item =>
-                (activeParentUids.includes(item.uid)) || // Es un padre con hijos sin cocinar
-                (!item.pid && item.kitchen_status !== 1) || // Es un ítem normal no cocinado
-                (item.pid && item.kitchen_status !== 1) // Es un hijo no cocinado
-            ).map(item => ({
-                ...item,
-                isParent: parentUids.includes(item.uid),
-                isChild: Boolean(item.pid)
-            })) || [];
+                (activeParentUids.includes(item.uid)) ||
+                (!item.pid && item.kitchen_status !== 1) ||
+                (item.pid && item.kitchen_status !== 1)
+            ).map(item => {
+                const isParent = parentUids.includes(item.uid);
+                const isBorrowedParent = borrowedParentUids.includes(item.uid);
+
+                return {
+                    ...item,
+                    isParent,
+                    isChild: Boolean(item.pid),
+                    isBorrowedParent,
+                    isDisabled: isBorrowedParent
+                };
+            }) || [];
+
+            // 🔥 POST-FILTRADO: Eliminar padres prestados sin hijos visibles
+            const finalItems = processedItems.filter(item => {
+                // Si es un padre prestado, verificar que tenga hijos en la lista
+                if (item.isDisabled && item.isParent) {
+                    const hasVisibleChildren = processedItems.some(child =>
+                        child.pid === item.uid && !child.isDisabled
+                    );
+                    return hasVisibleChildren; // Solo incluir si tiene hijos visibles
+                }
+                return true; // Incluir todos los demás items
+            });
 
             return {
                 orderTime: order.formatted_time,
                 elapsedTime: `${order.elapsedTime}分`,
                 table: order.table_name || 'Sin Mesa',
-                items: processedItems,
+                items: finalItems, // 🔥 Usar finalItems en vez de processedItems
                 originalOrder: order
             };
         }).filter(order => order.items.length > 0);
@@ -56,6 +86,8 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         const itemTotals = {};
         orderItems.forEach(order => {
             order.items.forEach(item => {
+                if (item.isDisabled) return;
+
                 if (!itemTotals[item.name]) {
                     itemTotals[item.name] = { total: 0, occurrences: 0 };
                 }
@@ -70,132 +102,7 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         };
     }, [orders]);
 
-
-    // Función para encontrar todos los hijos de un padre
-    const getAllChildren = (parentId, items) => {
-        if (!Array.isArray(items)) {
-            console.warn('Items no es un array:', items);
-            return [];
-        }
-        return items.filter(item => item.pid === parentId);
-    };
-
-    // Función para manejar el doble toque de un ítem
-    const handleItemTouch = useCallback((item, allItems) => {
-        const now = Date.now();
-        const touchId = `item-${item.id}`; // Identificador único para este ítem
-
-        if (selectionMode === "2") {
-            // Si es modo doble toque
-            if (now - (lastTouchRef.current[touchId] || 0) < DOUBLE_TAP_DELAY) {
-                // Es un doble toque, limpiamos el timeout y actualizamos
-                if (touchTimeoutRef.current[touchId]) {
-                    clearTimeout(touchTimeoutRef.current[touchId]);
-                }
-
-                // Colección de ids a actualizar
-                const itemIds = new Set([item.id]);
-
-                // Si es padre, incluir a sus hijos
-                if (item.isParent) {
-                    const children = getAllChildren(item.uid, allItems);
-                    children.forEach(child => itemIds.add(child.id));
-                }
-                // Si es hijo, verificar si debemos actualizar al padre
-                else if (item.isChild) {
-                    const siblings = getAllChildren(item.pid, allItems);
-                    const allSiblingsWillBeReady = siblings.every(sibling =>
-                        sibling.kitchen_status === 1 || sibling.id === item.id
-                    );
-
-                    if (allSiblingsWillBeReady) {
-                        const parent = allItems.find(i => i.uid === item.pid);
-                        if (parent) {
-                            itemIds.add(parent.id);
-                        }
-                    }
-                }
-
-                // Realizar la actualización
-                handleItemsUpdate(itemIds);
-
-                //limpiar seleccionados despues de Actualizar
-                setSelectedRows(new Set());
-            } else {
-                // Es el primer toque, guardamos tiempo y configuramos timeout
-                if (touchTimeoutRef.current[touchId]) {
-                    clearTimeout(touchTimeoutRef.current[touchId]);
-                }
-
-                touchTimeoutRef.current[touchId] = setTimeout(() => {
-                    // Opcional: acción para toque simple en modo 2
-                    console.log("Toque simple en ítem:", item.name);
-                    toggleRowSelection(item, allItems);
-                }, 250);
-            }
-
-            // Actualizar la referencia del último toque
-            lastTouchRef.current[touchId] = now;
-        } else {
-            // En modo 1, usar el comportamiento normal de selección
-            toggleRowSelection(item, allItems);
-        }
-    }, [selectionMode, getAllChildren]);
-
-    // Función para manejar el doble toque en una mesa completa
-    const handleTableTouch = useCallback((order) => {
-        const now = Date.now();
-        const touchId = `table-${order.orderTime}-${order.table}`; // Identificador único para esta mesa
-
-        if (selectionMode === "2") {
-            // Si es modo doble toque
-            if (now - (lastTouchRef.current[touchId] || 0) < DOUBLE_TAP_DELAY) {
-                // Es un doble toque, limpiamos el timeout y actualizamos
-                if (touchTimeoutRef.current[touchId]) {
-                    clearTimeout(touchTimeoutRef.current[touchId]);
-                }
-0
-                // Colección de ids a actualizar
-                const itemIds = new Set();
-
-                // Añadir todos los ítems de la mesa
-                order.items.forEach(item => {
-                    itemIds.add(item.id);
-
-                    // Si es padre, incluir a sus hijos
-                    if (item.isParent) {
-                        const children = getAllChildren(item.uid, order.items);
-                        children.forEach(child => itemIds.add(child.id));
-                    }
-                });
-
-                // Realizar la actualización
-                handleItemsUpdate(itemIds);
-
-                //limpiar seleccionados despues de actualizar
-                setSelectedRows(new Set());
-
-            } else {
-                // Es el primer toque, guardamos tiempo y configuramos timeout
-                if (touchTimeoutRef.current[touchId]) {
-                    clearTimeout(touchTimeoutRef.current[touchId]);
-                }
-
-                touchTimeoutRef.current[touchId] = setTimeout(() => {
-                    // Opcional: acción para toque simple en modo 2
-                    console.log("Toque simple en mesa:", order.table);
-                    toggleTableSelection(order);
-                }, 250);
-            }
-
-            // Actualizar la referencia del último toque
-            lastTouchRef.current[touchId] = now;
-        } else {
-            // En modo 1, usar el comportamiento normal de selección
-            toggleTableSelection(order);
-        }
-    }, [selectionMode, getAllChildren]);
-
+    // 🔥 NUEVO: Usar updateSelectedItems del helper
     const handleItemsUpdate = useCallback(async (itemIds) => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
@@ -203,125 +110,154 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         }
 
         try {
-            const updatePromises = [];
-
-            for (const order of orderItems) {
-                for (const item of order.items) {
-                    if (itemIds.has(item.id)) {
-                        updatePromises.push(updateKitchenStatus(item.id, 1, kitchen_cd));
-                    }
-                }
-            }
-
-            await Promise.all(updatePromises);
+            await updateSelectedItems({
+                selectedItemIds: itemIds,
+                orderGroups: orderItems,
+                updateKitchenStatus,
+                kitchen_cd,
+                targetStatus: 1,
+                useAdditionalItems: false, // OrderTimeline usa pid/uid directamente
+                parentUpdateStrategy: 'check-all-siblings'
+            });
         } catch (error) {
             console.error('Error al actualizar el estado:', error);
         }
     }, [kitchen_cd, orderItems, updateKitchenStatus]);
 
-    // Modificar toggleRowSelection para manejar la selección de padres e hijos
-    const toggleRowSelection = (item, allItems) => {
+    // 🔥 MEJORADO: Simplificar toggleRowSelection usando helper
+    const toggleRowSelection = useCallback((item, allItems) => {
         setSelectedRows(prev => {
-
-            if(selectionMode === "2"){
-
-                if(prev.has(item.id)){
-                    return new Set();
-                }else{
-                    const newSet = new Set();
-                    if(item.isParent){
-                        newSet.add(item.id);
-                        const children = getAllChildren(item.uid, allItems);
-                        children.forEach(child => newSet.add(child.id));
-                    }else{
-                        newSet.add(item.id);
-                    }
-
-                    return newSet;
-                }
-            }
-
-            const newSet = new Set(prev);
+            const newSet = new Set(selectionMode === "2" ? [] : prev);
 
             if (item.isParent) {
-                const children = getAllChildren(item.uid, allItems);
+                const children = getAllChildrenByPid(item.uid, allItems);
 
-                if (newSet.has(item.id)) {
-                    newSet.delete(item.id);
-                    children.forEach(child => newSet.delete(child.id));
-                } else {
+                if (selectionMode === "2" || !prev.has(item.id)) {
+                    // Seleccionar
                     newSet.add(item.id);
                     children.forEach(child => newSet.add(child.id));
+                } else {
+                    // Deseleccionar
+                    newSet.delete(item.id);
+                    children.forEach(child => newSet.delete(child.id));
                 }
             } else {
-                if (newSet.has(item.id)) {
-                    newSet.delete(item.id);
-                } else {
+                if (selectionMode === "2" || !prev.has(item.id)) {
                     newSet.add(item.id);
+                } else {
+                    newSet.delete(item.id);
                 }
             }
 
             return newSet;
         });
-    };
+    }, [selectionMode]);
 
-    const toggleTableSelection = (order) => {
+    // 🔥 MEJORADO: Simplificar toggleTableSelection usando helper
+    const toggleTableSelection = useCallback((order) => {
         setSelectedRows(prev => {
-
-            if(selectionMode === "2"){
-
-                const allItemsSelected = order.items.every(item => prev.has(item.id));
-
-                if(allItemsSelected){
-                    return new Set();
-                }else{
-                    const newSet = new Set();
-
-                    order.items.forEach(item =>{
-                        newSet.add(item.id);
-                        if(item.isParent){
-                            const children = getAllChildren(item.uid, order.items);
-                            children.forEach(child => newSet.add(child.id));
-                        }
-                    });
-
-                    return newSet;
-                }
-
-            }
-
-            const newSet = new Set(prev);
-            const allItemsSelected = order.items.every(item =>
-                newSet.has(item.id)
-            );
+            const newSet = new Set(selectionMode === "2" ? [] : prev);
+            const allItemsSelected = order.items.every(item => prev.has(item.id));
 
             order.items.forEach(item => {
-                if (allItemsSelected) {
-                    newSet.delete(item.id);
-                    // Si el ítem es padre, también deseleccionamos sus hijos
+                if (selectionMode === "2" || !allItemsSelected) {
+                    // Seleccionar
+                    newSet.add(item.id);
                     if (item.isParent) {
-                        const children = getAllChildren(item.uid, order.items);
-                        children.forEach(child => newSet.delete(child.id));
+                        const children = getAllChildrenByPid(item.uid, order.items);
+                        children.forEach(child => newSet.add(child.id));
                     }
                 } else {
-                    newSet.add(item.id);
-                    // Si el ítem es padre, también seleccionamos sus hijos
+                    // Deseleccionar
+                    newSet.delete(item.id);
                     if (item.isParent) {
-                        const children = getAllChildren(item.uid, order.items);
-                        children.forEach(child => newSet.add(child.id));
+                        const children = getAllChildrenByPid(item.uid, order.items);
+                        children.forEach(child => newSet.delete(child.id));
                     }
                 }
             });
+
             return newSet;
         });
-    };
+    }, [selectionMode]);
+
+    // 🔥 MEJORADO: Usar helper para doble toque de item
+    const handleItemTouch = useCallback((item, allItems) => {
+        if (item.isDisabled) return;
+
+        if (selectionMode === "2") {
+            // MODO 2: Double tap
+            handleTap(
+                `item-${item.id}`,
+                // Single tap: Seleccionar
+                () => toggleRowSelection(item, allItems),
+                // Double tap: Actualizar
+                () => {
+                    const itemIds = new Set();
+                    itemIds.add(item.id);
+
+                    if (item.isParent) {
+                        const children = getAllChildrenByPid(item.uid, allItems);
+                        children.forEach(child => itemIds.add(child.id));
+                    } else if (item.isChild) {
+                        const siblings = getAllChildrenByPid(item.pid, allItems);
+                        const allSiblingsWillBeReady = siblings.every(sibling =>
+                            sibling.kitchen_status === 1 || sibling.id === item.id
+                        );
+
+                        if (allSiblingsWillBeReady) {
+                            const parent = allItems.find(i => i.uid === item.pid);
+                            if (parent) itemIds.add(parent.id);
+                        }
+                    }
+
+                    handleItemsUpdate(itemIds);
+                    setSelectedRows(new Set());
+                }
+            );
+        } else {
+            // MODO 1: Single tap directo
+            toggleRowSelection(item, allItems);
+        }
+    }, [selectionMode, handleTap, toggleRowSelection, handleItemsUpdate]);
+
+
+    // 🔥 NUEVO: Handler unificado para mesas
+    const handleTableTouch = useCallback((order) => {
+        if (selectionMode === "2") {
+            // MODO 2: Double tap
+            handleTap(
+                `table-${order.orderTime}-${order.table}`,
+                // Single tap: Seleccionar
+                () => toggleTableSelection(order),
+                // Double tap: Actualizar
+                () => {
+                    const itemIds = new Set();
+                    order.items.forEach(item => {
+                        if (!item.isDisabled) {
+                            itemIds.add(item.id);
+                            if (item.isParent) {
+                                const children = getAllChildrenByPid(item.uid, order.items);
+                                children.forEach(child => itemIds.add(child.id));
+                            }
+                        }
+                    });
+
+                    handleItemsUpdate(itemIds);
+                    setSelectedRows(new Set());
+                }
+            );
+        } else {
+            // MODO 1: Single tap directo
+            toggleTableSelection(order);
+        }
+    }, [selectionMode, handleTap, toggleTableSelection, handleItemsUpdate]);
 
     const handleConfirm = () => {
         handleUpdate();
-        setShowConfirmDialog(false);
     };
 
-    // Actualizar estado de los ítems seleccionados
+    // 🔥 NUEVO: Actualizar usando helper
     const handleUpdate = async () => {
         if (!kitchen_cd) {
             console.error('No se encontró kitchen_cd en la configuración');
@@ -329,38 +265,15 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         }
 
         try {
-            for (const order of orderItems) {
-                for (const item of order.items) {
-                    if (selectedRows.has(item.id)) {
-                        if (item.isParent) {
-                            const children = getAllChildren(item.uid, order.items);
-                            await Promise.all([
-                                updateKitchenStatus(item.id, 1, kitchen_cd),
-                                ...children.map(child => updateKitchenStatus(child.id, 1, kitchen_cd))
-                            ]);
-                        } else if (item.isChild) {
-                            const siblings = getAllChildren(item.pid, order.items);
-                            const allSiblingsWillBeReady = siblings.every(sibling =>
-                                sibling.kitchen_status === 1 || selectedRows.has(sibling.id)
-                            );
-
-                            if (allSiblingsWillBeReady) {
-                                const parent = order.items.find(i => i.uid === item.pid);
-                                if (parent) {
-                                    await Promise.all([
-                                        updateKitchenStatus(item.id, 1, kitchen_cd),
-                                        updateKitchenStatus(parent.id, 1, kitchen_cd)
-                                    ]);
-                                }
-                            } else {
-                                await updateKitchenStatus(item.id, 1, kitchen_cd);
-                            }
-                        } else {
-                            await updateKitchenStatus(item.id, 1, kitchen_cd);
-                        }
-                    }
-                }
-            }
+            await updateSelectedItems({
+                selectedItemIds: selectedRows,
+                orderGroups: orderItems,
+                updateKitchenStatus,
+                kitchen_cd,
+                targetStatus: 1,
+                useAdditionalItems: false, // OrderTimeline usa pid/uid
+                parentUpdateStrategy: 'check-selected-siblings'
+            });
 
             setSelectedRows(new Set());
             setShowConfirmDialog(false);
@@ -380,13 +293,14 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
             });
         });
         return count;
-    }
+    };
 
     // Estilo para el tiempo transcurrido
     const getTimeStyle = (elapsedTime, configTime) => {
         const minutes = parseInt(elapsedTime?.toString().replace('分', '')) || 0;
         const threshold = parseInt(configTime || 0);
-        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'}`;
+        return `pt-2 pb-0 px-4 align-top font-medium w-[100px] text-center text-3xl ${minutes >= threshold ? 'text-red-500' : 'text-gray-900'
+            }`;
     };
 
     // Función para manejar el clic en el icono de imagen
@@ -398,32 +312,15 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
         setImageModalOpen(true);
     };
 
-    const getDisplayItems = (items) => {
-        const result = [];
-        const itemMap = new Map(items.map(item => [item.uid, item]));
-
-        items.forEach(item => {
-            if (!item.isChild) {
-                result.push(item); // 親を追加
-                const children = getAllChildren(item.uid, items); // 親に対応する子を取得
-                result.push(...children); // 子も追加
-            }
-        });
-
-        return result;
-    };
-
 
     return (
         <div className="flex flex-col h-full">
-            {selectedRows.size > 0 &&
-            (selectionMode !== "2") && (
+            {selectedRows.size > 0 && selectionMode !== "2" && (
                 <div className="sticky top-0 z-40 mb-2">
                     <button
                         onClick={() => setShowConfirmDialog(true)}
                         className="w-full px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors text-3xl"
                     >
-                        {/* 更新 ({getSelectedItemsCount()}イヤリング) */}
                         【調理済みにする】
                     </button>
                 </div>
@@ -435,13 +332,13 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                         <table className="w-full">
                             <thead className="sticky top-0 z-20 bg-white">
                                 <tr>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200">
                                         注文時間
                                     </th>
-                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[100px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200">
                                         経過時間
                                     </th>
-                                    <th className="w-[200px]py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200 ">
+                                    <th className="w-[200px] py-3 px-4 bg-gray-200 text-center font-bold text-gray-800 border-b border-gray-200">
                                         テーブル
                                     </th>
                                     <th className="py-3 px-4 bg-gray-200 text-left font-bold text-gray-800 border-b border-gray-200">
@@ -460,100 +357,95 @@ const OrderTimeline = ({ orders, updateKitchenStatus }) => {
                                     const isTableSelected = order.items.every(item => selectedRows.has(item.id));
                                     return (
                                         <tr key={`${order.orderTime}-${order.table}-${orderIndex}`}>
-                                            <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">{order.orderTime}</td>
+                                            <td className="pt-2 pb-0 px-4 align-top w-[100px] text-center text-3xl">
+                                                {order.orderTime}
+                                            </td>
                                             <td className={getTimeStyle(order.elapsedTime, config.elapsed_time)}>
                                                 {order.elapsedTime}
                                             </td>
-
                                             <td
-                                                className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected
-                                                    ? 'bg-yellow-300 ' // Estado seleccionado y su hover
-                                                    : ''                  // Hover solo cuando no está seleccionado
+                                                className={`pt-2 pb-0 px-4 align-top w-[200px] text-center text-3xl cursor-pointer ${isTableSelected ? 'bg-yellow-300' : ''
                                                     }`}
                                                 onClick={() => handleTableTouch(order)}
-
                                             >
                                                 {order.table}
                                             </td>
-                                            <td colSpan="3" className="p-0"> {/* Removemos el padding para el contenedor de items */}
+                                            <td colSpan="3" className="p-0">
                                                 <div className="divide-y divide-gray-200">
-                                                    {getDisplayItems(order.items).map((item, itemIndex) => (
+                                                    {getDisplayItemsHierarchy(order.items, false).map((item, itemIndex) => (
                                                         <div
                                                             key={itemIndex}
-                                                            onClick={() => handleItemTouch(item, order.items)}
-                                                            className={`flex items-left px-4 py-2 cursor-pointer ${selectedRows.has(item.id)
-                                                                ? 'bg-yellow-300 ' // Estado seleccionado y su hover
-                                                                : ''                  // Hover solo cuando no está seleccionado
+                                                            onClick={() => {
+                                                                // 🔥 NO permitir clic en items deshabilitados (padres prestados)
+                                                                if (!item.isDisabled) {
+                                                                    handleItemTouch(item, order.items);
+                                                                }
+                                                            }}
+                                                            className={`flex items-left px-4 py-2 ${item.isDisabled
+                                                                ? 'cursor-not-allowed opacity-50'  // 🔥 Estilo deshabilitado
+                                                                : `cursor-pointer ${selectedRows.has(item.id) ? 'bg-yellow-300' : ''}`
                                                                 }`}
                                                         >
-                                                                <div className="w-[50px] flex justify-star">
+                                                            <div className="w-[50px] flex justify-start">
                                                                 {item.modification && item.modification !== "　" && (
-                                                                    <span className={`text-3xl bg-gray-100  rounded text-red-600 `}>
-                                                                    {item.modification}
+                                                                    <span className="text-3xl bg-gray-100 rounded text-red-600">
+                                                                        {item.modification}
                                                                     </span>
-                                                            )}
+                                                                )}
                                                             </div>
-                                                            {/* Nombre del item */}
+
                                                             <div className={`flex-1 flex items-center ${item.isChild ? 'pl-4' : ''}`}>
                                                                 {item.isChild && (
                                                                     <div className="w-2 h-px bg-gray-300 mr-3 mt-4"></div>
                                                                 )}
-                                                                {/* {item.modification && item.modification !== "　" && (
-                                                                    <span className={`text-3xl bg-gray-100  rounded text-red-600 mr-4`}>
-                                                                    {item.modification}
-                                                                    </span>
-                                                                )} */}
-                                                                <span className="text-3xl">
+                                                                <span className={`text-3xl ${item.isDisabled ? 'text-gray-400' : ''}`}>
                                                                     {item.name}
-                                                                    {item.price_type === 2 && (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
-                                                                        <span className={`text-3xl text-red-500`}>
-                                                                            {"　"}@{item.price}
-                                                                        </span>
-                                                                    )}
+                                                                    {item.price_type === 2 &&
+                                                                        (item.later_price_change_flg === 0 || item.later_price_change_flg == null) && (
+                                                                            <span className="text-3xl text-red-500">
+                                                                                {"　"}@{item.price}
+                                                                            </span>
+                                                                        )}
                                                                 </span>
                                                             </div>
 
-
                                                             {item.handwriteImage !== null && (
                                                                 <div className="w-[50px] flex justify-end">
-                                                                    {/* Indicador de imagen manuscrita */}
                                                                     <div
-                                                                    className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation(); // Evitar que el clic afecte al elemento padre
-                                                                        if (handleImageClick) {
-                                                                            handleImageClick(item);
-                                                                        }
-                                                                    }}
+                                                                        className="flex-shrink-0 cursor-pointer hover:bg-indigo-100 p-1 rounded-full"
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (!item.isDisabled && handleImageClick) {
+                                                                                handleImageClick(item);
+                                                                            }
+                                                                        }}
                                                                     >
-                                                                    <Image className="h-10 w-10 text-indigo-500" />
+                                                                        <Image className="h-10 w-10 text-indigo-500" />
                                                                     </div>
                                                                 </div>
                                                             )}
 
-                                                            {/* Cantidad del item */}
                                                             <div className="w-[120px] flex justify-end">
-                                                                {/* {!item.isParent && ( */}
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-black-500">
+                                                                <span className={`inline-flex items-center justify-center w-8 h-8 text-5xl font-medium ${item.isDisabled ? 'text-gray-400' : 'text-black-500'
+                                                                    }`}>
                                                                     {item.quantity}
                                                                 </span>
-                                                                {/* )} */}
                                                             </div>
 
-                                                            {/* Total del item */}
                                                             <div className="w-[120px] flex justify-end px-4">
-                                                                {/* {!item.isParent && ( */}
-                                                                <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500 ">
-                                                                    {itemTotals[item.name].total}
-                                                                </span>
-                                                                {/* )} */}
+                                                                {/* 🔥 Solo mostrar total si NO es padre prestado */}
+                                                                {!item.isDisabled && (
+                                                                    <span className="inline-flex items-center justify-center w-8 h-8 text-5xl font-medium text-red-500">
+                                                                        {itemTotals[item.name]?.total || 0}
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </td>
                                         </tr>
-                                    )
+                                    );
                                 })}
                             </tbody>
                         </table>

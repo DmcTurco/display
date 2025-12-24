@@ -31,7 +31,7 @@ export function useItemSelection(selectionMode, onUpdate) {
                 const newSet = new Set(prev);
 
                 switch (type) {
-                    case 'table':
+                    case 'table':{
                         const allTableItemsSelected = tableGroup.orders.every(order =>
                             order.items.every(item => {
                                 if (item.isDisabled) return true;
@@ -64,9 +64,9 @@ export function useItemSelection(selectionMode, onUpdate) {
                                 }
                             });
                         });
-                        break;
+                        break;}
 
-                    case 'order':
+                    case 'order':{
                         const allOrderItemsSelected = order.items.every(item => {
                             if (item.isDisabled) return true;
                             const hasItem = newSet.has(item.id);
@@ -95,7 +95,7 @@ export function useItemSelection(selectionMode, onUpdate) {
                                 }
                             }
                         });
-                        break;
+                        break;}
 
                     case 'item':
                         if (item.isDisabled) {
