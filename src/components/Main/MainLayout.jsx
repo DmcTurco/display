@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import KitchenHeader from "../Header/KitchenHeader";
 import ConfigView from "../Pages/Config/ConfigView";
 import KitchenDisplay from "../Pages/Kitchen/kitchenDisplay";
-import { useKitchenSetup } from "../../hooks/useKitchenSetup";
+import { buildApiUrl, useKitchenSetup } from "../../hooks/useKitchenSetup";
 
 const MainLayout = ({ content }) => {
   const [pendingCount, setPendingCount] = useState(0);

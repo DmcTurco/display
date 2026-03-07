@@ -8,11 +8,14 @@ const LAST_UID_KEY = 'lastKitchenUID';
 const API_URL_KEY = 'apiUrl';
 
 export const buildApiUrl = () => {
-    const currentUrl = window.location.href;
-    const url = new URL(currentUrl);
-    const baseUrl = `${url.protocol}//${url.hostname}`;
-    const apiPath = '/kitchen_display/api/get_order.php';
-    return baseUrl + apiPath;
+    const host = window.location.hostname;
+    const protocol = window.location.protocol;
+    return `${protocol}//${host}/api`;
+    // const currentUrl = window.location.href;
+    // const url = new URL(currentUrl);
+    // const baseUrl = `${url.protocol}//${url.hostname}`;
+    // const apiPath = '/kitchen_display/api/get_order.php';
+    // return baseUrl + apiPath;
 };
 
 const FULL_API_URL = buildApiUrl();
@@ -48,7 +51,8 @@ export function useKitchenSetup() {
         try {
             if (!uid) throw new Error('UID no encontrado');
 
-            const response = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
+            // const response = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);config
+            const response = await fetch(`${FULL_API_URL}/kitchen/config?uid=${uid}`);
             const data = await response.json();
 
             if (data.status !== 'ok') throw new Error(data.message);
@@ -81,7 +85,8 @@ export function useKitchenSetup() {
             } else if (!storedConfig) {
                 await fetchConfig(uid);
             } else {
-                const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
+                // const newConfigResponse = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);
+                const newConfigResponse = await fetch(`${FULL_API_URL}/kitchen/config?uid=${uid}`);
                 const newConfigData = await newConfigResponse.json();
                 if (newConfigData.status === 'ok' && (newConfigData.data.type !== storedConfig.type ||
                     newConfigData.data.terminal_name !== storedConfig.terminal_name
@@ -116,7 +121,8 @@ export function useKitchenSetup() {
 
 
             if (currentConfig) {
-                const languageResponse = await fetch(`${FULL_API_URL}?action=get_Language&kitchen_cd=${currentConfig.cd}`);
+                // const languageResponse = await fetch(`${FULL_API_URL}?action=get_Language&kitchen_cd=${currentConfig.cd}`);
+                const languageResponse = await fetch(`${FULL_API_URL}/kitchen/languages?kitchen_cd=${currentConfig.cd}`);
                 const languageData = await languageResponse.json();
                 // console.log(languageData);
                 const mergedConfig = {
@@ -130,7 +136,8 @@ export function useKitchenSetup() {
                 setConfig(mergedConfig);
             }
 
-            const configSystemResponse = await fetch(`${FULL_API_URL}?action=get_configSystem&kitchen_cd=${currentConfig.cd}`);
+            // const configSystemResponse = await fetch(`${FULL_API_URL}?action=get_configSystem&kitchen_cd=${currentConfig.cd}`);
+            const configSystemResponse = await fetch(`${FULL_API_URL}/kitchen/config-system?kitchen_cd=${currentConfig.cd}`);
             const configSystemData = await configSystemResponse.json();
             if (configSystemData.status === 'ok') {
                 const storedConfigSystem = localStorage.getItem(CONFIG_SYSTEM_STORAGE_KEY);
