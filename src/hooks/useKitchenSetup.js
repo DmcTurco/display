@@ -30,7 +30,7 @@ export function useKitchenSetup() {
 
     const fetchLanguages = async (kitchen_cd) => {
         try {
-            const response = await fetch(`${FULL_API_URL}?action=getLanguage&kitchen_cd=${kitchen_cd}`);
+            const response = await fetch(`${FULL_API_URL}/kitchen/languages?kitchen_cd=${kitchen_cd}`);
             const data = await response.json();
 
             if (data.status !== 'ok') throw new Error(data.message);
@@ -53,6 +53,7 @@ export function useKitchenSetup() {
 
             // const response = await fetch(`${FULL_API_URL}?action=get_kitchen_config&uid=${uid}`);config
             const response = await fetch(`${FULL_API_URL}/kitchen/config?uid=${uid}`);
+            console.log(response);
             const data = await response.json();
 
             if (data.status !== 'ok') throw new Error(data.message);

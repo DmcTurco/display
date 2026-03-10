@@ -216,7 +216,8 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             setLoading(true);
             setKitchenCode(kitchenCd);
 
-            const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}&layout=${configLocal.layoutType}`);
+            // const response = await fetch(`${API_URL}?action=today_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}&layout=${configLocal.layoutType}`);
+            const response = await fetch(`${API_URL}/kitchen/today-orders?kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&type=${config?.type || 1}&layout=${configLocal.layoutType}`);
             if (!response.ok) throw new Error('Error al obtener los pedidos');
 
             const newData = await response.json();
@@ -262,9 +263,11 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
             let response; // Declara la variable primero
             // console.log(config);
             if (config.layoutType === 'kitchenServing') {
-                response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
+                // response = await fetch(`${API_URL}?action=ready_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
+                response = await fetch(`${API_URL}/kitchen/ready-orders?kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
             } else {
-                response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
+                // response = await fetch(`${API_URL}?action=completed_orders&kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
+                response = await fetch(`${API_URL}/kitchen/completed-orders?kitchen_cd=${kitchenCd}&language=${configLocal?.selectedLanguage}&layout=${configLocal.layoutType}`);
             }
             // console.log(response);
 
@@ -302,7 +305,8 @@ export function useOrders(config, API_URL) {  // Recibimos config y API_URL como
 
             // console.log('typeDisplay:', typeDisplay);
             console.log('updateKitchenStatus:', orderDetailId, newStatus, kitchen_cd, typeDisplay);
-            const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
+            // const response = await fetch(`${API_URL}?action=update_kitchen_status`, {
+            const response = await fetch(`${API_URL}/kitchen/update-status`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
